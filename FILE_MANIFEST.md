@@ -11,12 +11,12 @@
 
 | 파일 | MD5 | 크기 |
 |---|---|---|
-| `seedance-master-builder.html` | `5C6D9B11B160B95053DA909810775E4E` | 171,716 B (41축 v3.3 — 자연어 스타일: 라벨·메타주석 제거, 한국어 대사 전용, 잔류 자리표시자 정리) |
-| `README.md` | `23E422C8662840DFED316A51119A384B` | 14,670 B |
-| `PROJECT_SPEC.md` | `60903C85C11466B0D10768D0BEE728C5` | 41,487 B (2.5 단일 기준: 2.0 문구 정리) |
-| `LLM_RULES.md` | `8AAA48BDC634D66F6C1B6990D89BB241` | 15,735 B (2.5 단일 기준: 근거 레벨 단순화) |
+| `seedance-master-builder.html` | `54D3FA2667242D638CDEABDB18646177` | 171,683 B (41축 v3.3 — 자연어 스타일 최종: 부정제어 중국어화·감정 중국어화) |
+| `README.md` | `A255240D5B6EE4A87C0302A18C755FF2` | 19,359 B (v3.3 자연어 스타일 가이드) |
+| `PROJECT_SPEC.md` | `5CE60304C5A40ADE93B922B4C2DDB908` | 43,650 B (2.5 단일 기준 + §15 자연어 개편) |
+| `LLM_RULES.md` | `6AE63B299E213AE86D358CBC5405F008` | 18,229 B (2.5 단일 + v3.3 자연어 규칙) |
 | `axes.json` | `41E64109008AB44B7496F3DAFCAF5E52` | 61,633 B (41축 레지스트리 — 단일 진실 공급원) |
-| `PROMPT_LLM.md` | `C3C2CA1D7DAA60DEC8C23F04F5893710` | 4,725 B (LLM 주입용 시스템 프롬프트) |
+| `PROMPT_LLM.md` | `0D1D4DE864C794FA335107B35956053A` | 5,753 B (LLM 주입용 시스템 프롬프트 — v3.3 왕만두 예시) |
 | `seedance-llm\seedance-schema.js` | `9EBF9405EE1817A3DFDFB26B26F3EFB8` | 스키마 생성기 (task-first 2단계) |
 | `seedance-llm\seedance-validate.js` | `10963B2E2397FC3C6156A9521DB838F2` | 서버 검증기 (dependsOn 자동 정리) |
 | `konti_sajucheongung.html` | `514473DC6F6A8267C1AEDC708C1D1743` | 18,671 B |
@@ -26,7 +26,7 @@
 | `prompt_sajucheongung3_drama.md` | `B4C5F89A5F4941D0E52534E0B65322C3` | 13,793 B (최종 30초본) |
 | `prompt_sajucheongung3_drama_2x20s.md` | `7D6A1F41853FE11A5D5B07655979DDFF` | 22,365 B (2×20초 파생본) |
 | `builder_full.png` | `C4EDB3F8FE1AD9C16D35B04783F0CD72` | 245,446 B |
-| `backup.ps1` | `11ED33403D03BC5001168DD05BA27980` | 1,965 B (15파일 + 하위폴더 지원) |
+| `backup.ps1` | `37E2BCAE5A254BE94D91C0E74DF7DFF6` | 2,025 B (17파일 + 하위폴더 지원) |
 
 ## 📁 백업 계층
 
