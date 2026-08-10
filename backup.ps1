@@ -24,6 +24,8 @@ $files = @(
   'prompt_sajucheongung2.md',
   'prompt_sajucheongung3_drama.md',
   'prompt_sajucheongung3_drama_2x20s.md',
+  'prompt_25_example_heungbu.md',
+  'prompt_builder_25.md',
   'builder_full.png'
 )
 
