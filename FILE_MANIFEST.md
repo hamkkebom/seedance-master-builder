@@ -13,8 +13,8 @@
 |---|---|---|
 | `seedance-master-builder.html` | `5B9D35AD4AB8EC48BB1B03AB72C07D59` | 172,835 B (41축 v3.2 — QA 결함 5건 수정: 무효 키 정리) |
 | `README.md` | `23E422C8662840DFED316A51119A384B` | 14,670 B |
-| `PROJECT_SPEC.md` | `F66844C79CB7FD7DC81A5D825BA11847` | 41,483 B (QA 재검수: 감정외화·1컷1운경·4~5개 출처 2.0 표기) |
-| `LLM_RULES.md` | `B34B61201357185B6E9AF3072287AEA5` | 15,765 B (QA 재검수: duration 뉘앙스·500자 출처·LvB 표기) |
+| `PROJECT_SPEC.md` | `60903C85C11466B0D10768D0BEE728C5` | 41,487 B (2.5 단일 기준: 2.0 문구 정리) |
+| `LLM_RULES.md` | `8AAA48BDC634D66F6C1B6990D89BB241` | 15,735 B (2.5 단일 기준: 근거 레벨 단순화) |
 | `axes.json` | `41E64109008AB44B7496F3DAFCAF5E52` | 61,633 B (41축 레지스트리 — 단일 진실 공급원) |
 | `PROMPT_LLM.md` | `C3C2CA1D7DAA60DEC8C23F04F5893710` | 4,725 B (LLM 주입용 시스템 프롬프트) |
 | `seedance-llm\seedance-schema.js` | `9EBF9405EE1817A3DFDFB26B26F3EFB8` | 스키마 생성기 (task-first 2단계) |
