@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>콘티 — 사주천궁 드라마 (30초 · 7컷 · 산골 무당)</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
+<style>
+  :root {
+    --bg: #eef0f2; --card: #ffffff; --line: #dde2e8; --ink: #1c2330; --muted: #66707f;
+    --accent: #b3541e; --accent-soft: #f9ede4; --blue: #2f6fed; --blue-soft: #eaf1fe;
+    --green: #2e7d6b; --green-soft: #e6f3ef; --gold: #a67c1e; --gold-soft: #f8f1de;
+    --mist: #4a6b5f; --mist-soft: #e8efec; --amber: #c07a1e; --amber-soft: #faf0dd;
+    --shadow: 0 1px 3px rgba(20,30,50,.06), 0 8px 24px rgba(20,30,50,.07);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif; background: var(--bg); color: var(--ink); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 28px 20px 80px; }
+
+  .doc-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; padding-bottom: 18px; border-bottom: 2px solid var(--ink); margin-bottom: 18px; }
+  .doc-head h1 { font-size: 26px; font-weight: 800; letter-spacing: -.02em; }
+  .doc-head h1 .tag-d { font-size: 12px; font-weight: 800; vertical-align: 3px; background: var(--mist); color: #fff; border-radius: 6px; padding: 3px 8px; margin-left: 6px; }
+  .doc-head .sub { color: var(--muted); font-size: 13px; margin-top: 4px; }
+  .meta-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip { font-size: 12px; font-weight: 600; padding: 5px 11px; border-radius: 999px; background: var(--card); border: 1px solid var(--line); color: var(--muted); }
+  .chip.hl { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+  .timeline { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 22px; }
+  .tl-seg { position: relative; text-align: center; padding: 9px 3px 7px; border-radius: 8px; font-size: 10.5px; font-weight: 700; color: #fff; }
+  .tl-seg .t { font-size: 11.5px; font-weight: 800; display: block; }
+  .tl-seg .n { opacity: .85; font-weight: 600; }
+  .tl-seg.c1 { background: #4a6b5f; } .tl-seg.c2 { background: #3d5a50; } .tl-seg.c3 { background: #557a6c; }
+  .tl-seg.c4 { background: #c07a1e; } .tl-seg.c5 { background: #a3541e; } .tl-seg.c6 { background: #8e5ad8; } .tl-seg.c7 { background: #b8860b; }
+
+  .cut { background: var(--card); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); margin-bottom: 18px; overflow: hidden; }
+  .cut-head { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid var(--line); background: #fafbfc; }
+  .cut-no { font-size: 13px; font-weight: 800; color: #fff; border-radius: 8px; padding: 5px 12px; }
+  .cut-title { font-size: 15px; font-weight: 700; }
+  .cut-time { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--muted); background: var(--bg); padding: 4px 10px; border-radius: 6px; }
+  .cut-body { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+  @media (max-width: 760px) { .cut-body { grid-template-columns: 1fr; } }
+  .cell { padding: 14px 18px; border-right: 1px solid var(--line); }
+  .cell:last-child { border-right: none; }
+  .cell-label { font-size: 11px; font-weight: 800; letter-spacing: .04em; color: var(--muted); margin-bottom: 7px; display: flex; align-items: center; gap: 6px; }
+  .cell-label::before { content: ''; width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+  .cell.v .cell-label::before { background: var(--blue); }
+  .cell.c .cell-label::before { background: var(--accent); }
+  .cell p { font-size: 13.5px; color: var(--ink); }
+  .cell .sub-line { color: var(--muted); font-size: 12px; margin-top: 4px; }
+  .dia { background: var(--green-soft); border-left: 3px solid var(--green); padding: 7px 10px; border-radius: 6px; margin-top: 6px; font-size: 13px; font-weight: 600; }
+  .dia.mudang { background: var(--amber-soft); border-left-color: var(--amber); }
+  .dia b.speaker { color: var(--green); }
+  .dia.mudang b.speaker { color: var(--amber); }
+  .fx { font-size: 12.5px; color: var(--ink); margin-top: 4px; }
+  .fx b { color: var(--accent); font-weight: 700; }
+  .tag-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .tag { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 5px; }
+  .tag.cam { background: var(--blue-soft); color: var(--blue); }
+  .tag.opt { background: var(--blue-soft); color: #1d5bd6; }
+  .tag.tr { background: var(--accent-soft); color: var(--accent); }
+  .tag.sfx { background: var(--gold-soft); color: var(--gold); }
+  .tag.dir { background: var(--green-soft); color: var(--green); }
+
+  .bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 26px; }
+  @media (max-width: 760px) { .bottom-grid { grid-template-columns: 1fr; } }
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; box-shadow: var(--shadow); }
+  .panel h3 { font-size: 14px; font-weight: 800; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .panel ul { list-style: none; }
+  .panel li { font-size: 12.5px; color: var(--ink); padding: 3px 0 3px 16px; position: relative; }
+  .panel li::before { content: '✕'; position: absolute; left: 0; color: var(--accent); font-size: 11px; font-weight: 800; }
+  .panel li.ok::before { content: '✓'; color: var(--green); }
+  .sound-arc { margin-top: 12px; }
+  .sound-arc .arc-row { display: flex; align-items: center; gap: 8px; font-size: 12px; margin-bottom: 5px; }
+  .sound-arc .bar { flex: 1; height: 10px; background: var(--bg); border-radius: 5px; overflow: hidden; }
+  .sound-arc .fill { height: 100%; border-radius: 5px; }
+  .sound-arc .lvl { font-weight: 800; width: 46px; text-align: right; color: var(--muted); }
+  .print-btn { position: fixed; right: 22px; bottom: 22px; background: var(--ink); color: #fff; border: none; border-radius: 10px; padding: 12px 18px; font-size: 13px; font-weight: 700; cursor: pointer; box-shadow: var(--shadow); font-family: inherit; }
+  .print-btn:hover { background: #333c4d; }
+  @media print { .print-btn { display: none; } body { background: #fff; } .wrap { padding: 0; max-width: 100%; } .cut { box-shadow: none; page-break-inside: avoid; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="doc-head">
+    <div>
+      <h1>⛰️ 사주천궁 — 산골 무당 <span style="font-weight:600;color:var(--muted)">드라마 콘티</span><span class="tag-d">30s · DRAMA</span></h1>
+      <div class="sub">험한 산길을 걸어 찾아간 용한 무당 — 반전: 무당도 사주천궁 예약상담 · Seedance 2.5 t2v 단일 패스</div>
+    </div>
+    <div class="meta-chips">
+      <span class="chip hl">16:9</span><span class="chip">24fps</span><span class="chip">30초</span>
+      <span class="chip">t2v</span><span class="chip">발화 ON · 립싱크</span><span class="chip">무자막</span>
+    </div>
+  </div>
+
+  <div class="timeline">
+    <div class="tl-seg c1"><span class="t">0–4s</span><span class="n">C1 · 산길</span></div>
+    <div class="tl-seg c2"><span class="t">4–9s</span><span class="n">C2 · 고생</span></div>
+    <div class="tl-seg c3"><span class="t">9–13s</span><span class="n">C3 · 고비</span></div>
+    <div class="tl-seg c4"><span class="t">13–17s</span><span class="n">C4 · 도착</span></div>
+    <div class="tl-seg c5"><span class="t">17–22s</span><span class="n">C5 · 예약</span></div>
+    <div class="tl-seg c6"><span class="t">22–27s</span><span class="n">C6 · 반전</span></div>
+    <div class="tl-seg c7"><span class="t">27–30s</span><span class="n">C7 · 엔딩</span></div>
+  </div>
+
+  <!-- ============ CUT 1 ============ -->
+  <div class="cut">
+    <div class="cut-head">
+      <span class="cut-no" style="background:#4a6b5f">CUT 1</span>
+      <span class="cut-title">험한 산길 진입 — 대화 시작 | Hook: 긴장감</span>
+      <span class="cut-time">0:00–0:04</span>
+    </div>
+    <div class="cut-body">
+      <div class="cell v">
+        <div class="cell-label">화면 · 장면</div>
+        <p>남녀 연인(20대 후반)이 안개 낀 험한 산길을 오르고 있다. 흙탕길, 뿌리 돌출, 가파른 경사. <b>남자가 앞장서서 이끌며</b> 뒤를 돌아 여자를 확인한다. 배낭과 지팡이.</p>
+        <div class="sub-line">산악 안개 · 차갑고 촉촉한 빛 · 남자의 자신감 vs 여자의 반신반의</div>
+        <div class="tag-row">
+          <span class="tag cam">후방 추적 핸드헬드</span>
+          <span class="tag opt">얕은 심도</span>
+        </div>
+      </div>
+      <div class="cell c">
+        <div class="cell-label">카메라 · 동작</div>
+        <p>뒤에서 천천히 따라가는 트래킹 샷. 남자가 뒤를 돌아 여자에게 자신 있게 말을 건다. 여자는 반신반의하며 따라온다.</p>
+        <div class="dia"><b class="speaker">🎙 여:</b> {여기가 맞긴 해?}</div>
+        <div class="dia"><b class="speaker">🎙 남:</b> {오빠 믿지? 맞는 길이야}</div>
+        <div class="fx"><b>&lt;효과음&gt;</b> <잔돌 구르는 소리> <거친 바람> <새소리></div>
+        <div class="tag-row">
+          <span class="tag tr">전환 → 하드컷</span>
+          <span class="tag dir">지치지만 단단한 결의</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ CUT 2 ============ -->
+  <div class="cut">
+    <div class="cut-head">
+      <span class="cut-no" style="background:#3d5a50">CUT 2</span>
+      <span class="cut-title">여러 배경이 지나가는 고생 몽타주 | Hook: 고난 강조</span>
+      <span class="cut-time">0:04–0:09</span>
+    </div>
+    <div class="cut-body">
+      <div class="cell v">
+        <div class="cell-label">화면 · 장면</div>
+        <p>울창한 숲 → 바위 절벽 옆 비탈길 → 계곡 징검다리 → 안개 낀 능선이 각 1초씩 교차. 무거운 발걸음, 바람에 날리는 옷깃.</p>
+        <div class="sub-line">배경 빠르게 교차 · 시간 경과 느낌</div>
+        <div class="tag-row">
+          <span class="tag cam">패닝 + 하드컷 몽타주</span>
+          <span class="tag opt">광각 · 안개 헤이즈</span>
+        </div>
+      </div>
+      <div class="cell c">
+        <div class="cell-label">카메라 · 동작</div>
+        <p>각 배경에서 1초씩 걷는 모습을 하드컷으로 교차. 여자가 지쳐 주저앉을 뻔한다.</p>
+        <div class="dia"><b class="speaker">🎙 여:</b> {아이고 지쳐...}</div>
+        <div class="dia"><b class="speaker">🎙 남:</b> {내 손 잡아}</div>
+        <div class="fx"><b>&lt;효과음&gt;</b> <계곡 물소리> <바람 점점 강해짐> <숨 가쁜 호흡></div>
+        <div class="tag-row">
+          <span class="tag tr">전환 → 크로스페이드</span>
+          <span class="tag sfx">효과 밀도 HIGH (고생 절정)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ CUT 3 ============ -->
+  <div class="cut">
+    <div class="cut-head">
+      <span class="cut-no" style="background:#557a6c">CUT 3</span>
+      <span class="cut-title">비탈길 고비 — 연인 케미 | Hook: 긴장+유대</span>
+      <span class="cut-time">0:09–0:13</span>
+    </div>
+    <div class="cut-body">
+      <div class="cell v">
+        <div class="cell-label">화면 · 장면</div>
+        <p>바위 비탈길. 여자가 발을 헛디뎌 미끄러질 뻔하고, 남자가 재빨리 허리를 감싸 잡아준다. 잔돌이 굴러 떨어진다. 둘은 잠시 눈을 마주치고 헛웃음.</p>
+        <div class="sub-line">긴장 후 안도의 미소 · 연인 케미</div>
+        <div class="tag-row">
+          <span class="tag cam">슬로우 푸시인</span>
+          <span class="tag opt">렌즈 브리딩</span>
+        </div>
+      </div>
+      <div class="cell c">
+        <div class="cell-label">카메라 · 동작</div>
+        <p>느린 푸시인으로 두 사람에게 다가간다. 놀란 표정 → 안심 → 헛웃음의 감정 변화.</p>
+        <div class="dia"><b class="speaker">🎙 여:</b> {고마워}</div>
+        <div class="dia"><b class="speaker">🎙 남:</b> {고생한만큼 용할거야}</div>
+        <div class="fx"><b>&lt;효과음&gt;</b> <잔돌 떨어지는 소리> <안도의 짧은 웃음></div>
+        <div class="tag-row">
+          <span class="tag tr">전환 → 하드컷</span>
+          <span class="tag dir">케미 · 가벼운 장난기</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ CUT 4 ============ -->
+  <div class="cut">
+    <div class="cut-head">
+      <span class="cut-no" style="background:#c07a1e">CUT 4</span>
+      <span class="cut-title">무당집 도착 — "오느라 고생했다" | Hook: 안도</span>
+      <span class="cut-time">0:13–0:17</span>
+    </div>
+    <div class="cut-body">
+      <div class="cell v">
+        <div class="cell-label">화면 · 장면</div>
+        <p>산골 오두막 앞. 중년 여성 무당(한복)이 문가에 서 있다. 따뜻한 등불, 산 안개가 배경. 두 사람이 지쳐 인사한다.</p>
+        <div class="tag-row">
+          <span class="tag cam">고정 미디엄</span>
+          <span class="tag opt">등불 보케</span>
+        </div>
+      </div>
+      <div class="cell c">
+        <div class="cell-label">카메라 · 동작</div>
+        <p>고정 미디엄 컷. 무당이 부드러운 눈빛으로 맞이하고 오두막으로 안내한다.</p>
+        <div class="dia mudang"><b class="speaker">🎙 무당:</b> {먼 길 왔구먼. 들어오게}</div>
+        <div class="fx"><b>&lt;효과음&gt;</b> <문 삐걱 소리> <산새소리></div>
+        <div class="tag-row">
+          <span class="tag tr">전환 → 하드컷</span>
+          <span class="tag dir">무당: 온화 · 포근</span>
+          <span class="tag dir">효과 밀도 LOW (안도)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ CUT 5 ============ -->
+  <div class="cut">
+    <div class="cut-head">
+      <span class="cut-no" style="background:#a3541e">CUT 5</span>
+      <span class="cut-title">"예약이 있어서 기다리라" — 장애물 | Hook: 긴장</span>
+      <span class="cut-time">0:17–0:22</span>
+    </div>
+    <div class="cut-body">
+      <div class="cell v">
+        <div class="cell-label">화면 · 장면</div>
+        <p>오두막 안. 두 사람이 앉고 무당이 차를 따라준다. 차 연기, 따뜻한 등불. 무당이 난처하게 웃으며 말한다.</p>
+        <div class="tag-row">
+          <span class="tag cam">슬로우 푸시인</span>
+          <span class="tag opt">차 연기 보케</span>
+        </div>
+      </div>
+      <div class="cell c">
+        <div class="cell-label">카메라 · 동작</div>
+        <p>느린 푸시인. 남녀가 공손히 상담을 청하고, 무당이 난처하게 설명한다.</p>
+        <div class="dia"><b class="speaker">🎙 남:</b> {상담 받고 싶어요}</div>
+        <div class="dia mudang"><b class="speaker">🎙 무당:</b> {예약 손님이 있어서... 기다려야 하겠구먼}</div>
+        <div class="dia"><b class="speaker">🎙 여:</b> {저희 말고도 왔어요?}</div>
+        <div class="tag-row">
+          <span class="tag tr">전환 → 푸시인 → 폰</span>
+          <span class="tag dir">긴장 · 의아함</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ CUT 6 ============ -->
+  <div class="cut">
+    <div class="cut-head">
+      <span class="cut-no" style="background:#8e5ad8">CUT 6</span>
+      <span class="cut-title">"사주천궁에서 전화로도 만나는데?" — 반전 | Hook: 펀치라인</span>
+      <span class="cut-time">0:22–0:27</span>
+    </div>
+    <div class="cut-body">
+      <div class="cell v">
+        <div class="cell-label">화면 · 장면</div>
+        <p>오두막 안. <b>무당만</b> 편안한 미소로 스마트폰을 꺼내 보여준다. 남녀는 각자 앉은 자리에서 폰을 들지 않고 무당의 폰만 바라본다. 폰 화면은 <b>빈 홈 화면(밝은 단색)</b> — 후편집에서 사용자가 준 UI 스크린샷 합성. 폰 빛이 무당의 얼굴을 비춘다.</p>
+        <div class="tag-row">
+          <span class="tag cam">푸시인 → 무당의 폰 매크로</span>
+          <span class="tag opt">폰 빛 글로우</span>
+          <span class="tag opt">아나모픽 선 플레어</span>
+        </div>
+      </div>
+      <div class="cell c">
+        <div class="cell-label">카메라 · 동작</div>
+        <p>크래시줌으로 무당의 폰 화면에 밀착. 무당이 장난기 있는 미소로 말하고, <b>여자가 눈을 크게 뜨며 놀라고 남자도 어안이 벙벙해진다</b>.</p>
+        <div class="dia mudang"><b class="speaker">🎙 무당:</b> {사주천궁에서 전화로도 만날 수 있어.}</div>
+        <div class="fx"><b>&lt;효과음&gt;</b> <폰 알림음 — 티리링> <반전 스팅거></div>
+        <div class="tag-row">
+          <span class="tag tr">전환 → 크로스페이드</span>
+          <span class="tag sfx">효과 밀도 MEDIUM (반전)</span>
+          <span class="tag dir">여: 놀람(눈 큼) · 남: 어안이 벙벙</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ CUT 7 ============ -->
+  <div class="cut">
+    <div class="cut-head">
+      <span class="cut-no" style="background:#b8860b">CUT 7</span>
+      <span class="cut-title">엔딩 — "너랑 오니까 너무 좋다" | Hook: 여운</span>
+      <span class="cut-time">0:27–0:30</span>
+    </div>
+    <div class="cut-body">
+      <div class="cell v">
+        <div class="cell-label">화면 · 장면</div>
+        <p>노을빛으로 물든 오두막 앞. <b>무당은 문가에 서서 손을 흔들며 배웅</b>한다. 산 안개가 걷히고 따뜻한 빛. 남녀는 각자 손을 흔들어 답례한 뒤, <b>두 사람만 손을 잡고</b> 산길을 걸어 내려간다. 셋이 손을 잡고 걷지 않는다.</p>
+        <div class="sub-line">골든아워 역광 · 무당 배웅 + 남녀 뒷모습 와이드</div>
+        <div class="tag-row">
+          <span class="tag cam">와이드 고정(잠금)</span>
+          <span class="tag opt">슬로모션 85%</span>
+          <span class="tag opt">골든아워 글로우</span>
+        </div>
+      </div>
+      <div class="cell c">
+        <div class="cell-label">카메라 · 동작</div>
+        <p>와이드 고정. 남자가 다정하게 말하고, 여자가 장난스럽게 팔을 톡 치며 받아준다. 두 사람이 손을 잡고 걸어 내려가고, 무당이 문가에서 손을 흔든다.</p>
+        <div class="dia"><b class="speaker">🎙 남:</b> {너랑 여기 오니까 너무 좋다}</div>
+        <div class="dia"><b class="speaker">🎙 여:</b> {나도 좋으니까 넘어간다 넘어가!} <span style="font-weight:700;color:var(--accent)">— 장난스럽게</span></div>
+        <div class="fx"><b>&lt;효과음&gt;</b> <발소리> <잔잔한 새소리> <여자의 짧은 웃음></div>
+        <div class="tag-row">
+          <span class="tag sfx">엔딩 테일: 웃음 + 0.5s 무음</span>
+          <span class="tag dir">남: 다정 · 여: 장난기 · 무당: 배웅</span>
+          <span class="tag dir">효과 밀도 LOW (여운)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 하단 블록 -->
+  <div class="bottom-grid">
+    <div class="panel">
+      <h3>🎵 음악 · 사운드 아크 (7컷)</h3>
+      <p style="font-size:12.5px;color:var(--muted);margin-bottom:10px">잔잔한 어쿠스틱 기타 + 은은한 가야금 선율, 80 BPM, 매우 낮은 볼륨 (1s–28s) · 반전(22s)에서 은은한 코드 변화</p>
+      <div class="sound-arc">
+        <div class="arc-row"><span style="width:60px">[0–4s]</span><div class="bar"><div class="fill" style="width:55%;background:#4a6b5f"></div></div><span class="lvl">MED</span></div>
+        <div class="arc-row"><span style="width:60px">[4–9s]</span><div class="bar"><div class="fill" style="width:85%;background:#3d5a50"></div></div><span class="lvl">HIGH</span></div>
+        <div class="arc-row"><span style="width:60px">[9–13s]</span><div class="bar"><div class="fill" style="width:55%;background:#557a6c"></div></div><span class="lvl">MED</span></div>
+        <div class="arc-row"><span style="width:60px">[13–17s]</span><div class="bar"><div class="fill" style="width:25%;background:#c07a1e"></div></div><span class="lvl">LOW</span></div>
+        <div class="arc-row"><span style="width:60px">[17–22s]</span><div class="bar"><div class="fill" style="width:35%;background:#a3541e"></div></div><span class="lvl">LOW</span></div>
+        <div class="arc-row"><span style="width:60px">[22–27s]</span><div class="bar"><div class="fill" style="width:60%;background:#8e5ad8"></div></div><span class="lvl">MED</span></div>
+        <div class="arc-row"><span style="width:60px">[27–30s]</span><div class="bar"><div class="fill" style="width:30%;background:#b8860b"></div></div><span class="lvl">LOW</span></div>
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin-top:10px">산길(MED) → 고생 절정(HIGH) → 고비(MED) → 안도(LOW) → 긴장(LOW) → 반전(MED) → 여운(LOW)</p>
+    </div>
+    <div class="panel">
+      <h3>🚫 네거티브 · 유지 사항</h3>
+      <ul>
+        <li>문자·자막·워터마크·로고 생성 금지</li>
+        <li>실존 브랜드·실존 얼굴·실존 앱/메신저 UI 금지</li>
+        <li>다중 얼굴·손 변형·손가락 추가·녹는 얼굴 금지</li>
+        <li>날씨 점프 금지 (산악 안개 유지, 갑작스러운 맑음/밤 금지)</li>
+        <li>그림자 방향 불일치·깜빡임 금지</li>
+        <li>의상 색 변화 금지 (남·녀·무당 한복 각각 고정)</li>
+        <li>폰·지팡이·배낭·차잔 갑작 등장/소멸 금지</li>
+        <li class="ok">플라스틱 피부·과포화·왁스 질감 금지</li>
+        <li class="ok">립싱크 불일치·로봇 목소리·부자연스러운 억양 금지</li>
+        <li class="ok">1컷 1운경 (공식 규칙) · 타임스탬프 연속·비중첩</li>
+        <li class="ok">걷기·호흡 동작의 물리적 자연스러움 (비틀거림·부자연스러운 보행 금지)</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<button class="print-btn" onclick="window.print()">🖨 인쇄 / PDF 저장</button>
+</body>
+</html>

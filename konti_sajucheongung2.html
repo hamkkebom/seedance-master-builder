@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>콘티 — 사주천궁 타로 광고 2 (20초 · 5컷 · 여자친구 연애운)</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f6f8; --card: #ffffff; --line: #e4e7ec; --ink: #1c2330; --muted: #6b7484;
+    --accent: #e0563f; --accent-soft: #fdeeea; --blue: #2f6fed; --blue-soft: #eaf1fe;
+    --green: #2e9e6b; --green-soft: #e8f6ef; --gold: #b8860b; --gold-soft: #faf3e0;
+    --pink: #d5558a; --pink-soft: #fdeef4;
+    --shadow: 0 1px 3px rgba(20,30,50,.06), 0 8px 24px rgba(20,30,50,.07);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif; background: var(--bg); color: var(--ink); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 28px 20px 80px; }
+
+  .doc-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; padding-bottom: 18px; border-bottom: 2px solid var(--ink); margin-bottom: 18px; }
+  .doc-head h1 { font-size: 26px; font-weight: 800; letter-spacing: -.02em; }
+  .doc-head .sub { color: var(--muted); font-size: 13px; margin-top: 4px; }
+  .meta-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip { font-size: 12px; font-weight: 600; padding: 5px 11px; border-radius: 999px; background: var(--card); border: 1px solid var(--line); color: var(--muted); }
+  .chip.hl { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+  .timeline { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin-bottom: 22px; }
+  .tl-seg { position: relative; text-align: center; padding: 9px 4px 7px; border-radius: 8px; font-size: 11px; font-weight: 700; color: #fff; }
+  .tl-seg .t { font-size: 12px; font-weight: 800; display: block; }
+  .tl-seg .n { opacity: .85; font-weight: 600; }
+  .tl-seg.c1 { background: #d5558a; } .tl-seg.c2 { background: #2e9e6b; } .tl-seg.c3 { background: #d5563a; } .tl-seg.c4 { background: #8e5ad8; } .tl-seg.c5 { background: #b8860b; }
+
+  .cut { background: var(--card); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); margin-bottom: 18px; overflow: hidden; }
+  .cut-head { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid var(--line); background: #fafbfc; }
+  .cut-no { font-size: 13px; font-weight: 800; color: #fff; border-radius: 8px; padding: 5px 12px; }
+  .cut-title { font-size: 15px; font-weight: 700; }
+  .cut-time { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--muted); background: var(--bg); padding: 4px 10px; border-radius: 6px; }
+  .cut-body { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+  @media (max-width: 760px) { .cut-body { grid-template-columns: 1fr; } }
+  .cell { padding: 14px 18px; border-right: 1px solid var(--line); }
+  .cell:last-child { border-right: none; }
+  .cell-label { font-size: 11px; font-weight: 800; letter-spacing: .04em; color: var(--muted); margin-bottom: 7px; display: flex; align-items: center; gap: 6px; }
+  .cell-label::before { content: ''; width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+  .cell.v .cell-label::before { background: var(--blue); }
+  .cell.c .cell-label::before { background: var(--accent); }
+  .cell.a .cell-label::before { background: var(--green); }
+  .cell.d .cell-label::before { background: var(--gold); }
+  .cell p { font-size: 13.5px; color: var(--ink); }
+  .cell .sub-line { color: var(--muted); font-size: 12px; margin-top: 4px; }
+  .dia { background: var(--pink-soft); border-left: 3px solid var(--pink); padding: 7px 10px; border-radius: 6px; margin-top: 6px; font-size: 13px; font-weight: 600; }
+  .dia b.speaker { color: var(--pink); }
+  .fx { font-size: 12.5px; color: var(--ink); margin-top: 4px; }
+  .fx b { color: var(--accent); font-weight: 700; }
+  .tag-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .tag { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 5px; }
+  .tag.cam { background: var(--blue-soft); color: var(--blue); }
+  .tag.opt { background: var(--blue-soft); color: #1d5bd6; }
+  .tag.tr { background: var(--accent-soft); color: var(--accent); }
+  .tag.sfx { background: var(--gold-soft); color: var(--gold); }
+  .tag.dir { background: var(--green-soft); color: var(--green); }
+
+  .bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 26px; }
+  @media (max-width: 760px) { .bottom-grid { grid-template-columns: 1fr; } }
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; box-shadow: var(--shadow); }
+  .panel h3 { font-size: 14px; font-weight: 800; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .panel ul { list-style: none; }
+  .panel li { font-size: 12.5px; color: var(--ink); padding: 3px 0 3px 16px; position: relative; }
+  .panel li::before { content: '✕'; position: absolute; left: 0; color: var(--accent); font-size: 11px; font-weight: 800; }
+  .panel li.ok::before { content: '✓'; color: var(--green); }
+  .sound-arc { margin-top: 12px; }
+  .sound-arc .arc-row { display: flex; align-items: center; gap: 8px; font-size: 12px; margin-bottom: 5px; }
+  .sound-arc .bar { flex: 1; height: 10px; background: var(--bg); border-radius: 5px; overflow: hidden; }
+  .sound-arc .fill { height: 100%; border-radius: 5px; }
+  .sound-arc .lvl { font-weight: 800; width: 46px; text-align: right; color: var(--muted); }
+  .print-btn { position: fixed; right: 22px; bottom: 22px; background: var(--ink); color: #fff; border: none; border-radius: 10px; padding: 12px 18px; font-size: 13px; font-weight: 700; cursor: pointer; box-shadow: var(--shadow); font-family: inherit; }
+  .print-btn:hover { background: #333c4d; }
+  @media print { .print-btn { display: none; } body { background: #fff; } .wrap { padding: 0; max-width: 100%; } .cut { box-shadow: none; page-break-inside: avoid; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="doc-head">
+    <div>
+      <h1>🎴 사주천궁 — 친구 연애운 상담 <span style="font-weight:600;color:var(--muted)">콘티 2</span></h1>
+      <div class="sub">여자 친구 둘 · "시간나면~" → "24시간이라 시간 냈지~" · Seedance 2.5 t2v 단일 패스</div>
+    </div>
+    <div class="meta-chips">
+      <span class="chip hl">16:9</span><span class="chip">24fps</span><span class="chip">20초</span>
+      <span class="chip">t2v</span><span class="chip">발화 ON · 립싱크</span><span class="chip">무자막</span>
+    </div>
+  </div>
+
+  <div class="timeline">
+    <div class="tl-seg c1"><span class="t">0–4s</span><span class="n">C1 · 제안</span></div>
+    <div class="tl-seg c2"><span class="t">4–8s</span><span class="n">C2 · 반전</span></div>
+    <div class="tl-seg c3"><span class="t">8–11s</span><span class="n">C3 · 충격</span></div>
+    <div class="tl-seg c4"><span class="t">11–16s</span><span class="n">C4 · 메시지</span></div>
+    <div class="tl-seg c5"><span class="t">16–20s</span><span class="n">C5 · 엔딩</span></div>
+  </div>
+
+  <!-- ============ CUT 1 ============ -->
+  <div class="cut">
+    <div class="cut-head">
+      <span class="cut-no" style="background:#d5558a">CUT 1</span>
+      <span class="cut-title">"연애운 볼까? 시간나면~" — 제안 | Hook: 스팅거</span>
+      <span class="cut-time">0:00–0:04</span>
+    </div>
+    <div class="cut-body">
+      <div class="cell v">
+        <div class="cell-label">화면 · 장면</div>
+        <p>20대 후반 여자 친구 둘, 카페 테라스. B(기대에 찬 표정)가 손에 폰을 쥔 채 A에게 몸을 기울이며 말을 건다. A는 노트북과 폰을 동시에 보느라 정신없이 바쁘다.</p>
+        <div class="sub-line">오후 햇살 · 카페 야외 테라스 · B의 기대감 / A의 분주함 대비</div>
+        <div class="tag-row">
+          <span class="tag cam">투샷 아이레벨</span>
+          <span class="tag opt">손떨림 살짝</span>
+          <span class="tag opt">얕은 심도</span>
+        </div>
+      </div>
+      <div class="cell c">
+        <div class="cell-label">카메라 · 동작</div>
+        <p>아이레벨 투샷, 미세한 손떨림. B가 기대에 찬 눈빛으로 A를 보며 제안한다. A는 화면(업무)에서 고개를 잠깐 들었다가 다시 내린다.</p>
+        <div class="dia"><b class="speaker">🎙 B:</b> {야, 우리 연애운 볼까? 시간나면~}</div>
+        <div class="fx"><b>&lt;효과음&gt;</b> <커피 머신 스팀 소리> <폰 알림음 — 티리링></div>
+        <div class="tag-row">
+          <span class="tag tr">전환 → 하드컷</span>
+          <span class="tag sfx">스팅거 0–0.5s</span>
+          <span class="tag dir">B: 기대 · A: 바쁨</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ CUT 2 ============ -->
+  <div class="cut">
+    <div class="cut-head">
+      <span class="cut-no" style="background:#2e9e6b">CUT 2</span>
+      <span class="cut-title">"24시간이라 시간 냈지~" — 반전 | Hook: 페이오프</span>
+      <span class="cut-time">0:04–0:08</span>
+    </div>
+    <div class="cut-body">
+      <div class="cell v">
+        <div class="cell-label">화면 · 장면</div>
+        <p>A가 노트북을 덮고, 여유로운 미소로 폰을 살짝 들어 보인다. B는 눈을 깜빡이며 멈춘다. A의 표정에 '이미 해결함'의 여유가 묻어난다.</p>
+        <div class="sub-line">커피잔 위로 부드러운 역광 · A의 편안한 포즈</div>
+        <div class="tag-row">
+          <span class="tag cam">슬로우 돌리인</span>
+          <span class="tag opt">커피 스팀 보케</span>
+        </div>
+      </div>
+      <div class="cell c">
+        <div class="cell-label">카메라 · 동작</div>
+        <p>슬로우 돌리인(느린 전진). A가 폰을 들어 보이며 능글맞게(?)가 아니라 편안하게 웃는다. B가 고개를 갸웃한다.</p>
+        <div class="dia"><b class="speaker">🎙 A:</b> {나 이미 상담 받았지~ 24시간이라 언제든 되더라~}</div>
+        <div class="fx"><b>&lt;효과음&gt;</b> <폰 화면 터치 — 틱></div>
+        <div class="tag-row">
+          <span class="tag tr">전환 → 하드컷</span>
+          <span class="tag dir">A: 여유 · 편안</span>
+          <span class="tag dir">효과 밀도 LOW (여백)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ CUT 3 ============ -->
+  <div class="cut">
+    <div class="cut-head">
+      <span class="cut-no" style="background:#d5563a">CUT 3</span>
+      <span class="cut-title">"언제!?" — B 충격 | Hook: 턴 (절정)</span>
+      <span class="cut-time">0:08–0:11</span>
+    </div>
+    <div class="cut-body">
+      <div class="cell v">
+        <div class="cell-label">화면 · 장면</div>
+        <p>B의 얼굴 클로즈업. 눈을 크게 뜨고 입을 벌린 채 A를 바라본다. 손에 든 폰이 <툭> 테이블에 내려앉는다.</p>
+        <div class="tag-row">
+          <span class="tag cam">85mm 텔레 클로즈업</span>
+          <span class="tag opt">크래시줌 110%→100%</span>
+        </div>
+      </div>
+      <div class="cell c">
+        <div class="cell-label">카메라 · 동작</div>
+        <p>85mm 텔레포토 클로즈업, 크래시줌으로 밀착. B가 몸을 앞으로 숙이며 놀란다.</p>
+        <div class="dia"><b class="speaker">🎙 B:</b> {아니! 언제!? 나는 시간 내기도 힘들었는데!}</div>
+        <div class="fx"><b>&lt;효과음&gt;</b> <폰이 테이블에 닿는 툭></div>
+        <div class="tag-row">
+          <span class="tag tr">전환 → 매치컷</span>
+          <span class="tag sfx">효과 밀도 HIGH</span>
+          <span class="tag dir">B: 충격 · 놀람</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ CUT 4 ============ -->
+  <div class="cut">
+    <div class="cut-head">
+      <span class="cut-no" style="background:#8e5ad8">CUT 4</span>
+      <span class="cut-title">"24시간 전국 어디서나" — 제품 메시지 | Hook: 클라이맥스</span>
+      <span class="cut-time">0:11–0:16</span>
+    </div>
+    <div class="cut-body">
+      <div class="cell v">
+        <div class="cell-label">화면 · 장면</div>
+        <p>A가 폰을 B 쪽으로 살짝 기울여 보여준다. 폰 화면에 별자리 모양의 가상 앱 아이콘(실존 앱 UI 아님)과 "24시간" 배너가 떠 있다.</p>
+        <div class="tag-row">
+          <span class="tag cam">24mm 울트라와이드 로우앵글</span>
+          <span class="tag opt">아크 오빗 20°</span>
+          <span class="tag opt">아나모픽 선 플레어</span>
+        </div>
+      </div>
+      <div class="cell c">
+        <div class="cell-label">카메라 · 동작</div>
+        <p>24mm 울트라와이드 저각, 20° 아크 오빗. A가 또렷하고 당당하게 말하고, 살짝 윙크한다.</p>
+        <div class="dia"><b class="speaker">🎙 A:</b> {전국 어디서나 24시간 운영하는 사주천궁이니까~ 시간 나는 때 아무 때나 하면 되지~}</div>
+        <div class="fx"><b>&lt;효과음&gt;</b> <폰 스와이프 효과음></div>
+        <div class="tag-row">
+          <span class="tag tr">전환 → 크로스페이드</span>
+          <span class="tag dir">A: 또렷 · 당당</span>
+          <span class="tag dir">윙크 엔딩</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ CUT 5 ============ -->
+  <div class="cut">
+    <div class="cut-head">
+      <span class="cut-no" style="background:#b8860b">CUT 5</span>
+      <span class="cut-title">"나도 지금 할래" — 엔딩 비트 | Hook: 랜딩</span>
+      <span class="cut-time">0:16–0:20</span>
+    </div>
+    <div class="cut-body">
+      <div class="cell v">
+        <div class="cell-label">화면 · 장면</div>
+        <p>B가 고개를 끄덕이며 곧바로 폰을 꺼내든다. 둘이 나란히 앉아 각자 폰으로 상담을 시작하고, 서로 마주 보며 웃는다. 카페 테라스가 노을빛으로 물든다.</p>
+        <div class="sub-line">골든아워 역광 · 둘의 실루엣 · 웃음</div>
+        <div class="tag-row">
+          <span class="tag cam">와이드 고정(잠금)</span>
+          <span class="tag opt">슬로모션 85%</span>
+          <span class="tag opt">골든아워 글로우</span>
+        </div>
+      </div>
+      <div class="cell c">
+        <div class="cell-label">카메라 · 동작</div>
+        <p>와이드 고정 컷. B가 폰을 꺼내고, 두 사람이 나란히 상담을 시작하며 마주 보고 웃는다.</p>
+        <div class="dia"><b class="speaker">🎙 B:</b> {그럼 나도 지금 당장 할래~}</div>
+        <div class="fx"><b>&lt;효과음&gt;</b> <발랄한 통화 연결음></div>
+        <div class="tag-row">
+          <span class="tag sfx">엔딩 테일: 웃음 + 0.5s 무음</span>
+          <span class="tag dir">효과 밀도 LOW (여운)</span>
+          <span class="tag dir">두 사람 모두 상담 중</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 하단 블록 -->
+  <div class="bottom-grid">
+    <div class="panel">
+      <h3>🎵 음악 · 사운드 아크</h3>
+      <p style="font-size:12.5px;color:var(--muted);margin-bottom:10px">springy acoustic pop — ukulele + light percussion, 96 BPM, 매우 낮은 볼륨 (1s–18s)</p>
+      <div class="sound-arc">
+        <div class="arc-row"><span style="width:74px">[0–4s]</span><div class="bar"><div class="fill" style="width:55%;background:#d5558a"></div></div><span class="lvl">MEDIUM</span></div>
+        <div class="arc-row"><span style="width:74px">[4–8s]</span><div class="bar"><div class="fill" style="width:25%;background:#2e9e6b"></div></div><span class="lvl">LOW</span></div>
+        <div class="arc-row"><span style="width:74px">[8–11s]</span><div class="bar"><div class="fill" style="width:85%;background:#d5563a"></div></div><span class="lvl">HIGH</span></div>
+        <div class="arc-row"><span style="width:74px">[11–16s]</span><div class="bar"><div class="fill" style="width:55%;background:#8e5ad8"></div></div><span class="lvl">MEDIUM</span></div>
+        <div class="arc-row"><span style="width:74px">[16–20s]</span><div class="bar"><div class="fill" style="width:35%;background:#b8860b"></div></div><span class="lvl">LOW</span></div>
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin-top:10px">제안(스팅거) → 여유 반전 → 충격 절정 → 메시지 → 여운(엔딩 웃음)의 구조</p>
+    </div>
+    <div class="panel">
+      <h3>🚫 네거티브 · 유지 사항</h3>
+      <ul>
+        <li>문자·자막·워터마크·로고 생성 금지</li>
+        <li>실존 브랜드·실존 얼굴·실존 앱/메신저 UI 금지</li>
+        <li>다중 얼굴·손 변형·손가락 추가·녹는 얼굴 금지</li>
+        <li>낮→밤 점프·그림자 방향 불일치·깜빡임 금지</li>
+        <li>인물 의상 색 변화 금지 (두 사람 각각 고정)</li>
+        <li>폰·커피잔 갑작 등장/소멸 금지</li>
+        <li class="ok">플라스틱 피부·과포화·왁스 질감 금지</li>
+        <li class="ok">립싱크 불일치·로봇 목소리·부자연스러운 억양 금지</li>
+        <li class="ok">1컷 1운경 (공식 규칙) · 타임스탬프 연속·비중첩</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<button class="print-btn" onclick="window.print()">🖨 인쇄 / PDF 저장</button>
+</body>
+</html>

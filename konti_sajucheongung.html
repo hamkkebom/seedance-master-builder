@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>콘티 — 사주천궁 타로 광고 (20초 · 5컷)</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f6f8; --card: #ffffff; --line: #e4e7ec; --ink: #1c2330; --muted: #6b7484;
+    --accent: #e0563f; --accent-soft: #fdeeea; --blue: #2f6fed; --blue-soft: #eaf1fe;
+    --green: #2e9e6b; --green-soft: #e8f6ef; --gold: #b8860b; --gold-soft: #faf3e0;
+    --shadow: 0 1px 3px rgba(20,30,50,.06), 0 8px 24px rgba(20,30,50,.07);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif; background: var(--bg); color: var(--ink); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 28px 20px 80px; }
+
+  /* ── 헤더 ── */
+  .doc-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; padding-bottom: 18px; border-bottom: 2px solid var(--ink); margin-bottom: 18px; }
+  .doc-head h1 { font-size: 26px; font-weight: 800; letter-spacing: -.02em; }
+  .doc-head .sub { color: var(--muted); font-size: 13px; margin-top: 4px; }
+  .meta-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip { font-size: 12px; font-weight: 600; padding: 5px 11px; border-radius: 999px; background: var(--card); border: 1px solid var(--line); color: var(--muted); }
+  .chip.hl { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+  /* ── 타임라인 ── */
+  .timeline { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin-bottom: 22px; }
+  .tl-seg { position: relative; text-align: center; padding: 9px 4px 7px; border-radius: 8px; font-size: 11px; font-weight: 700; color: #fff; }
+  .tl-seg .t { font-size: 12px; font-weight: 800; display: block; }
+  .tl-seg .n { opacity: .85; font-weight: 600; }
+  .tl-seg.c1 { background: #3a7bd5; } .tl-seg.c2 { background: #2e9e6b; } .tl-seg.c3 { background: #d5563a; } .tl-seg.c4 { background: #8e5ad8; } .tl-seg.c5 { background: #b8860b; }
+
+  /* ── 컷 카드 ── */
+  .cut { background: var(--card); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); margin-bottom: 18px; overflow: hidden; }
+  .cut-head { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid var(--line); background: #fafbfc; }
+  .cut-no { font-size: 13px; font-weight: 800; color: #fff; border-radius: 8px; padding: 5px 12px; }
+  .cut-title { font-size: 15px; font-weight: 700; }
+  .cut-time { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--muted); background: var(--bg); padding: 4px 10px; border-radius: 6px; }
+  .cut-body { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+  @media (max-width: 760px) { .cut-body { grid-template-columns: 1fr; } }
+  .cell { padding: 14px 18px; border-right: 1px solid var(--line); }
+  .cell:last-child { border-right: none; }
+  .cell-label { font-size: 11px; font-weight: 800; letter-spacing: .04em; color: var(--muted); margin-bottom: 7px; display: flex; align-items: center; gap: 6px; }
+  .cell-label::before { content: ''; width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+  .cell.v .cell-label::before { background: var(--blue); }
+  .cell.c .cell-label::before { background: var(--accent); }
+  .cell.a .cell-label::before { background: var(--green); }
+  .cell.d .cell-label::before { background: var(--gold); }
+  .cell p { font-size: 13.5px; color: var(--ink); }
+  .cell .sub-line { color: var(--muted); font-size: 12px; margin-top: 4px; }
+  .dia { background: var(--green-soft); border-left: 3px solid var(--green); padding: 7px 10px; border-radius: 6px; margin-top: 6px; font-size: 13px; font-weight: 600; }
+  .fx { font-size: 12.5px; color: var(--ink); margin-top: 4px; }
+  .fx b { color: var(--accent); font-weight: 700; }
+  .tag-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .tag { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 5px; }
+  .tag.cam { background: var(--blue-soft); color: var(--blue); }
+  .tag.opt { background: var(--blue-soft); color: #1d5bd6; }
+  .tag.tr { background: var(--accent-soft); color: var(--accent); }
+  .tag.sfx { background: var(--gold-soft); color: var(--gold); }
+  .tag.dir { background: var(--green-soft); color: var(--green); }
+
+  /* ── 하단 블록 ── */
+  .bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 26px; }
+  @media (max-width: 760px) { .bottom-grid { grid-template-columns: 1fr; } }
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; box-shadow: var(--shadow); }
+  .panel h3 { font-size: 14px; font-weight: 800; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .panel ul { list-style: none; }
+  .panel li { font-size: 12.5px; color: var(--ink); padding: 3px 0 3px 16px; position: relative; }
+  .panel li::before { content: '✕'; position: absolute; left: 0; color: var(--accent); font-size: 11px; font-weight: 800; }
+  .panel li.ok::before { content: '✓'; color: var(--green); }
+  .sound-arc { margin-top: 12px; }
+  .sound-arc .arc-row { display: flex; align-items: center; gap: 8px; font-size: 12px; margin-bottom: 5px; }
+  .sound-arc .bar { flex: 1; height: 10px; background: var(--bg); border-radius: 5px; overflow: hidden; }
+  .sound-arc .fill { height: 100%; border-radius: 5px; }
+  .sound-arc .lvl { font-weight: 800; width: 46px; text-align: right; color: var(--muted); }
+  .print-btn { position: fixed; right: 22px; bottom: 22px; background: var(--ink); color: #fff; border: none; border-radius: 10px; padding: 12px 18px; font-size: 13px; font-weight: 700; cursor: pointer; box-shadow: var(--shadow); font-family: inherit; }
+  .print-btn:hover { background: #333c4d; }
+  @media print { .print-btn { display: none; } body { background: #fff; } .wrap { padding: 0; max-width: 100%; } .cut { box-shadow: none; page-break-inside: avoid; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- 헤더 -->
+  <div class="doc-head">
+    <div>
+      <h1>🎴 사주천궁 — 타로 상담 광고 <span style="font-weight:600;color:var(--muted)">콘티</span></h1>
+      <div class="sub">한여름 반전 코미디 · 20초 단편 광고 · Seedance 2.5 t2v 단일 패스</div>
+    </div>
+    <div class="meta-chips">
+      <span class="chip hl">16:9</span><span class="chip">24fps</span><span class="chip">20초</span>
+      <span class="chip">t2v</span><span class="chip">발화 ON · 립싱크</span><span class="chip">무자막</span>
+    </div>
+  </div>
+
+  <!-- 타임라인 -->
+  <div class="timeline">
+    <div class="tl-seg c1"><span class="t">0–4s</span><span class="n">C1 · 따짐</span></div>
+    <div class="tl-seg c2"><span class="t">4–8s</span><span class="n">C2 · 반전</span></div>
+    <div class="tl-seg c3"><span class="t">8–11s</span><span class="n">C3 · 충격</span></div>
+    <div class="tl-seg c4"><span class="t">11–16s</span><span class="n">C4 · 메시지</span></div>
+    <div class="tl-seg c5"><span class="t">16–20s</span><span class="n">C5 · 엔딩</span></div>
+  </div>
+
+  <!-- ============ CUT 1 ============ -->
+  <div class="cut">
+    <div class="cut-head">
+      <span class="cut-no" style="background:#3a7bd5">CUT 1</span>
+      <span class="cut-title">더위에 찌든 B — 따지기 시작 | Hook: 스팅거 + 불협화</span>
+      <span class="cut-time">0:00–0:04</span>
+    </div>
+    <div class="cut-body">
+      <div class="cell v">
+        <div class="cell-label">화면 · 장면</div>
+        <p>20대 후반 남성, 흰 와이셔츠(소매 걷어올림, 등이 땀에 젖어 붙음) + 느슨한 넥타이. 한여름 도심 보도에서 손풍기를 연타하며 걷다가 멈춰 선다. 이마의 땀방울이 볼을 타고 흐른다. 화면 좌측 1/3에 인물, 우측 깊이에 아스팔트 아지랑이와 흐릿한 차량.</p>
+        <div class="sub-line">직사광선 하이키 · 짧고 진한 그림자</div>
+        <div class="tag-row">
+          <span class="tag cam">아이레벨 중경</span>
+          <span class="tag opt">손떨림 살짝</span>
+          <span class="tag opt">얕은 심도</span>
+          <span class="tag opt">땀방울 매크로 → 랙포커스</span>
+        </div>
+      </div>
+      <div class="cell c">
+        <div class="cell-label">카메라 · 동작</div>
+        <p>아이레벨 중경, 미세한 손떨림(핸드헬드). 땀방울 매크로 인서트 후 얼굴로 랙포커스. 짜증 난 표정으로 스마트폰을 귀에 바짝 대고 숨차게 따진다.</p>
+        <div class="dia">🎙 B: {우리 타로보고 서로 알려주기로 해서 나 타로보로 가는데 너는 어떻게 쉴수가있어?}</div>
+        <div class="fx"><b>&lt;효과음&gt;</b> <손풍기 날개 — 파파파파파> <전화 연결음 — 뚜르르></div>
+        <div class="tag-row">
+          <span class="tag tr">전환 → 하드컷</span>
+          <span class="tag sfx">스팅거 0–0.5s</span>
+          <span class="tag dir">말투: 짜증·숨참</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ CUT 2 ============ -->
+  <div class="cut">
+    <div class="cut-head">
+      <span class="cut-no" style="background:#2e9e6b">CUT 2</span>
+      <span class="cut-title">해운대 A — 여유의 반전 | Hook: 페이오프</span>
+      <span class="cut-time">0:04–0:08</span>
+    </div>
+    <div class="cut-body">
+      <div class="cell v">
+        <div class="cell-label">화면 · 장면</div>
+        <p>20대 후반 여성, 민트색 오프숄더 비치웨어 + 젖은 생머리 + 선글라스. 해운대 파라솔 아래 비치체어에 기대어 파도를 바라본다. 화면 우측 1/3에 인물, 좌측 깊이에 파도 라인과 갈매기.</p>
+        <div class="sub-line">해변 반사광의 부드러운 필</div>
+        <div class="tag-row">
+          <span class="tag cam">슬로우 돌리인</span>
+          <span class="tag opt">파도 반짝임 보케</span>
+          <span class="tag opt">반사광 필</span>
+        </div>
+      </div>
+      <div class="cell c">
+        <div class="cell-label">카메라 · 동작</div>
+        <p>슬로우 돌리인(느린 전진). 선글라스를 한 손가락으로 내려 눈을 드러내고, 능글맞은 미소로 여유롭게 말한다. 스마트폰을 받아 귀에 댄다.</p>
+        <div class="dia">🎙 A: {나는 이미 상담 받고 기다렸지~}</div>
+        <div class="fx"><b>&lt;효과음&gt;</b> <파도 — 쉬이이> · 갈매기</div>
+        <div class="tag-row">
+          <span class="tag tr">전환 → 하드컷</span>
+          <span class="tag dir">말투: 능글·여유</span>
+          <span class="tag dir">효과 밀도 LOW (여백)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ CUT 3 ============ -->
+  <div class="cut">
+    <div class="cut-head">
+      <span class="cut-no" style="background:#d5563a">CUT 3</span>
+      <span class="cut-title">B 충격 | Hook: 턴 (절정)</span>
+      <span class="cut-time">0:08–0:11</span>
+    </div>
+    <div class="cut-body">
+      <div class="cell v">
+        <div class="cell-label">화면 · 장면</div>
+        <p>남성의 얼굴 클로즈업. 손풍기가 탁 멈춘다. 눈을 휘둥그레 뜨고 입을 크게 벌리며 소리친다. 땀방울이 이마에 맺힌 채. 배경 완전 흐림.</p>
+        <div class="tag-row">
+          <span class="tag cam">85mm 텔레 클로즈업</span>
+          <span class="tag opt">크래시줌 110%→100%</span>
+          <span class="tag opt">렌즈 브리딩</span>
+        </div>
+      </div>
+      <div class="cell c">
+        <div class="cell-label">카메라 · 동작</div>
+        <p>85mm 텔레포토 클로즈업, 크래시줌(110%→100%)으로 밀착. 렌즈 브리딩. 몸이 굳고 손풍기가 순간 정지.</p>
+        <div class="dia">🎙 B: {아니! 어떻게 벌써!?}</div>
+        <div class="fx"><b>&lt;효과음&gt;</b> <손풍기 멈추는 탁></div>
+        <div class="tag-row">
+          <span class="tag tr">전환 → 매치컷 (파도→아지랑이)</span>
+          <span class="tag sfx">효과 밀도 HIGH</span>
+          <span class="tag dir">말투: 놀람·고성</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ CUT 4 ============ -->
+  <div class="cut">
+    <div class="cut-head">
+      <span class="cut-no" style="background:#8e5ad8">CUT 4</span>
+      <span class="cut-title">A, 제품 메시지 | Hook: 클라이맥스</span>
+      <span class="cut-time">0:11–0:16</span>
+    </div>
+    <div class="cut-body">
+      <div class="cell v">
+        <div class="cell-label">화면 · 장면</div>
+        <p>여성이 파라솔 아래에서 스마트폰을 카메라 쪽으로 살짝 들어 보여준다. 폰 화면에는 별자리 모양의 가상 앱 아이콘(실존 앱 UI 아님). 말을 마치며 살짝 윙크.</p>
+        <div class="tag-row">
+          <span class="tag cam">24mm 울트라와이드 로우앵글</span>
+          <span class="tag opt">아크 오빗 20°</span>
+          <span class="tag opt">아나모픽 선 플레어</span>
+        </div>
+      </div>
+      <div class="cell c">
+        <div class="cell-label">카메라 · 동작</div>
+        <p>24mm 울트라와이드 저각, 20° 아크 오빗으로 감싸며. 아나모픽 선 플레어. 폰을 카메라 쪽으로 살짝 들어 보여준다.</p>
+        <div class="dia">🎙 A: {전국 어디서나 24시간 운영하는 사주천궁에서 타로 상담 받았어}</div>
+        <div class="fx"><b>&lt;효과음&gt;</b> <폰 스와이프 효과음></div>
+        <div class="tag-row">
+          <span class="tag tr">전환 → 크로스페이드</span>
+          <span class="tag dir">말투: 또렷·당당</span>
+          <span class="tag dir">윙크 엔딩</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ CUT 5 ============ -->
+  <div class="cut">
+    <div class="cut-head">
+      <span class="cut-no" style="background:#b8860b">CUT 5</span>
+      <span class="cut-title">B 깨달음 + 엔딩 비트 | Hook: 랜딩</span>
+      <span class="cut-time">0:16–0:20</span>
+    </div>
+    <div class="cut-body">
+      <div class="cell v">
+        <div class="cell-label">화면 · 장면</div>
+        <p>남성이 스마트폰 화면을 내려다보며 고개를 끄덕인다. 땀을 닦고 헛웃음, 손풍기를 다시 부치며 폰을 든 채 걸어간다. 그의 뒤로 한 번 더 해운대 — 여성이 선글라스를 다시 끼고 카메라를 향해 손을 흔든다.</p>
+        <div class="sub-line">파도가 화면 하단을 채우며 마무리 · god rays/헤이즈</div>
+        <div class="tag-row">
+          <span class="tag cam">와이드 고정(잠금)</span>
+          <span class="tag opt">슬로모션 85%</span>
+          <span class="tag opt">패럴랙스 돌리</span>
+          <span class="tag opt">크로스페이드 → 해운대</span>
+        </div>
+      </div>
+      <div class="cell c">
+        <div class="cell-label">카메라 · 동작</div>
+        <p>와이드 고정 컷. 걸어가는 B를 패럴랙스 돌리로 비스듬히 따라가며, 해운대로 크로스페이드. A가 선글라스를 다시 끼고 손을 흔든다.</p>
+        <div class="fx"><b>&lt;대사&gt;</b> 없음 (발화 종료)</div>
+        <div class="fx"><b>&lt;효과음&gt;</b> <발소리> <파도 — 쉬이이></div>
+        <div class="tag-row">
+          <span class="tag sfx">엔딩 테일: 파도 워시 1s + 0.5s 무음</span>
+          <span class="tag dir">효과 밀도 LOW (여운)</span>
+          <span class="tag dir">B는 화면 밖으로 퇴장</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 하단 블록 -->
+  <div class="bottom-grid">
+    <div class="panel">
+      <h3>🎵 음악 · 사운드 아크</h3>
+      <p style="font-size:12.5px;color:var(--muted);margin-bottom:10px">summer comedy lounge — ukulele + brush drums, 96 BPM, 매우 낮은 볼륨 (1s–18s)</p>
+      <div class="sound-arc">
+        <div class="arc-row"><span style="width:74px">[0–4s]</span><div class="bar"><div class="fill" style="width:60%;background:#3a7bd5"></div></div><span class="lvl">MEDIUM</span></div>
+        <div class="arc-row"><span style="width:74px">[4–8s]</span><div class="bar"><div class="fill" style="width:25%;background:#2e9e6b"></div></div><span class="lvl">LOW</span></div>
+        <div class="arc-row"><span style="width:74px">[8–11s]</span><div class="bar"><div class="fill" style="width:85%;background:#d5563a"></div></div><span class="lvl">HIGH</span></div>
+        <div class="arc-row"><span style="width:74px">[11–16s]</span><div class="bar"><div class="fill" style="width:55%;background:#8e5ad8"></div></div><span class="lvl">MEDIUM</span></div>
+        <div class="arc-row"><span style="width:74px">[16–20s]</span><div class="bar"><div class="fill" style="width:35%;background:#b8860b"></div></div><span class="lvl">LOW</span></div>
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin-top:10px">도입(스팅거·불협화) → 여백 → 충격 절정 → 메시지 → 여운의 구조</p>
+    </div>
+    <div class="panel">
+      <h3>🚫 네거티브 · 유지 사항</h3>
+      <ul>
+        <li>문자·자막·워터마크·로고 생성 금지</li>
+        <li>실존 브랜드·실존 얼굴·실존 앱/메신저 UI 금지</li>
+        <li>다중 얼굴·손 변형·손가락 추가·녹는 얼굴 금지</li>
+        <li>낮→밤 점프·그림자 방향 불일치·깜빡임 금지</li>
+        <li>의상 색 변화 금지 (흰 와이셔츠 / 민트 비치웨어)</li>
+        <li>선글라스·손풍기 갑작 등장/소멸 금지</li>
+        <li class="ok">플라스틱 피부·과포화·왁스 질감 금지</li>
+        <li class="ok">립싱크 불일치·로봇 목소리·부자연스러운 억양 금지</li>
+        <li class="ok">1컷 1운경 (공식 규칙) · 타임스탬프 연속·비중첩</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<button class="print-btn" onclick="window.print()">🖨 인쇄 / PDF 저장</button>
+
+<script>
+  // 콘티 카드에 인쇄 시 페이지 분리 방지용 id (스타일로 충분 — 스크립트는 무동작)
+</script>
+</body>
+</html>

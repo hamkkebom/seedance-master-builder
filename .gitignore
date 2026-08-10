@@ -1,0 +1,15 @@
+# 백업 (로컬 전용 — 원본 소스만 업로드)
+_backup_latest/
+_kakaotalk_backup/
+
+# 에이전트 작업 파일 (로컬 전용)
+.omo/
+
+# OS / 편집기
+Thumbs.db
+.DS_Store
+*.swp
+
+# 로컬 세션·로그
+opencode.db
+*.log

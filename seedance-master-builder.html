@@ -1,0 +1,2659 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seedance 2.5 Master Prompt Builder v3.0 (30축)</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  :root {
+    /* ===== 기존 변수 유지 (하위 호환 — 인라인 스타일·JS 참조) ===== */
+    --bg: #0b0e1a;
+    --panel: #151a2b;
+    --panel2: #1c2238;
+    --border: #262d47;
+    --text: #e8eaf0;
+    --muted: #8b90a3;
+    --accent: #6c8cff;
+    --accent2: #4ade80;
+    --warn: #fbbf24;
+    --danger: #f87171;
+
+    /* ===== 디자인 시스템 확장 ===== */
+    --accent3: #a78bfa;
+    --bg-top: #10132e;
+    --bg-mid: #0b0e1a;
+    --bg-low: #150f2e;
+    --glass: rgba(21, 26, 45, .6);
+    --glass-strong: rgba(28, 34, 58, .82);
+    --glass-light: rgba(140, 160, 220, .07);
+    --border-soft: rgba(148, 168, 224, .14);
+    --grad: linear-gradient(135deg, #6c8cff 0%, #a78bfa 55%, #c084fc 100%);
+    --radius: 14px;
+    --radius-sm: 10px;
+    --radius-xs: 8px;
+    --shadow: 0 14px 36px rgba(0, 0, 0, .42);
+    --shadow-sm: 0 4px 16px rgba(0, 0, 0, .3);
+    --glow: 0 0 26px rgba(108, 140, 255, .3);
+    --glow-soft: 0 0 18px rgba(108, 140, 255, .18);
+    --trans: all .22s cubic-bezier(.4, 0, .2, 1);
+    --header-h: 62px;
+    --summary-h: 50px;
+    --scrollbar: rgba(148, 168, 224, .18);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  ::selection { background: rgba(108, 140, 255, .35); }
+  button:focus-visible, input:focus-visible, .toggle-chip:focus-visible { outline: 2px solid rgba(108,140,255,.6); outline-offset: 2px; }
+
+  body {
+    color: var(--text);
+    font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Segoe UI', sans-serif;
+    line-height: 1.5;
+    min-height: 100vh;
+    background:
+      radial-gradient(1100px 620px at 88% -12%, rgba(167, 139, 250, .17), transparent 62%),
+      radial-gradient(900px 640px at -12% 8%, rgba(108, 140, 255, .15), transparent 58%),
+      linear-gradient(165deg, var(--bg-top) 0%, var(--bg-mid) 48%, var(--bg-low) 100%);
+    background-attachment: fixed;
+  }
+
+  /* 은은한 그리드 노이즈 오버레이 */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    pointer-events: none; z-index: 0;
+    background-image:
+      linear-gradient(rgba(148,168,224,.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(148,168,224,.035) 1px, transparent 1px);
+    background-size: 44px 44px;
+    -webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, #000 30%, transparent 75%);
+    mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, #000 30%, transparent 75%);
+  }
+
+  /* ================= 헤더 ================= */
+  header {
+    position: sticky; top: 0; z-index: 60;
+    padding: 14px 26px;
+    min-height: var(--header-h);
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+    background: rgba(11, 14, 26, .72);
+    backdrop-filter: blur(16px) saturate(1.3);
+    -webkit-backdrop-filter: blur(16px) saturate(1.3);
+    border-bottom: 1px solid var(--border-soft);
+  }
+  header h1 {
+    font-size: 17px; font-weight: 800; letter-spacing: -.01em;
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    background: linear-gradient(92deg, #fff 30%, var(--accent3) 100%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  header h1 .title-emoji { -webkit-text-fill-color: initial; filter: drop-shadow(0 0 8px rgba(167,139,250,.5)); }
+  header .badge {
+    font-size: 10.5px; font-weight: 600;
+    color: var(--accent2); border: 1px solid rgba(74, 222, 128, .35);
+    padding: 3px 11px; border-radius: 999px;
+    background: rgba(74, 222, 128, .08);
+    box-shadow: 0 0 14px rgba(74, 222, 128, .12);
+    -webkit-text-fill-color: var(--accent2);
+  }
+  .header-sub { font-size: 10.5px; color: var(--muted); line-height: 1.6; max-width: 720px; }
+  .header-sub b { color: var(--text); font-weight: 600; }
+  .header-sub .h-ko { color: var(--accent); }
+  .header-sub .h-dlg { color: var(--accent2); }
+
+  /* ================= 선택 요약 바 ================= */
+  .summary-bar {
+    position: sticky; top: var(--header-h); z-index: 50;
+    min-height: var(--summary-h);
+    padding: 7px 20px;
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    background: rgba(11, 14, 26, .6);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .summary-bar .sb-label {
+    font-size: 10.5px; font-weight: 700; letter-spacing: .08em;
+    color: var(--muted); text-transform: uppercase; white-space: nowrap;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .sb-label .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--grad); box-shadow: var(--glow-soft); }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11px; color: var(--text);
+    background: var(--glass-light);
+    border: 1px solid var(--border-soft);
+    padding: 3px 10px; border-radius: 999px;
+    white-space: nowrap; max-width: 230px; overflow: hidden;
+    transition: var(--trans);
+  }
+  .chip:hover { border-color: rgba(108,140,255,.5); box-shadow: var(--glow-soft); }
+  .chip em { font-style: normal; color: var(--accent); font-weight: 600; }
+  .chip .c-txt { overflow: hidden; text-overflow: ellipsis; }
+  .chip.warn { border-color: rgba(248, 113, 113, .4); background: rgba(248, 113, 113, .08); color: #fca5a5; }
+  .chip.warn em { color: #f87171; }
+  .sb-empty { font-size: 11px; color: var(--muted); }
+
+  /* ================= 레이아웃 ================= */
+  .layout {
+    display: grid; grid-template-columns: 408px 1fr;
+    min-height: calc(100vh - var(--header-h) - var(--summary-h));
+    position: relative; z-index: 1;
+  }
+  @media (max-width: 1000px) { .layout { grid-template-columns: 1fr; } }
+
+  /* ---- 슬롯 컬럼 (왼쪽) ---- */
+  .slots-col {
+    display: flex; flex-direction: column;
+    border-right: 1px solid var(--border-soft);
+    max-height: calc(100vh - var(--header-h) - var(--summary-h));
+    background: rgba(13, 16, 32, .35);
+  }
+  @media (max-width: 1000px) { .slots-col { max-height: none; border-right: none; border-bottom: 1px solid var(--border-soft); } }
+
+  .slots-toolbar {
+    padding: 12px 14px 10px;
+    display: flex; flex-direction: column; gap: 9px;
+    border-bottom: 1px solid var(--border-soft);
+    background: rgba(16, 19, 38, .55);
+  }
+  .search-wrap { position: relative; }
+  .search-wrap svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: var(--muted); pointer-events: none; }
+  #searchInput {
+    width: 100%;
+    background: rgba(10, 13, 26, .7);
+    border: 1px solid var(--border-soft);
+    color: var(--text);
+    font-size: 12px; font-family: inherit;
+    padding: 8px 12px 8px 34px;
+    border-radius: 999px;
+    outline: none;
+    transition: var(--trans);
+  }
+  #searchInput::placeholder { color: var(--muted); }
+  #searchInput:focus { border-color: rgba(108,140,255,.55); box-shadow: 0 0 0 3px rgba(108,140,255,.12); }
+  .toolbar-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .seg { display: inline-flex; background: rgba(10,13,26,.6); border: 1px solid var(--border-soft); border-radius: 999px; padding: 3px; gap: 2px; }
+  .seg button {
+    border: none; background: transparent; color: var(--muted);
+    font-size: 11px; font-weight: 600; font-family: inherit;
+    padding: 5px 11px; border-radius: 999px; cursor: pointer;
+    transition: var(--trans);
+  }
+  .seg button:hover { color: var(--text); }
+  .seg button.on { background: var(--grad); color: #fff; box-shadow: 0 2px 10px rgba(108,140,255,.35); }
+  .toggle-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 600; color: var(--muted);
+    background: rgba(10,13,26,.6); border: 1px solid var(--border-soft);
+    padding: 5px 11px; border-radius: 999px; cursor: pointer;
+    transition: var(--trans); user-select: none;
+  }
+  .toggle-chip:hover { color: var(--text); border-color: rgba(108,140,255,.4); }
+  .toggle-chip.on { color: var(--accent); border-color: rgba(108,140,255,.5); background: rgba(108,140,255,.1); }
+  .toggle-chip .tbox {
+    width: 14px; height: 14px; border-radius: 4px;
+    border: 1.5px solid currentColor; display: grid; place-items: center;
+    font-size: 10px; line-height: 1;
+  }
+  .toggle-chip.on .tbox::after { content: '✓'; }
+
+  #slots { flex: 1; overflow-y: auto; padding: 16px 14px 28px; }
+  #slots::-webkit-scrollbar, .axis-body::-webkit-scrollbar, #promptOut::-webkit-scrollbar { width: 8px; }
+  #slots::-webkit-scrollbar-thumb, .axis-body::-webkit-scrollbar-thumb, #promptOut::-webkit-scrollbar-thumb { background: var(--scrollbar); border-radius: 8px; }
+
+  .no-result {
+    text-align: center; padding: 40px 16px; color: var(--muted); font-size: 12px;
+    border: 1px dashed var(--border-soft); border-radius: var(--radius);
+    background: rgba(10,13,26,.3);
+  }
+
+  /* ---- 축 카드 ---- */
+  .axis {
+    background: var(--glass);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius);
+    margin-bottom: 12px;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    transition: var(--trans);
+  }
+  .axis:hover { border-color: rgba(108,140,255,.35); box-shadow: var(--glow-soft); }
+  .axis.axis-warn { border-left: 2.5px solid var(--danger); }
+  .axis-head {
+    padding: 12px 14px;
+    display: flex; justify-content: space-between; align-items: center; gap: 10px;
+    cursor: pointer; user-select: none;
+    background: linear-gradient(120deg, rgba(108,140,255,.07), transparent 55%);
+    transition: var(--trans);
+  }
+  .axis-head:hover { background: linear-gradient(120deg, rgba(108,140,255,.14), rgba(167,139,250,.05)); }
+  .axis-head-left { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .axis-title {
+    font-size: 13px; font-weight: 700; letter-spacing: -.01em;
+    display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
+  }
+  .axis-title .tag {
+    font-size: 9.5px; padding: 2px 8px; border-radius: 999px; font-weight: 700;
+    letter-spacing: .02em;
+  }
+  .tag.core { background: rgba(108,140,255,.16); color: var(--accent); box-shadow: inset 0 0 0 1px rgba(108,140,255,.3); }
+  .tag.opt  { background: rgba(251,191,36,.12); color: var(--warn); box-shadow: inset 0 0 0 1px rgba(251,191,36,.28); }
+  .tag.r2v  { background: rgba(74,222,128,.12); color: var(--accent2); box-shadow: inset 0 0 0 1px rgba(74,222,128,.28); }
+  .tag.lock-tag { background: rgba(248,113,113,.14); color: #f87171; box-shadow: inset 0 0 0 1px rgba(248,113,113,.3); }
+  .axis-desc { font-size: 11px; color: var(--muted); margin-top: 3px; font-weight: 400; line-height: 1.5; }
+  .axis-arrow { color: var(--muted); font-size: 11px; transition: transform .25s cubic-bezier(.4,0,.2,1); flex-shrink: 0; }
+  .axis.collapsed .axis-arrow { transform: rotate(-90deg); }
+  .axis.collapsed .axis-body { display: none; }
+  .axis-locked .opt-disabled { opacity: .38; pointer-events: none; border-style: dashed; }
+
+  .count-badge {
+    font-size: 9.5px; font-weight: 700;
+    color: var(--muted);
+    background: rgba(140,160,220,.08);
+    border: 1px solid var(--border-soft);
+    padding: 1.5px 8px; border-radius: 999px;
+    white-space: nowrap;
+    transition: var(--trans);
+  }
+  .count-badge.has {
+    color: var(--accent); border-color: rgba(108,140,255,.45);
+    background: rgba(108,140,255,.12);
+    box-shadow: 0 0 10px rgba(108,140,255,.15);
+  }
+  .count-badge.miss {
+    color: #fca5a5; border-color: rgba(248,113,113,.4);
+    background: rgba(248,113,113,.1);
+  }
+
+  .axis-body { padding: 12px 14px; border-top: 1px solid var(--border-soft); }
+
+  /* ===== R2V 참조 슬롯 UI ===== */
+  .refmat-wrap { display: flex; flex-direction: column; gap: 10px; }
+  .refmat-slots { display: flex; flex-direction: column; gap: 6px; }
+  .refmat-slot {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(108,140,255,.08);
+    border: 1px solid rgba(108,140,255,.35);
+    border-radius: 8px; padding: 7px 10px;
+    font-size: 12px;
+  }
+  .rs-num {
+    font-weight: 800; color: var(--accent);
+    background: rgba(108,140,255,.15);
+    border: 1px solid rgba(108,140,255,.4);
+    padding: 1px 8px; border-radius: 6px; white-space: nowrap;
+  }
+  .rs-icon { font-size: 14px; }
+  .rs-label { flex: 1; color: var(--text); }
+  .rs-del {
+    background: rgba(248,113,113,.12); color: #fca5a5;
+    border: 1px solid rgba(248,113,113,.35);
+    border-radius: 6px; width: 22px; height: 22px;
+    cursor: pointer; font-size: 11px; line-height: 1;
+  }
+  .rs-del:hover { background: rgba(248,113,113,.3); }
+  .rs-empty { color: var(--muted); font-size: 11.5px; padding: 6px 2px; }
+  .refmat-groups {
+    border: 1px dashed var(--border-soft);
+    border-radius: 8px; padding: 8px 10px;
+  }
+  .rg-title { font-size: 10.5px; color: var(--muted); font-weight: 700; margin-bottom: 6px; }
+  .rg-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .rg-chip {
+    font-size: 11px; cursor: pointer;
+    background: rgba(140,160,220,.07);
+    border: 1px solid var(--border-soft);
+    color: var(--text); border-radius: 999px; padding: 3.5px 10px;
+    transition: var(--trans);
+  }
+  .rg-chip:hover { border-color: rgba(108,140,255,.5); }
+  .rg-chip.sel { background: rgba(108,140,255,.15); border-color: rgba(108,140,255,.5); color: var(--accent); }
+  .refmat-note {
+    font-size: 10.5px; color: #fbbf77;
+    background: rgba(251,191,119,.08);
+    border: 1px solid rgba(251,191,119,.25);
+    border-radius: 8px; padding: 6px 9px; line-height: 1.5;
+  }
+
+  /* ===== 장면 타임라인 ===== */
+  .tl-head { font-size: 11px; font-weight: 800; color: var(--accent2); margin-bottom: 7px; }
+  .tl-row {
+    border: 1px solid var(--border-soft);
+    border-radius: 8px; padding: 8px 10px; margin-bottom: 6px;
+    background: rgba(140,160,220,.04);
+  }
+  .tl-sec { font-size: 11.5px; font-weight: 800; color: var(--text); margin-bottom: 6px; }
+  .tl-time { color: var(--accent); font-size: 10.5px; margin-left: 6px; font-weight: 700; }
+  .tl-fields { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+  .tl-field { display: flex; flex-direction: column; gap: 3px; }
+  .tl-label { font-size: 9.5px; color: var(--muted); font-weight: 700; }
+  .tl-field input {
+    background: var(--bg2); color: var(--text);
+    border: 1px solid var(--border-soft); border-radius: 6px;
+    padding: 5px 8px; font-size: 11.5px; width: 100%;
+  }
+  .tl-field input:focus { border-color: rgba(108,140,255,.5); outline: none; }
+
+  /* ===== 주체 바인딩 매트릭스 ===== */
+  .sm-head { font-size: 11px; font-weight: 800; color: var(--accent2); margin-bottom: 7px; }
+  .sm-row {
+    border: 1px solid var(--border-soft);
+    border-radius: 8px; padding: 8px 10px; margin-bottom: 6px;
+    background: rgba(140,160,220,.04);
+  }
+  .sm-fields { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1.4fr; gap: 6px; }
+  .sm-field { display: flex; flex-direction: column; gap: 3px; }
+  .sm-label { font-size: 9.5px; color: var(--muted); font-weight: 700; }
+  .sm-field input, .sm-field select {
+    background: var(--bg2); color: var(--text);
+    border: 1px solid var(--border-soft); border-radius: 6px;
+    padding: 5px 8px; font-size: 11.5px; width: 100%;
+  }
+  .sm-field input:focus, .sm-field select:focus { border-color: rgba(108,140,255,.5); outline: none; }
+
+  /* ===== 시나리오 위저드 ===== */
+  .wizard {
+    border: 1px solid rgba(108,140,255,.35);
+    background: rgba(108,140,255,.06);
+    border-radius: 10px; padding: 10px 12px; margin-bottom: 12px;
+  }
+  .wz-title { font-size: 12px; font-weight: 800; color: var(--accent); margin-bottom: 8px; }
+  .wz-steps { display: flex; flex-direction: column; gap: 6px; }
+  .wz-step { display: flex; align-items: center; gap: 8px; }
+  .wz-label { font-size: 10.5px; font-weight: 700; color: var(--muted); width: 88px; flex-shrink: 0; }
+  .wz-step select, .wz-step input {
+    flex: 1; background: var(--bg2); color: var(--text);
+    border: 1px solid var(--border-soft); border-radius: 6px;
+    padding: 5px 8px; font-size: 11.5px; min-width: 0;
+  }
+  .wz-step select:focus, .wz-step input:focus { border-color: rgba(108,140,255,.5); outline: none; }
+  .wizard .btn { margin-top: 8px; width: 100%; }
+
+  /* ===== 인라인 위저드 (메인 노출) ===== */
+  .wizard-inline {
+    margin-bottom: 12px;
+    border-color: rgba(108,140,255,.45);
+    background: linear-gradient(135deg, rgba(108,140,255,.09), rgba(108,140,255,.03));
+    box-shadow: 0 2px 12px rgba(108,140,255,.12);
+  }
+  .wz-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .wz-close {
+    background: rgba(248,113,113,.12); color: #fca5a5;
+    border: 1px solid rgba(248,113,113,.35); border-radius: 6px;
+    width: 24px; height: 24px; cursor: pointer; font-size: 12px;
+  }
+  .wz-result {
+    margin-top: 8px; font-size: 11.5px; line-height: 1.6;
+    color: var(--accent);
+    background: rgba(108,140,255,.08);
+    border: 1px solid rgba(108,140,255,.3);
+    border-radius: 8px; padding: 8px 10px;
+  }
+
+  .group-head {
+    font-size: 10px; font-weight: 800; letter-spacing: .08em;
+    color: var(--accent3);
+    padding: 13px 4px 7px;
+    text-transform: uppercase;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .group-head::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, var(--border-soft), transparent); }
+  .group-head:first-child { padding-top: 0; }
+
+  .options { display: flex; flex-wrap: wrap; gap: 7px; }
+  .opt {
+    border: 1px solid var(--border-soft);
+    background: rgba(12, 15, 30, .55);
+    padding: 7px 11px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    cursor: pointer;
+    transition: var(--trans);
+    display: flex; align-items: center; gap: 6px;
+    color: var(--text);
+    position: relative;
+  }
+  .opt:hover { border-color: rgba(108,140,255,.5); transform: translateY(-1px); box-shadow: var(--glow-soft); }
+  .opt.selected {
+    border-color: var(--accent);
+    background: linear-gradient(135deg, rgba(108,140,255,.2), rgba(167,139,250,.14));
+    color: #fff;
+    box-shadow: 0 0 16px rgba(108,140,255,.2), inset 0 0 0 1px rgba(108,140,255,.25);
+    animation: optPop .28s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes optPop {
+    0% { transform: scale(.92); }
+    60% { transform: scale(1.04); }
+    100% { transform: scale(1); }
+  }
+  .opt .k {
+    font-size: 9px; color: var(--muted); font-weight: 700;
+    background: rgba(140,160,220,.1); padding: 1px 5px; border-radius: 4px;
+    letter-spacing: .02em;
+  }
+  .opt.selected .k { color: var(--accent); background: rgba(108,140,255,.15); }
+  .opt .check {
+    width: 14px; height: 14px; border-radius: 50%;
+    border: 1.5px solid var(--border-soft);
+    display: grid; place-items: center;
+    font-size: 9px; color: transparent;
+    transition: var(--trans); flex-shrink: 0;
+  }
+  .opt.selected .check {
+    background: var(--grad); border-color: transparent; color: #fff;
+    box-shadow: 0 0 8px rgba(108,140,255,.5);
+  }
+
+  .single .opt { flex: 1 1 auto; }
+  .opt-row { margin-bottom: 8px; }
+  .opt-row input[type="text"] {
+    width: 100%; background: rgba(10,13,26,.7); border: 1px solid var(--border-soft);
+    color: var(--text); font-size: 12px; font-family: inherit;
+    padding: 7px 10px; border-radius: var(--radius-xs);
+    outline: none; transition: var(--trans);
+  }
+  .opt-row input[type="text"]:focus { border-color: rgba(108,140,255,.55); box-shadow: 0 0 0 3px rgba(108,140,255,.12); }
+  .phw-head { font-size: 11px; font-weight: 700; color: var(--warn); margin-bottom: 5px; }
+  .phw-ok { font-size: 11px; font-weight: 700; color: var(--accent2); }
+  .phw-list { display: flex; flex-wrap: wrap; gap: 5px; }
+  .phw-chip {
+    font-size: 10.5px; font-weight: 600; color: var(--warn);
+    background: rgba(251,191,36,.1); border: 1px solid rgba(251,191,36,.3);
+    padding: 3px 8px; border-radius: 999px;
+  }
+  .opt-label { font-size: 10.5px; color: var(--muted); margin-bottom: 4px; font-weight: 600; }
+
+  select {
+    width: 100%;
+    background: rgba(10,13,26,.7);
+    color: var(--text);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-xs);
+    padding: 7px 10px;
+    font-size: 12px; font-family: inherit;
+    outline: none;
+    transition: var(--trans);
+  }
+  select:focus { border-color: rgba(108,140,255,.55); box-shadow: 0 0 0 3px rgba(108,140,255,.12); }
+  select option { background: #14192e; color: var(--text); }
+
+  .params-axis { border-color: rgba(108,140,255,.35); background: linear-gradient(135deg, rgba(108,140,255,.07), rgba(167,139,250,.04)); }
+  .params-axis .axis-head { background: linear-gradient(120deg, rgba(108,140,255,.13), rgba(167,139,250,.05)); }
+  .params-axis .axis-head:hover { background: linear-gradient(120deg, rgba(108,140,255,.2), rgba(167,139,250,.08)); }
+
+  /* ---- 프리뷰 패널 (오른쪽) ---- */
+  .preview {
+    padding: 18px 20px 22px;
+    display: flex; flex-direction: column; gap: 14px;
+    background: rgba(10, 13, 26, .28);
+  }
+  .preview-toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+  .btn {
+    position: relative; overflow: hidden;
+    padding: 9px 16px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-soft);
+    background: var(--glass-strong);
+    color: var(--text);
+    font-size: 12.5px; font-weight: 600; font-family: inherit;
+    cursor: pointer;
+    transition: var(--trans);
+    display: inline-flex; align-items: center; gap: 7px;
+  }
+  .btn:hover { border-color: rgba(108,140,255,.5); transform: translateY(-1px); box-shadow: var(--glow-soft); }
+  .btn:active { transform: translateY(0); }
+  .btn.primary {
+    background: linear-gradient(135deg, #6c8cff, #8b6cff);
+    border-color: rgba(108,140,255,.6);
+    color: #fff;
+    box-shadow: 0 6px 20px rgba(108,140,255,.3);
+  }
+  .btn.primary:hover { box-shadow: 0 8px 26px rgba(108,140,255,.45); }
+  .btn.ghost { background: rgba(140,160,220,.06); }
+  .btn.danger { color: #fca5a5; border-color: rgba(248,113,113,.35); }
+  .btn.danger:hover { border-color: var(--danger); box-shadow: 0 0 14px rgba(248,113,113,.25); }
+
+  .ripple {
+    position: absolute; border-radius: 50%;
+    background: rgba(255,255,255,.35);
+    transform: scale(0);
+    animation: rippleAnim .55s ease-out forwards;
+    pointer-events: none;
+  }
+  @keyframes rippleAnim { to { transform: scale(4); opacity: 0; } }
+
+  #promptOut {
+    background: rgba(7, 9, 18, .75);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius);
+    padding: 18px;
+    font-family: 'Consolas', 'Cascadia Code', 'Courier New', monospace;
+    font-size: 12.5px; line-height: 1.75;
+    white-space: pre-wrap; word-break: break-word;
+    min-height: 300px; max-height: calc(100vh - 280px); overflow-y: auto;
+    box-shadow: inset 0 0 40px rgba(108,140,255,.04);
+  }
+
+  .empty-hint {
+    display: none;
+    border: 1px dashed rgba(108,140,255,.4);
+    background: linear-gradient(135deg, rgba(108,140,255,.08), rgba(167,139,250,.06));
+    border-radius: var(--radius);
+    padding: 13px 18px;
+    font-size: 12.5px; color: var(--text);
+    align-items: center; gap: 11px;
+  }
+  .empty-hint.show { display: flex; }
+  .empty-hint .eh-icon { font-size: 20px; filter: drop-shadow(0 0 10px rgba(108,140,255,.5)); }
+  .empty-hint b { color: var(--accent); }
+
+  .rule-note {
+    background: linear-gradient(135deg, rgba(251,191,36,.08), rgba(251,191,36,.03));
+    border: 1px solid rgba(251,191,36,.22);
+    padding: 9px 13px; border-radius: var(--radius-sm);
+    font-size: 11px; color: var(--warn); line-height: 1.6;
+  }
+
+  .meta-bar {
+    font-size: 11px; color: var(--muted);
+    display: flex; gap: 16px; flex-wrap: wrap;
+    border-top: 1px solid var(--border-soft);
+    padding-top: 11px;
+  }
+  .meta-bar b { color: var(--text); font-weight: 600; }
+  .warn-line { font-size: 11px; color: var(--warn); }
+
+  /* ---- 프리셋 팝오버 ---- */
+  .preset-wrap { position: relative; }
+  .preset-pop {
+    position: absolute; top: calc(100% + 10px); right: 0; z-index: 80;
+    width: 340px; max-height: 70vh; overflow-y: auto;
+    background: rgba(17, 21, 40, .95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 14px;
+    display: none;
+    flex-direction: column; gap: 10px;
+    animation: popIn .18s cubic-bezier(.34,1.56,.64,1);
+  }
+  .preset-pop.open { display: flex; }
+  @keyframes popIn { from { opacity: 0; transform: translateY(-6px) scale(.97); } to { opacity: 1; transform: none; } }
+  .preset-pop h4 { font-size: 12px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 7px; }
+  .preset-section-title {
+    font-size: 10px; font-weight: 700; color: var(--muted);
+    letter-spacing: .04em; margin: 4px 0 6px; padding-top: 6px;
+    border-top: 1px dashed var(--border-soft);
+  }
+  .preset-section-title:first-child { border-top: none; padding-top: 0; }
+  .preset-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 4px; }
+  .preset-chip {
+    border: 1px solid var(--border-soft); background: rgba(108,140,255,.06);
+    color: var(--text); font-size: 11px; font-weight: 600; font-family: inherit;
+    padding: 8px 6px; border-radius: var(--radius-xs); cursor: pointer;
+    transition: var(--trans); text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .preset-chip:hover { border-color: var(--accent); background: rgba(108,140,255,.14); transform: translateY(-1px); }
+  .preset-chip.chip-full { border-color: rgba(251,191,36,.35); background: rgba(251,191,36,.07); }
+  .preset-chip.chip-full:hover { border-color: var(--warn); background: rgba(251,191,36,.14); }
+  .preset-new { display: flex; gap: 7px; }
+  .preset-new .btn { padding: 8px 13px; }
+  #presetName {
+    flex: 1; min-width: 0;
+    background: rgba(10,13,26,.7); border: 1px solid var(--border-soft);
+    color: var(--text); font-size: 12px; font-family: inherit;
+    padding: 8px 11px; border-radius: var(--radius-xs);
+    outline: none; transition: var(--trans);
+  }
+  #presetName:focus { border-color: rgba(108,140,255,.55); box-shadow: 0 0 0 3px rgba(108,140,255,.12); }
+  .preset-list { display: flex; flex-direction: column; gap: 6px; max-height: 220px; overflow-y: auto; }
+  .preset-item {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(140,160,220,.06);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-xs);
+    padding: 7px 10px;
+  }
+  .preset-item .pi-name {
+    flex: 1; min-width: 0; font-size: 12px; font-weight: 600; color: var(--text);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .preset-item .pi-load, .preset-item .pi-del {
+    border: 1px solid var(--border-soft); background: transparent;
+    color: var(--muted); font-size: 10px; font-weight: 600; font-family: inherit;
+    padding: 3px 8px; border-radius: 6px; cursor: pointer; transition: var(--trans);
+  }
+  .preset-item .pi-load:hover { color: var(--accent); border-color: rgba(108,140,255,.5); }
+  .preset-item .pi-del:hover { color: var(--danger); border-color: rgba(248,113,113,.5); }
+  .preset-empty { font-size: 11px; color: var(--muted); text-align: center; padding: 8px 0; }
+
+  /* ---- 토스트 ---- */
+  .toast {
+    position: fixed; left: 50%; bottom: 30px; z-index: 200;
+    transform: translate(-50%, 20px);
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(20, 25, 46, .95);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(74,222,128,.4);
+    color: var(--text);
+    font-size: 12.5px; font-weight: 600;
+    padding: 11px 18px;
+    border-radius: 999px;
+    box-shadow: var(--shadow), 0 0 22px rgba(74,222,128,.18);
+    opacity: 0; pointer-events: none;
+    transition: opacity .28s cubic-bezier(.4,0,.2,1), transform .28s cubic-bezier(.34,1.56,.64,1);
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+  .toast.toast-err { border-color: rgba(248,113,113,.45); box-shadow: var(--shadow), 0 0 22px rgba(248,113,113,.2); }
+  .toast .t-ico { font-size: 14px; }
+
+  @media (max-width: 1000px) {
+    header { position: static; }
+    .summary-bar { top: 0; }
+    .layout { min-height: auto; }
+    .slots-col { max-height: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1><span class="title-emoji">🎬</span> Seedance 2.5 Master Prompt Builder <span class="badge">30축 · 공식 규칙 준수</span></h1>
+  <div class="header-sub">근거: 2.5 공식 (2607689·2607688·1520757) + 참조(Lark·Runware) — 축은 2.5 전용<br>🌐 축 읽기는 한국어 · <b class="h-ko">프롬프트 입력값은 중국어</b> · <b class="h-dlg">대사만 한국어</b> (대사언어：한국어 명시) · <a href="README.md" target="_blank" style="color:var(--accent)">📖 사용 가이드</a></div>
+</header>
+
+<div class="summary-bar" id="summaryBar"></div>
+
+<div class="layout">
+  <!-- ===================== 왼쪽: 슬롯 선택 패널 ===================== -->
+  <aside class="slots-col">
+    <div class="slots-toolbar">
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input id="searchInput" type="text" placeholder="축 검색 — 제목·설명·옵션 키워드 (예: 카메라, 감정, R2V)">
+      </div>
+      <div class="toolbar-row">
+        <div class="seg">
+          <button id="collapseAllBtn" title="모든 축 접기">전체 접기</button>
+          <button id="expandAllBtn" title="모든 축 펼치기">전체 펼치기</button>
+        </div>
+        <div class="toggle-chip" id="coreOnlyToggle" role="button" tabindex="0" title="필수(core) 축만 표시">
+          <span class="tbox"></span> 필수 축만
+        </div>
+      </div>
+    </div>
+    <div id="slots"></div>
+  </aside>
+
+  <!-- ===================== 오른쪽: 프롬프트 프리뷰 ===================== -->
+  <main class="preview">
+    <div class="preview-toolbar">
+      <button class="btn primary" id="wizardOpenBtn">🧙 시나리오로 시작</button>
+      <button class="btn primary" id="copyBtn">📋 프롬프트 복사</button>
+      <button class="btn ghost" id="langToggleBtn" title="프롬프트를 중국어/한국어로 보기">🌐 中文</button>
+      <button class="btn ghost" id="resetBtn">초기화</button>
+      <div class="preset-wrap">
+        <button class="btn ghost" id="presetBtn">📁 프리셋</button>
+        <div class="preset-pop" id="presetPop">
+          <h4>📁 프리셋 불러오기</h4>
+          <!-- A. 기본 12종 (핵심 축 빠르게) -->
+          <div class="preset-section-title">기본 (핵심 축 세팅)</div>
+          <div class="preset-grid" id="presetGrid"></div>
+          <!-- B. 세부 확장 (기본 + 인물·소리·조명까지) -->
+          <div class="preset-section-title">세부 확장 (⚡ 풀 세팅)</div>
+          <div class="preset-grid" id="presetGridFull"></div>
+          <!-- 사용자 저장 -->
+          <div class="preset-section-title">💾 저장한 프리셋 <span style="font-weight:400;color:var(--muted);font-size:10px">localStorage</span></div>
+          <div class="preset-new">
+            <input id="presetName" type="text" placeholder="새 프리셋 이름" maxlength="24">
+            <button class="btn primary" id="presetSave">저장</button>
+          </div>
+          <div class="preset-list" id="presetList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 🧙 인라인 시나리오 위저드 (메인 노출 — 발견성 개선) ===== -->
+    <div class="wizard wizard-inline" id="wizardInline" style="display:none">
+      <div class="wz-head">
+        <span class="wz-title">🧙 시나리오 위저드 — 고객사 입장으로 한 번에 구성</span>
+        <button class="wz-close" onclick="document.getElementById('wizardInline').style.display='none'">✕</button>
+      </div>
+      <div class="wz-steps">
+        <div class="wz-step"><div class="wz-label">1. 시나리오</div><select id="wz_scenario" onchange="wizardApply()">
+          <option value="">— 선택 —</option>
+          <option value="yt_shorts">📱 유튜브 쇼츠 광고 (9:16, 첫 3초 훅+CTA)</option>
+          <option value="live_comm">🛒 라이브 커머스 (쇼호스트+세일즈)</option>
+          <option value="k_drama">🎎 K-드라마 (감정 아크+화자 분리)</option>
+          <option value="saguek">⚔️ 사극 (조선 시대)</option>
+          <option value="mukbang">🍜 먹방 (음식 클로즈업)</option>
+        </select></div>
+        <div class="wz-step"><div class="wz-label">2. 주체·제품</div><input id="wz_subject" type="text" placeholder="예: 광고할 스킨케어 제품" oninput="wizardApply()"></div>
+        <div class="wz-step"><div class="wz-label">3. 훅 (첫 3초)</div><input id="wz_hook" type="text" placeholder="예: 제품이 번쩍이며 화면 중앙에 떨어진다" oninput="wizardApply()"></div>
+        <div class="wz-step"><div class="wz-label">4. CTA</div><input id="wz_cta" type="text" placeholder="예: 지금 구매하러 가기" oninput="wizardApply()"></div>
+        <button class="btn primary" id="wzApplyBtn" onclick="wizardApply(true)">✨ 구성 적용</button>
+      </div>
+      <div class="wz-result" id="wzResult"></div>
+    </div>
+
+    <!-- ===== ✍️ 콘텐츠 입력 (자리표시자 채우기 — 비우면 <...> 유지) ===== -->
+    <div class="axis params-axis" data-axis="content" style="margin-bottom:12px">
+      <div class="axis-head" onclick="toggleAxis('content')">
+        <div class="axis-head-left">
+          <div class="axis-title">✍️ 콘텐츠 입력 <span class="tag opt">선택</span></div>
+          <div class="axis-desc">주체·사건·장면·대사·끝 상태·전체 톤·CTA를 채우면 프롬프트의 <...> 자리표시자가 완성됩니다 (비우면 자리표시자 유지) — 유튜브 광고 고객사 관점: 첫 3초 훅 + CTA로 시청·클릭 유도</div>
+        </div>
+        <div class="axis-arrow">▼</div>
+      </div>
+      <div class="axis-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div class="opt-row"><div class="opt-label">주체 — 核心主体 (누가)</div>
+            <input id="ci_subject" type="text" placeholder="예: 카페 테라스의 여자 친구 둘" oninput="renderPrompt()">
+          </div>
+          <div class="opt-row"><div class="opt-label">사건·동작 — 主要事件 (무슨 일)</div>
+            <input id="ci_event" type="text" placeholder="예: B가 연애운을 보자고 제안한다" oninput="renderPrompt()">
+          </div>
+          <div class="opt-row"><div class="opt-label">장면·배경 — 场景 (어디서)</div>
+            <input id="ci_scene" type="text" placeholder="예: 오후 햇살의 카페 야외 테라스" oninput="renderPrompt()">
+          </div>
+          <div class="opt-row"><div class="opt-label">대사 — 台词 ({ } 안 내용)</div>
+            <input id="ci_dialog" type="text" placeholder="예: 야, 우리 연애운 볼까?" oninput="renderPrompt()">
+          </div>
+          <div class="opt-row"><div class="opt-label">끝 상태 — 结束状态 (컷 마무리)</div>
+            <input id="ci_ending" type="text" placeholder="예: 두 사람이 마주 보며 웃는다" oninput="renderPrompt()">
+          </div>
+          <div class="opt-row"><div class="opt-label">전체 톤 — 约束 (한 줄 분위기)</div>
+            <input id="ci_constraint" type="text" placeholder="예: 밝고 따뜻한 분위기" oninput="renderPrompt()">
+          </div>
+          <div class="opt-row"><div class="opt-label">클릭 유도 (CTA) — 구독·구매 문구</div>
+            <input id="ci_cta" type="text" placeholder="예: 지금 구매하러 가기 / 구독 좋아요!" oninput="renderPrompt()">
+          </div>
+          <div class="opt-row"><div class="opt-label">참조 이미지 개수 — 업로드 순서 번호 (참조 모드)</div>
+            <input id="ci_refcount" type="number" min="1" max="30" placeholder="예: 3 (图 1、图 2、图 3 지칭 생성)" oninput="renderPrompt()">
+          </div>
+          <div class="opt-row"><div class="opt-label">첫 3초 훅 — 유튜브 시청 유지용 강렬 장면</div>
+            <input id="ci_hook" type="text" placeholder="예: 제품이 번쩍이며 테이블에 떨어진다" oninput="renderPrompt()">
+          </div>
+        </div>
+        <div id="timelineWrap" style="margin-top:10px"></div>
+        <div id="subjectMatrixWrap" style="margin-top:10px"></div>
+        <div id="placeholderWarn" style="margin-top:10px"></div>
+      </div>
+    </div>
+
+    <!-- ===== Seedance 2.5 전용 생성 파라미터 패널 (프롬프트에 미포함 — API/페이지 설정) ===== -->
+    <div class="axis params-axis" data-axis="params">
+      <div class="axis-head" onclick="toggleAxis('params')">
+        <div class="axis-head-left">
+          <div class="axis-title">⚙️ 생성 파라미터 (Seedance 2.5 전용 — API/페이지 설정)</div>
+          <div class="axis-desc">프롬프트에 넣지 않음 · 1520757 API 문서 기준 · seed/camera_fixed는 2.5 미지원이라 제외</div>
+        </div>
+        <div class="axis-arrow">▼</div>
+      </div>
+      <div class="axis-body">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px">
+          <div class="opt-row"><div class="opt-label">전달 방식 (2298881)</div>
+            <select id="p_mode" onchange="renderPrompt()">
+              <option value="body" selected>request body (강검증, 권장)</option>
+              <option value="suffix">구방식 --rs/--rt/--dur 접미사</option>
+            </select>
+          </div>
+          <div class="opt-row"><div class="opt-label">model (공식 모델 ID — 2607688)</div>
+            <select id="p_model" onchange="renderPrompt()">
+              <option value="doubao-seedance-2-5-260628" selected>doubao-seedance-2-5-260628</option>
+            </select>
+          </div>
+          <div class="opt-row"><div class="opt-label">resolution (2.5: 480p/720p만)</div>
+            <select id="p_res" onchange="renderPrompt()">
+              <option value="720p">720p (기본)</option><option value="480p">480p</option>
+            </select>
+          </div>
+          <div class="opt-row"><div class="opt-label">ratio (편집/연장/시작·끝 프레임은 adaptive 고정)</div>
+            <select id="p_ratio" onchange="renderPrompt()">
+              <option value="16:9">16:9</option><option value="9:16">9:16</option>
+              <option value="4:3">4:3</option><option value="3:4">3:4</option>
+              <option value="1:1">1:1</option><option value="21:9">21:9</option>
+              <option value="adaptive" selected>adaptive (자동)</option>
+            </select>
+          </div>
+          <div class="opt-row"><div class="opt-label">duration (초, [4,30] 또는 -1)</div>
+            <select id="p_dur" onchange="renderPrompt()">
+              <option value="20">20</option><option value="30">30</option><option value="15">15</option>
+              <option value="-1" selected>-1 (모델 자동)</option>
+            </select>
+          </div>
+          <div class="opt-row"><div class="opt-label">generate_audio (한국어 대사 필수 true)</div>
+            <select id="p_audio" onchange="renderPrompt()">
+              <option value="true" selected>true (유성)</option><option value="false">false (무성)</option>
+            </select>
+          </div>
+          <div class="opt-row"><div class="opt-label">output_format (2.5 전용)</div>
+            <select id="p_fmt" onchange="renderPrompt()">
+              <option value="mp4" selected>mp4</option><option value="mov">mov (영화급 색정확도)</option>
+            </select>
+          </div>
+          <div class="opt-row"><div class="opt-label">watermark</div>
+            <select id="p_wm" onchange="renderPrompt()">
+              <option value="false" selected>false (없음)</option><option value="true">true (AI 워터마크)</option>
+            </select>
+          </div>
+          <div class="opt-row"><div class="opt-label">return_last_frame (연속 생성용)</div>
+            <select id="p_ret" onchange="renderPrompt()">
+              <option value="false" selected>false</option><option value="true">true (끝 프레임 반환)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="empty-hint" id="emptyHint">
+      <span class="eh-icon">✨</span>
+      <div>좌측 패널에서 <b>① 작업 유형</b>부터 선택하세요 — 축을 고르면 프롬프트가 여기에 자동으로 조립됩니다.</div>
+    </div>
+    <div id="promptOut" contenteditable="false"></div>
+    <div class="rule-note">⚠️ 공식 규칙 자동 적용: 파라미터(비율·fps·길이)는 프롬프트에 미포함 · 1컷 1운경 · 대사는 대사언어 명시 · 효과음 &lt;&gt; / 음악 () / 대사 {} 기호 · 네거티브 최소화</div>
+    <div class="meta-bar" id="metaBar"></div>
+  </main>
+</div>
+
+<div class="toast" id="toast"><span class="t-ico">✅</span><span id="toastMsg">복사됨!</span></div>
+
+<script>
+/* ================================================================
+   슬롯 정의 — 각 축(axis)은 공식 문서에서 검증된 선택지
+   type: 'single' (하나만) | 'multi' (여러 개)
+   ================================================================ */
+/* ========== 공용 화자 특성/역할 옵션 (단일 speaker 축 + 복수 화자 블록 공유) ========== */
+const SPEAKER_CHAR_OPTS = [
+  { k: 'teen',     label: '10대', value: '十几岁' },
+  { k: 'fem20',    label: '20대 여성', value: '二十多岁女性' },
+  { k: 'thirties', label: '30대', value: '三十多岁' },
+  { k: 'fem40',    label: '40대 여성', value: '四十多岁女性' },
+  { k: 'male20',   label: '20대 남성', value: '二十多岁男性' },
+  { k: 'male40',   label: '40대 남성', value: '四十多岁男性' },
+  { k: 'fifties',  label: '50대', value: '五十多岁' },
+  { k: 'sixties',  label: '60대 이상', value: '六十多岁' },
+  { k: 'calmV',    label: '음색: 차분·안정', value: '声音沉稳安定' },
+  { k: 'brightV',  label: '음색: 밝고 또렷', value: '声音明亮清晰' },
+  { k: 'warmV',    label: '음색: 부드럽고 따뜻', value: '声音温柔温暖' },
+  { k: 'lowV',     label: '음색: 낮고 무게감', value: '声音低沉有力' },
+  { k: 'whisperV', label: '음색: 속삭이는 가벼움', value: '声音轻柔低语' },
+  { k: 'huskyV',   label: '음색: 거칠고 쉰 목소리', value: '声音沙哑粗粝' },
+  { k: 'clearV',   label: '음색: 맑고 청량', value: '声音清亮通透' },
+  { k: 'fastP',    label: '속도: 빠름', value: '语速较快' },
+  { k: 'vfastP',   label: '속도: 매우 빠름', value: '语速很快' },
+  { k: 'midP',     label: '속도: 보통', value: '语速适中' },
+  { k: 'slowP',    label: '속도: 느림', value: '语速缓慢' },
+  { k: 'happyE',   label: '감정기조: 명랑·외향', value: '情绪基调积极外向' },
+  { k: 'excitedE', label: '감정기조: 흥분·격앙', value: '情绪基调激动高昂' },
+  { k: 'calmE',    label: '감정기조: 차분·냉정', value: '情绪基调沉稳冷静' },
+  { k: 'softE',    label: '감정기조: 다정·포근', value: '情绪基调温柔亲切' },
+  { k: 'gloomyE',  label: '감정기조: 우울·가라앉음', value: '情绪基调低沉忧郁' },
+];
+const SPEAKER_ROLE_OPTS = [
+  { k: 'bf',        label: '남자친구/오빠', value: '남자친구' },
+  { k: 'gf',        label: '여자친구', value: '여자친구' },
+  { k: 'mudang',    label: '무당/상담사', value: '무당' },
+  { k: 'friend',    label: '친구', value: '친구' },
+  { k: 'family',    label: '가족 (부모·자녀)', value: '가족' },
+  { k: 'mom',       label: '엄마', value: '엄마' },
+  { k: 'dad',       label: '아빠', value: '아빠' },
+  { k: 'kid',       label: '아이', value: '아이' },
+  { k: 'granny',    label: '할머니', value: '할머니' },
+  { k: 'grandpa',   label: '할아버지', value: '할아버지' },
+  { k: 'police',    label: '형사/경찰', value: '형사' },
+  { k: 'doctor',    label: '의사/간호사', value: '의사' },
+  { k: 'boss',      label: '사장님/보스', value: '사장님' },
+  { k: 'reporter',  label: '기자', value: '기자' },
+  { k: 'villain',   label: '악당/빌런', value: '악당' },
+  { k: 'youtuber',  label: '유튜버', value: '유튜버' },
+  { k: 'noona',     label: '누나/언니 ⚡확장', value: '누나' },
+  { k: 'ajumma',    label: '아주머니 ⚡확장', value: '아주머니' },
+  { k: 'seonbi',    label: '선비 (사극) ⚡확장', value: '선비' },
+  { k: 'jumju',     label: '주모 (사극) ⚡확장', value: '주모' },
+  { k: 'showhost',  label: '쇼호스트 — 라이브 커머스 진행자 ⚡확장', value: '쇼호스트' },
+  { k: 'seller',    label: '판매원/세일즈맨 ⚡확장', value: '판매원' },
+  { k: 'teacher',   label: '선생님', value: '선생님' },
+  { k: 'customer',  label: '고객', value: '고객' },
+  { k: 'employee',  label: '직원/상담원', value: '직원' },
+  { k: 'narration', label: '내레이션', value: '내레이터' },
+];
+
+const AXES = [
+  /* ============ 그룹 A: 장르·구조 (뭘 만들지) ============ */
+  {
+    id: 'task', title: '① 작업 유형 — 새로·참조·편집·연장', tag: 'core', type: 'single', group: 'A. 장르·구조 — 뭘 만들지',
+    desc: '영상을 새로 만들지, 참조·편집·연장할지 선택 — 첫 단계로 여기서 시작. 편집·연장은 기존 영상의 비율·길이가 유지됨',
+    options: [
+      { k: 't2v',  label: '텍스트만 — 새 영상', value: '' },
+      { k: 'r2v',  label: '참조 — 이미지·영상 첨부', value: '' },
+      { k: 'edit', label: '편집 — 🔒고정, 기존 영상 수정', value: '' },
+      { k: 'ext',  label: '연장 — 🔒고정, 영상 이어 만들기', value: '' },
+      { k: 'fl',   label: '시작·끝 프레임 — 🔒고정', value: '' },
+    ]
+  },
+  {
+    id: 'extra', title: '①-2 추가 기능 — 사진 묶기·영상 연결', tag: 'opt', type: 'single', group: 'A. 장르·구조 — 뭘 만들지', requires: ['t2v','r2v'],
+    desc: '기본 생성에 추가 기능 붙이기 (사진 묶기·영상 연결·기능 병행)',
+    options: [
+      { k: 'none', label: '사용 안 함', value: '' },
+      { k: 'oc',   label: '사진 묶어 완성', value: '' },
+      { k: 'tr',   label: '영상 간 자연 연결', value: '', requires: ['r2v'] },
+      { k: 'comb', label: '조합 능력 — 여러 기능 병행', value: '' },
+    ]
+  },
+  {
+    id: 'genre', title: '② 장르 프리셋', tag: 'opt', type: 'single', group: 'A. 장르·구조 — 뭘 만들지', requires: ['t2v','r2v'],
+    desc: '영상의 목적·장르 — 선택하면 어울리는 표현이 자동으로 들어감',
+    options: [
+      { k: 'none',   label: '선택 안 함', value: '' },
+      { k: 'tvc',    label: '광고 (TVC)', value: '高端广告片风格' },
+      { k: 'drama',  label: '단편 드라마', value: '短剧叙事风格' },
+      { k: 'brand',  label: '브랜드 스토리', value: '品牌故事片风格' },
+      { k: 'edu',    label: '교육 영상', value: '教育讲解风格' },
+      { k: 'ecom',   label: '전자상거래 제품', value: '电商带货风格' },
+      { k: 'travel', label: '여행 Vlog', value: '旅行Vlog风格' },
+      { k: 'docu',   label: '다큐멘터리 ⚡확장', value: '纪实纪录片风格' },
+      { k: 'mv',     label: '뮤직비디오 ⚡확장', value: '音乐MV风格' },
+      { k: 'game',   label: '게임 소개 ⚡확장', value: '游戏宣传片风格' },
+      { k: 'kdrama', label: 'K-드라마 ⚡확장', value: '韩剧叙事风格' },
+      { k: 'sageuk', label: '사극 (조선 시대) ⚡확장', value: '韩国古装剧（朝鲜时代）风格' },
+      { k: 'mukbang', label: '먹방 — 음식 먹는 방송 ⚡확장', value: '韩国吃播风格' },
+      { k: 'kvariety', label: 'K-예능 ⚡확장', value: '韩国综艺节目风格' },
+      { k: 'trad',  label: '한국 전통문화 ⚡확장', value: '韩国传统文化风格' },
+      { k: 'livecomm', label: '라이브 커머스 — 실시간 방송 쇼핑 ⚡확장', value: '直播带货风格' },
+      { k: 'promo', label: '프로모션·세일 — 한정 특가 ⚡확장', value: '促销折扣风格' },
+      { k: 'ytshorts', label: '유튜브 쇼츠 — 세로형 (9:16) ⚡확장', value: 'YouTube短视频（竖屏）风格，前3秒画面强烈吸引眼球，节奏明快' },
+    ]
+  },
+  {
+    id: 'duration', title: '③ 길이·단계', tag: 'core', type: 'single', group: 'A. 장르·구조 — 뭘 만들지',
+    desc: '영상 길이와 장면 단계 수 — 20초가 기본, -1은 모델이 알아서',
+    options: [
+      { k: '10s',  label: '10초 / 3단계', value: '' },
+      { k: '15s',  label: '15초 / 3단계', value: '' },
+      { k: '20s',  label: '20초 / 4단계 (기본)', value: '' },
+      { k: '30s',  label: '30초 / 5단계 (최대)', value: '' },
+      { k: 'auto', label: '-1 자동 (모델이 적절한 길이 선택)', value: '' },
+    ]
+  },
+  {
+    id: 'shotseq', title: '④ 장면 분할 방식 — 영상을 어떻게 쪼갤지', tag: 'opt', type: 'single', group: 'A. 장르·구조 — 뭘 만들지', requires: ['t2v','r2v'],
+    desc: '영상을 시간 또는 장면으로 어떻게 나눌지 — 시간 구간이 가장 추천',
+    options: [
+      { k: 'ts',   label: '시간 구간 (추천) → 【阶段一】(0-4)【阶段二】(4-9)…', value: '' },
+      { k: 'point',label: '시간점 → "第5秒에 장면 전환" (이벤트 1개 지정)', value: '' },
+      { k: 'rel',  label: '상대시간 → "버튼 누른 뒤 3초 후" (연속 액션용)', value: '' },
+      { k: 'mix',  label: '혼합 → 【镜头1】(0-4)【镜头2】(4-9)…', value: '' },
+      { k: 'n',    label: '장면 번호만 → 【镜头1】【镜头2】… (2.0 방식, 시간 없음, 비권장)', value: '' },
+    ]
+  },
+  /* ============ 그룹 B: 인물·대사 (누가 나오지) ============ */
+  {
+    id: 'lang', title: '⑤ 대사 언어·억양', tag: 'core', type: 'single', group: 'B. 인물·대사 — 누가 나오지',
+    desc: '대사 언어는 한국어 — 억양(사투리)을 지정하면 발음이 안정적',
+    options: [
+      { k: 'ko',   label: '한국어 + 서울 억양 (권장)', value: '台词语言：韩语，自然的首尔口音' },
+      { k: 'gyeongsang', label: '한국어 + 경상도 (부산·대구) 사투리 ⚡확장', value: '台词语言：韩语，自然的釜山方言口音' },
+      { k: 'jeolla', label: '한국어 + 전라도 사투리 ⚡확장', value: '台词语言：韩语，自然的全罗道方言口音' },
+      { k: 'chungcheong', label: '한국어 + 충청도 사투리 ⚡확장', value: '台词语言：韩语，自然的忠清道方言口音' },
+      { k: 'gangwon', label: '한국어 + 강원도 사투리 ⚡확장', value: '台词语言：韩语，自然的江原道方言口音' },
+      { k: 'jeju', label: '한국어 + 제주도 사투리 ⚡확장', value: '台词语言：韩语，自然的济州方言口音' },
+      { k: 'none', label: '대사 없음 — 입모양만 (마임)', value: '' },
+    ]
+  },
+  {
+    id: 'voice', title: '⑥ 말투 — 대사를 어떻게 말할지', tag: 'opt', type: 'single', group: 'B. 인물·대사 — 누가 나오지', dependsOn: { lang: ['ko','gyeongsang','jeolla','chungcheong','gangwon','jeju'] },
+    desc: '대사의 말투 (부드럽게·밝게·차분하게 등) — "대사 없음"이면 사용 불가',
+    options: [
+      { k: 'soft',    label: '부드럽고 느리게', value: '语气温柔舒缓，语速缓慢，口语化' },
+      { k: 'bright',  label: '밝고 빠르게', value: '语气明亮轻快，语速稍快，充满活力' },
+      { k: 'calm',    label: '차분하고 격식 있게', value: '语气沉稳冷静，语速均匀，正式' },
+      { k: 'excited', label: '흥분되고 빠르게', value: '语气激动兴奋，语速较快，情绪饱满' },
+      { k: 'warm',    label: '다정하고 부드럽게 ⚡확장', value: '语气亲切温柔，语速舒缓' },
+      { k: 'firm',    label: '단호하고 또렷하게 ⚡확장', value: '语气坚定清晰，语速适中' },
+      { k: 'playful', label: '명랑하고 장난기 있게 ⚡확장', value: '语气活泼俏皮，语速轻快' },
+      { k: 'deep',    label: '무게감 있게 차분히 ⚡확장', value: '语气深沉稳重，语速缓慢' },
+      { k: 'polite',  label: '공손하고 예의 바르게 ⚡확장', value: '语气恭敬礼貌，语速适中，正式' },
+      { k: 'cute',    label: '애교 있고 사랑스럽게 ⚡확장', value: '语气撒娇可爱，语速稍慢，亲昵' },
+      { k: 'sarcastic', label: '냉소적이고 비꼬듯 ⚡확장', value: '语气冷淡讽刺，语速均匀' },
+      { k: 'awe',     label: '경외심 가득하게 ⚡확장', value: '语气充满惊叹崇敬，语速稍慢' },
+      { k: 'whisper', label: '속삭이듯 조용히 ⚡확장', value: '语气轻柔如耳语，语速缓慢，压低声量' },
+      { k: 'loud',    label: '큰 소리로 힘차게 ⚡확장', value: '语气高亢有力，声量较大，充满气势' },
+      { k: 'singing', label: '노래하듯 리드미컬하게 ⚡확장', value: '语气抑扬顿挫，像唱歌一样有节奏' },
+      { k: 'teary',   label: '울먹이며 간절하게 ⚡확장', value: '语气哽咽颤抖，带着哭腔' },
+      { k: 'laughing', label: '웃으며 대화하듯 ⚡확장', value: '语气轻松带笑，像聊天一样自然' },
+      { k: 'flat',    label: '무감정하게 또박또박 ⚡확장', value: '语气平淡无起伏，机械地一字一句' },
+      { k: 'sales',   label: '세일즈 톤 — 적극 호객·설득 ⚡확장', value: '语气热情高涨，积极推销，充满感染力' },
+      { k: 'urgent',  label: '긴급·한정 특가 톤 ⚡확장', value: '语气急促紧迫，强调限时优惠' },
+    ]
+  },
+  {
+    id: 'speaker', title: '⑥-2 화자 특성 — 목소리 특징', tag: 'opt', type: 'multi', group: 'B. 인물·대사 — 누가 나오지', dependsOn: { lang: ['ko','gyeongsang','jeolla','chungcheong','gangwon','jeju'] },
+    desc: '화자의 목소리 특징 조합 (성별·연령·음색·속도·감정) — 목소리가 섞이지 않게',
+    options: SPEAKER_CHAR_OPTS
+  },
+  {
+    id: 'speakerflow', title: '⑥-3 복수 화자 — 여러 명 목소리 분리', tag: 'opt', type: 'single', group: 'B. 인물·대사 — 누가 나오지', dependsOn: { lang: ['ko','gyeongsang','jeolla','chungcheong','gangwon','jeju'] },
+    desc: '화자가 2명 이상일 때 각자 목소리를 정의 — 역할·특성을 골라 목소리를 분리',
+    options: [
+      { k: 'none', label: '사용 안 함', value: '' },
+      { k: '2',    label: '화자 2명 — 목소리 분리', value: '' },
+      { k: '3',    label: '화자 3명 — 목소리 분리', value: '' },
+      { k: '4',    label: '화자 4명 — 목소리 분리 ⚡확장', value: '' },
+    ]
+  },
+  {
+    id: 'sp1_role', title: '화자 1 — 역할', tag: 'opt', type: 'single', group: 'B. 인물·대사 — 누가 나오지', dependsOn: { speakerflow: ['2','3','4'] },
+    desc: '첫 번째 화자의 역할 (남자친구·무당·친구 등)',
+    options: SPEAKER_ROLE_OPTS
+  },
+  {
+    id: 'sp1_char', title: '화자 1 — 목소리 특성', tag: 'opt', type: 'multi', group: 'B. 인물·대사 — 누가 나오지', dependsOn: { speakerflow: ['2','3','4'] },
+    desc: '첫 번째 화자의 목소리 특징 (성별·연령·음색·속도·감정)',
+    options: SPEAKER_CHAR_OPTS
+  },
+  {
+    id: 'sp2_role', title: '화자 2 — 역할', tag: 'opt', type: 'single', group: 'B. 인물·대사 — 누가 나오지', dependsOn: { speakerflow: ['2','3','4'] },
+    desc: '두 번째 화자의 역할',
+    options: SPEAKER_ROLE_OPTS
+  },
+  {
+    id: 'sp2_char', title: '화자 2 — 목소리 특성', tag: 'opt', type: 'multi', group: 'B. 인물·대사 — 누가 나오지', dependsOn: { speakerflow: ['2','3','4'] },
+    desc: '두 번째 화자의 목소리 특징 — 첫 번째와 다르게',
+    options: SPEAKER_CHAR_OPTS
+  },
+  {
+    id: 'sp3_role', title: '화자 3 — 역할', tag: 'opt', type: 'single', group: 'B. 인물·대사 — 누가 나오지', dependsOn: { speakerflow: ['3','4'] },
+    desc: '세 번째 화자의 역할 — 화자 3명일 때만',
+    options: SPEAKER_ROLE_OPTS
+  },
+  {
+    id: 'sp3_char', title: '화자 3 — 목소리 특성', tag: 'opt', type: 'multi', group: 'B. 인물·대사 — 누가 나오지', dependsOn: { speakerflow: ['3','4'] },
+    desc: '세 번째 화자의 목소리 특징 — 다른 화자와 다르게',
+    options: SPEAKER_CHAR_OPTS
+  },
+  {
+    id: 'sp4_role', title: '화자 4 — 역할', tag: 'opt', type: 'single', group: 'B. 인물·대사 — 누가 나오지', dependsOn: { speakerflow: ['4'] },
+    desc: '네 번째 화자의 역할 — 화자 4명일 때만',
+    options: SPEAKER_ROLE_OPTS
+  },
+  {
+    id: 'sp4_char', title: '화자 4 — 목소리 특성', tag: 'opt', type: 'multi', group: 'B. 인물·대사 — 누가 나오지', dependsOn: { speakerflow: ['4'] },
+    desc: '네 번째 화자의 목소리 특징 — 다른 화자와 다르게',
+    options: SPEAKER_CHAR_OPTS
+  },
+  {
+    id: 'emotion', title: '⑦ 감정 — 몸짓·표정으로 표현', tag: 'core', type: 'multi', group: 'B. 인물·대사 — 누가 나오지',
+    desc: '등장인물의 감정을 몸짓·표정으로 표현 — "슬프다" 대신 "눈가가 붉어짐"처럼 구체적으로',
+    options: [
+      { k: 'joy',   label: '기쁨',   value: '입꼬리 억제할 수 없이 올라감, 미간·눈이 풀림, 발걸음이 가벼워짐' },
+      { k: 'sad',   label: '슬픔',   value: '고개를 숙임, 어깨가 미세하게 떨림, 눈가가 붉어짐, 눈물이 맴돌지만 떨어지지 않음' },
+      { k: 'anx',   label: '긴장/불안', value: '호흡이 급해짐, 시선이 회피됨, 손가락이 무의식적으로 움직임' },
+      { k: 'angry', label: '분노',   value: '양주먹을 꽉 쥠, 턱 라인이 긴장됨, 가슴이 격렬하게 움직임' },
+      { k: 'relief',label: '해소',   value: '길게 숨을 내쉼, 어깨가 완전히 이완됨, 오랜만의 미소가 번짐' },
+      { k: 'embarrassed', label: '당황 ⚡확장', value: '귀가 붉어지고 시선을 피하며 어색한 미소가 삐뚤어짐' },
+      { k: 'flutter', label: '설렘 ⚡확장', value: '심장이 두근거려 손끝을 만지작거리고 미소가 저절로 번짐' },
+      { k: 'fear',   label: '두려움 ⚡확장', value: '눈이 크게 열리고 숨이 멎으며 몸이 움찔함' },
+      { k: 'amused', label: '즐거움 ⚡확장', value: '입꼬리가 저절로 올라가고 어깨가 들썩임' },
+      { k: 'aegyo', label: '애교 ⚡확장', value: '눈을 깜빡이며 고개를 살짝 기울임, 입술을 삐죽이고 어깨를 움츠리며 애교 부림' },
+      { k: 'burst', label: '버럭 ⚡확장', value: '갑자기 눈을 부릅뜨고 버럭 화를 냄, 목소리가 커지고 몸이 앞으로 쏠림' },
+      { k: 'choke', label: '울컥 ⚡확장', value: '목이 메어 말을 잇지 못함, 눈물이 갑자기 차오르고 입가가 파르르 떨림' },
+      { k: 'cheer', label: '쾌재 ⚡확장', value: '주먹을 불끈 쥐고 쾌재를 부름, 눈빛이 반짝이고 발을 구름' },
+      { k: 'dazed', label: '허탈 ⚡확장', value: '허탈한 웃음이 새어 나옴, 어깨가 축 처지고 시선이 허공을 맴돎' },
+    ]
+  },
+  {
+    id: 'emotionflow', title: '⑧ 감정 전환 — 감정이 변하는 장면', tag: 'opt', type: 'single', group: 'B. 인물·대사 — 누가 나오지', dependsOn: { emotion: ['joy','sad','anx','angry','relief','embarrassed','flutter','fear','amused','aegyo','burst','choke','cheer','dazed'] },
+    desc: '감정이 변하는 장면 — 시작→사건→반응→전환 4단계로 자연스럽게 연결',
+    options: [
+      { k: 'none', label: '사용 안 함', value: '' },
+      { k: 'flow', label: '감정 전환 4단계 적용', value: '' },
+      { k: 'arc',  label: '전역 감정 아크 — 단계별 자연 전환', value: '【情绪转折】전역 감정 아크：<주체>의 감정이 <시작 감정> → <중간 감정들> → <끝 감정>으로 단계별로 자연스럽게 전환된다。얼굴 표정·눈·입·호흡·손동작이 각 단계에 맞게 서서히 변하며，갑작스러운 표정 점프 없이 이어진다。' },
+    ]
+  },
+  /* ============ 그룹 C: 장면 (어떤 장면이지) ============ */
+  {
+    id: 'shotsize', title: '⑨ 화면 크기 — 인물을 얼마나 크게', tag: 'opt', type: 'single', group: 'C. 장면 — 어떤 장면이지', requires: ['t2v','r2v'],
+    desc: '인물을 화면에 얼마나 크게 담을지 (멀리 → 가까이 흐름)',
+    options: [
+      { k: 'wide2wide', label: '전체→중간→클로즈업→전체 (시작과 끝 동일)', value: '' },
+      { k: 'close2wide', label: '클로즈업→중간→전체 (가까이서 멀리)', value: '' },
+      { k: 'wide2close', label: '전체→중간→클로즈업 (멀리서 가까이)', value: '' },
+      { k: 'bust', label: '인물: 얼굴→가슴→반신→전신', value: '' },
+      { k: 'wide2bust', label: '전체→클로즈업 직행 ⚡확장', value: '' },
+      { k: 'bust2wide', label: '클로즈업→전체 직행 ⚡확장', value: '' },
+      { k: 'extreme', label: '대전경 — 광활한 와이드 ⚡확장', value: '' },
+      { k: 'close2bust', label: '클로즈업→가슴 ⚡확장', value: '' },
+      { k: 'wmcm', label: '전→중→특→중 ⚡확장', value: '' },
+    ]
+  },
+  {
+    id: 'timeweather', title: '⑩ 시간대·날씨', tag: 'opt', type: 'single', group: 'C. 장면 — 어떤 장면이지', requires: ['t2v','r2v'],
+    desc: '장면의 시간대·날씨 (아침·정오·노을·밤·비·안개)',
+    options: [
+      { k: 'none',    label: '선택 안 함', value: '' },
+      { k: 'morning', label: '이른 아침 — 맑음', value: '清晨，薄雾散去，柔和的晨光' },
+      { k: 'noon',    label: '정오 — 강한 햇빛', value: '正午，阳光强烈，清晰阴影' },
+      { k: 'evening', label: '저녁 — 노을', value: '傍晚，金色夕阳，长阴影' },
+      { k: 'night',   label: '밤 — 인공조명', value: '夜晚，城市灯光' },
+      { k: 'rain',    label: '비', value: '雨天，湿润反光' },
+      { k: 'fog',     label: '안개', value: '雾天，朦胧氛围' },
+      { k: 'snow',    label: '눈 ⚡확장', value: '雪天，白雪覆盖，寂静氛围' },
+      { k: 'storm',   label: '폭풍 ⚡확장', value: '暴风雨天，昏暗，雨水猛烈' },
+    ]
+  },
+  {
+    id: 'cutprinciple', title: '⑩-2 장면 분리 — 각 장면을 완전히 다르게', tag: 'opt', type: 'single', group: 'C. 장면 — 어떤 장면이지', requires: ['t2v','r2v'],
+    desc: '각 장면을 완전히 다른 장면으로 분리 — 배경·의상·위치가 확실히 바뀌게 (드라마에 유용)',
+    options: [
+      { k: 'none',  label: '사용 안 함', value: '' },
+      { k: 'apply', label: '적용 — 【镜头切换原则】 전역 블록', value: '【镜头切换原则】각 阶段은 직전 컷과 겹치지 않는 독립된 장면이다。장면이 바뀔 때 배경·의상·소품·인물 위치가 확실히 전환되며，이전 컷의 인물이나 소품이 다음 컷에 이어지지 않는다。전환(하드컷/크로스페이드) 시점에 화면이 선명하게 새 장면으로 교체된다。' },
+      { k: 'strong', label: '강화 — 무봉제/연속 액션 전용 ⚡확장', value: '【镜头切换原则·强化】각 阶段은 완전히 독립된 장면이며，인물·소품이 컷 사이에 절대 이어지지 않는다。전환 시 배경·조명·의상이 선명하게 교체된다。연속 동작(무봉제)이 필요한 구간은 <매끄러운 생성형 전환>을 명시하되，그 외 컷은 완전 분리를 유지한다。' },
+    ]
+  },
+  /* ============ 그룹 D: 카메라 (어떻게 찍지 — 통합) ============ */
+  {
+    id: 'camera', title: '⑪ 카메라 움직임 (운경)', tag: 'core', type: 'single', group: 'D. 카메라 — 어떻게 찍지', requires: ['t2v','r2v'],
+    desc: '카메라 움직임 스타일 — 한 장면에 카메라 움직임은 한 가지만',
+    options: [
+      { k: 'A', label: 'A. 일상 Vlog — 따라가며 기록', value: '' },
+      { k: 'B', label: 'B. 시네마틱 — 영화 같은 움직임', value: '' },
+      { k: 'C', label: 'C. 원테이크 — 한 번에 끝까지', value: '' },
+      { k: 'D', label: 'D. FPV — 1인칭 시점', value: '' },
+      { k: 'E', label: 'E. 핸드헬드 다큐 — 현장감', value: '' },
+      { k: 'F', label: 'F. 히치콕 줌 — 배경과 주체 반대 움직임 ⚡확장', value: '' },
+      { k: 'G', label: 'G. 항공 촬영 — 하늘에서 내려다봄 ⚡확장', value: '' },
+      { k: 'H', label: 'H. 불릿타임 — 시간이 느려지는 순간 ⚡확장', value: '' },
+      { k: 'I', label: 'I. 리바운드 변속 — 빠름↔느림 리듬 ⚡확장', value: '' },
+    ]
+  },
+  {
+    id: 'angle', title: '⑫ 카메라 각도 (세부)', tag: 'opt', type: 'single', group: 'D. 카메라 — 어떻게 찍지', requires: ['t2v','r2v'],
+    desc: '카메라 높이·보는 각도 — 기본은 운경 프리셋이 정해줌',
+    options: [
+      { k: 'eye',    label: '눈높이', value: '平视' },
+      { k: 'low',    label: '낮은 위치에서 올려보기', value: '低机位仰视' },
+      { k: 'high',   label: '높은 위치에서 내려보기', value: '高机位俯视' },
+      { k: 'top',    label: '위에서 정면 내려다보기', value: '正扣（顶面视角）' },
+      { k: 'fpv',    label: '1인칭 시점', value: '第一人称主观视角' },
+      { k: 'ots',    label: '어깨 너머로 보기', value: '过肩视角' },
+      { k: '3q',     label: '옆으로 45도', value: '四分之三侧视角' },
+      { k: 'floor',  label: '바닥 앵글 — 극저각 ⚡확장', value: '地板仰角（极低视角）' },
+      { k: 'ceiling',label: '천장 앵글 — 극고각 ⚡확장', value: '天花板俯角（极高视角）' },
+    ]
+  },
+  {
+    id: 'optical', title: '⑬ 렌즈 효과 (세부)', tag: 'opt', type: 'multi', group: 'D. 카메라 — 어떻게 찍지', requires: ['t2v','r2v'],
+    desc: '렌즈 효과 (배경 흐림·슬로모션·광각 등)',
+    options: [
+      { k: 'dof',   label: '배경 흐리게', value: '浅景深（背景虚化为柔和色块）' },
+      { k: 'bokeh', label: '배경 불빛 동그랗게', value: '背景光斑形成柔和的圆形散景' },
+      { k: 'flare', label: '태양빛 가로줄', value: '镜头光晕（横向电影感光晕）' },
+      { k: 'slow',  label: '느린 동작', value: '慢动作（85%速度，动作优雅延展）' },
+      { k: 'wide',  label: '화면 가장자리 늘어남', value: '广角镜头，边缘产生轻微的广角畸变' },
+      { k: 'fish',  label: '볼록하게 왜곡', value: '鱼眼镜头（强烈的弧形畸变）' },
+      { k: 'macro', label: '아주 가까운 초접사', value: '微距摄影（极近距离的细节放大）' },
+      { k: 'tilt',  label: '미니어처 — 틸트시프트 ⚡확장', value: '移轴微缩效果（迷你世界感）' },
+      { k: 'zoomb', label: '줌 블러 — 초점 변화 ⚡확장', value: '变焦模糊（镜头聚焦变化）' },
+      { k: 'star',  label: '스타버스트 — 빛 방사 ⚡확장', value: '星芒光斑（点光源放射）' },
+    ]
+  },
+  {
+    id: 'composition', title: '⑭ 화면 배치·구도 (세부)', tag: 'opt', type: 'single', group: 'D. 카메라 — 어떻게 찍지', requires: ['t2v','r2v'],
+    desc: '화면 배치 (3분할·중앙·대각선 등)',
+    options: [
+      { k: 'none',   label: '선택 안 함', value: '' },
+      { k: 'rule3',  label: '3분할 구도', value: '三分构图' },
+      { k: 'center', label: '중앙 구도', value: '中心构图' },
+      { k: 'diag',   label: '대각선 구도', value: '对角线构图' },
+      { k: 'ots2',   label: '과견(어깨너머) 구도', value: '过肩构图' },
+      { k: 'high2',  label: '높은 앵글 구도', value: '高角度俯视构图' },
+      { k: 'sym',    label: '대칭 구도 ⚡확장', value: '对称构图' },
+      { k: 'frame',  label: '프레임 인 프레임 ⚡확장', value: '框式构图（画中画框架）' },
+      { k: 'golden', label: '황금비 구도 ⚡확장', value: '黄金分割构图' },
+      { k: 'circle', label: '원형 구도 ⚡확장', value: '环形构图（环绕聚焦）' },
+    ]
+  },
+  {
+    id: 'transition', title: '⑮ 장면 전환 (세부)', tag: 'opt', type: 'single', group: 'D. 카메라 — 어떻게 찍지', requires: ['t2v','r2v'],
+    desc: '장면 사이 전환 방식 (하드컷·크로스페이드 등)',
+    options: [
+      { k: 'hard',    label: '하드컷 (급전환)', value: '硬切（HARD CUT）' },
+      { k: 'cross',   label: '크로스페이드 (부드럽게)', value: '交叉溶解（叠化）' },
+      { k: 'match',   label: '매치컷 (유사 형태 연결)', value: '匹配剪辑（match cut）' },
+      { k: 'seamless',label: '무봉제 전환 (생성형)', value: '无缝转场（生成式过渡）' },
+      { k: 'zoom',    label: '줌 전환', value: '推拉变焦转场' },
+      { k: 'slide',   label: '슬라이드 ⚡확장', value: '滑动转场（slide）' },
+      { k: 'wipe',    label: '와이프 ⚡확장', value: '擦拭转场（wipe）' },
+      { k: 'fadeblack',label: '페이드 투 블랙 ⚡확장', value: '淡出至黑场（fade to black）' },
+      { k: 'hold',    label: '홀드 — 정지 프레임 ⚡확장', value: '定格帧（画面静止）' },
+      { k: 'whip',    label: '윕 팬 — 빠른 회전 ⚡확장', value: '快速甩镜转场（whip pan）' },
+    ]
+  },
+  /* ============ 그룹 E: 소리 (무슨 소리지) ============ */
+  {
+    id: 'audio', title: '⑯ 소리 종류 (4가지)', tag: 'core', type: 'multi', group: 'E. 소리 — 무슨 소리지',
+    desc: '넣을 소리 종류 — 효과음 / 배경소음 / 음악 / 자막 (여러 개 선택 가능)',
+    options: [
+      { k: 'fx',   label: '효과음', value: '' },
+      { k: 'amb',  label: '배경 소음 (앰비언스)', value: '' },
+      { k: 'mus',  label: '음악', value: '' },
+      { k: 'sub',  label: '자막', value: '' },
+    ]
+  },
+  {
+    id: 'musicgenre', title: '⑰ 배경 음악 장르', tag: 'opt', type: 'single', group: 'E. 소리 — 무슨 소리지', dependsOn: { audio: ['mus'] },
+    desc: '배경 음악 장르 — ⑯에서 "음악"을 선택했을 때만',
+    options: [
+      { k: 'none',     label: '무음', value: '（无背景音乐）' },
+      { k: 'acoustic', label: '어쿠스틱 — 가볍고 따뜻', value: '（轻快的原声吉他音乐，音量很低）' },
+      { k: 'orchestra',label: '오케스트라 — 웅장', value: '（恢弘的管弦乐，音量适中）' },
+      { k: 'hiphop',   label: '힙합 — 리듬감', value: '（节奏感强的嘻哈音乐，音量适中）' },
+      { k: 'lounge',   label: '라운지 — 여유', value: '（夏日喜剧休息室风格音乐，音量很低）' },
+      { k: 'synth',    label: '신스웨이브 — 레트로 전자 ⚡확장', value: '（合成器浪潮风格音乐，音量适中）' },
+      { k: 'jazz',     label: '재즈 — 세련·여유 ⚡확장', value: '（爵士乐，优雅律动，音量适中）' },
+      { k: 'ballad',   label: '발라드 — 서정적 ⚡확장', value: '（抒情民谣风格，温暖平静，音量很低）' },
+      { k: 'beat',     label: '카드박 — 비트에 맞춘 컷 전환 ⚡확장', value: '背景音乐卡点' },
+      { k: 'indie',    label: '인디팝 — 경쾌·산뜻 ⚡확장', value: '（独立流行音乐，轻快清新，音量适中）' },
+      { k: 'classic',  label: '클래식 — 장엄·우아 ⚡확장', value: '（古典管弦乐，庄重优雅，音量适中）' },
+      { k: 'rnb',      label: 'R&B — 부드러운 리듬 ⚡확장', value: '（R&B风格音乐，律动柔和，音量适中）' },
+      { k: 'gugak',    label: '국악 — 가야금·대금·판소리 ⚡확장', value: '（韩国传统国乐，伽倻琴/大笒/板索里风格，音量适中）' },
+      { k: 'kpop',     label: 'K-POP — 대중적 신나는 비트 ⚡확장', value: '（K-POP流行音乐，节奏明快有活力，音量适中）' },
+    ]
+  },
+  {
+    id: 'fxpreset', title: '⑱ 효과음 세트', tag: 'opt', type: 'multi', group: 'E. 소리 — 무슨 소리지', dependsOn: { audio: ['fx'] },
+    desc: '효과음 세트 (자연·도시·일상·기계 등) — ⑯에서 "효과음"을 선택했을 때만',
+    options: [
+      { k: 'nature', label: '자연 — 파도·새·바람', value: '<海浪声><鸟鸣><风声>' },
+      { k: 'city',   label: '도시 — 차량·건설·인파', value: '<车辆经过声><施工声><人群声>' },
+      { k: 'daily',  label: '일상 — 전화·발소리·문', value: '<电话铃声><脚步声><开门声>' },
+      { k: 'tech',   label: '기계 — 전자음·모터', value: '<电子提示音><马达声>' },
+      { k: 'animal', label: '동물 — 새·짐승 ⚡확장', value: '<鸟群振翅声><兽鸣声><虫鸣声>' },
+      { k: 'sports', label: '스포츠 — 휘슬·관중 ⚡확장', value: '<哨声><观众欢呼声><球击打声>' },
+      { k: 'magic',  label: '판타지 — 마법·불꽃 ⚡확장', value: '<法术轰鸣声><火焰噼啪声><能量嗡鸣声>' },
+      { k: 'storm',  label: '천둥·비 — 폭풍 ⚡확장', value: '<雷声><雨声>' },
+      { k: 'combat', label: '전투 — 칼·타격 ⚡확장', value: '<剑鸣声><击打声>' },
+      { k: 'vehicle',label: '차량 — 엔진·경적 ⚡확장', value: '<引擎声><喇叭声>' },
+    ]
+  },
+  /* ============ 그룹 F: 마무리 (어떻게 마무리할지) ============ */
+  {
+    id: 'quality', title: '⑲ 화질·분위기', tag: 'core', type: 'multi', group: 'F. 마무리 — 화질·스타일·제약',
+    desc: '화질·분위기 결정어 — 마지막에 영상의 전체 톤을 다듬는 역할',
+    options: [
+      { k: 'hd',   label: '고화질+영화 느낌', value: '高清，细节丰富，电影质感' },
+      { k: 'nat',  label: '자연색·부드러운 빛', value: '色彩自然，光影柔和' },
+      { k: 'skin', label: '실제 피부 질감', value: '皮肤质感真实不油腻' },
+      { k: 'warm', label: '따뜻한 색감', value: '暖色调' },
+      { k: 'grain', label: '필름 그레인 — 영화 입자 ⚡확장', value: '胶片颗粒质感' },
+      { k: 'clean', label: '클린 룩 — 깔끔·선명 ⚡확장', value: '干净利落的清晰画面' },
+      { k: 'neg',  label: '네거티브 감소 — 저대비 부드러움 ⚡확장', value: '减少高对比，柔和低反差' },
+      { k: 'vignette', label: '비네트 — 가장자리 어둡게 ⚡확장', value: '轻微暗角，聚焦画面中心' },
+      { k: 'hdr',  label: 'HDR — 넓은 명암 표현 ⚡확장', value: '高动态范围，明暗细节丰富' },
+      { k: 'contrast', label: '고대비 — 강렬한 명암 ⚡확장', value: '高对比度，明暗分明' },
+      { k: 'pastel', label: '파스텔 톤 — 부드러운 색감 ⚡확장', value: '柔和粉彩色调，低饱和' },
+    ]
+  },
+  {
+    id: 'negaudio', title: '⑲-2 만들지 않을 소리', tag: 'opt', type: 'single', group: 'F. 마무리 — 화질·스타일·제약',
+    desc: '만들지 않을 소리 제어 — BGM 없음·완전 무음·대사 자막 없음',
+    options: [
+      { k: 'none',   label: '제한 없음', value: '' },
+      { k: 'nobgm',  label: 'BGM 없음 — 환경음·동작음만', value: '无 bgm，只生成环境音和动作音' },
+      { k: 'silent', label: '완전 무음 — 어떤 소리도 금지', value: '不要任何声音' },
+      { k: 'noidia', label: '대사 자막 없음 — 배경음악 유지', value: '不额外加入对白字幕' },
+    ]
+  },
+  {
+    id: 'stylepreset', title: '⑳ 영상 스타일 — 실사·애니', tag: 'opt', type: 'single', group: 'F. 마무리 — 화질·스타일·제약', requires: ['t2v','r2v'],
+    desc: '영상의 전체 시각 스타일 (실사·2D 애니·3D·사이버펑크 등)',
+    options: [
+      { k: 'none',   label: '선택 안 함', value: '' },
+      { k: 'docu',   label: '실사 다큐 — 실제 사람·실사', value: '真人实拍彩色电影正片，写实照片级质感' },
+      { k: 'anime2d',label: '2D 애니메이션', value: '2D日系动画风格' },
+      { k: 'cg3d',   label: '3D CG — 3D 애니', value: '3D CG动画风格' },
+      { k: 'cyber',  label: '사이버펑크', value: '赛博朋克冷蓝紫调' },
+      { k: 'retro',  label: '레트로 필름', value: '复古胶片质感' },
+      { k: 'vlog',   label: '일상 Vlog', value: '日常Vlog自然质感' },
+      { k: 'pixel',  label: '픽셀 아트 — 8bit ⚡확장', value: '像素艺术风格（8bit游戏风）' },
+      { k: 'stopmotion', label: '스톱모션 ⚡확장', value: '定格动画风格（粘土/手工质感）' },
+    ]
+  },
+  {
+    id: 'stylelock', title: '㉑ 스타일 고정', tag: 'opt', type: 'single', group: 'F. 마무리 — 화질·스타일·제약', requires: ['t2v','r2v'],
+    desc: '스타일을 고정하는 방법 — 실사면 "애니 느낌 금지"처럼 반대 스타일을 막아줌',
+    options: [
+      { k: 'forward',   label: '정방향만 — 스타일어로 지정', value: '' },
+      { k: 'both',      label: '정방향+역방향 — 【严格排除】으로 반대 스타일 금지 (추천)', value: '' },
+      { k: 'refimg',    label: '참조 이미지 — 스타일 기준 이미지 첨부', value: '' },
+    ]
+  },
+  {
+    id: 'lighting', title: '㉒ 조명·분위기', tag: 'opt', type: 'single', group: 'F. 마무리 — 화질·스타일·제약', requires: ['t2v','r2v'],
+    desc: '조명·분위기 (골든아워·네온·스튜디오 등)',
+    options: [
+      { k: 'none',   label: '선택 안 함', value: '' },
+      { k: 'golden', label: '골든아워 — 노을빛', value: '黄金时刻光线（暖色低角度阳光）' },
+      { k: 'neon',   label: '네온 — 도시 야간', value: '霓虹灯光氛围' },
+      { k: 'studio', label: '스튜디오 — 부드러운 조명', value: '摄影棚柔光' },
+      { k: 'natural',label: '자연광 — 부드럽게', value: '柔和自然光' },
+      { k: 'lowkey', label: '저조도 — 어둡고 묵직', value: '低光照（暗调氛围）' },
+      { k: 'blue',   label: '블루아워 — 푸른 황혼', value: '蓝调时刻（暮色蓝）' },
+      { k: 'lamp',   label: '따뜻한 실내등 ⚡확장', value: '暖色台灯灯光（温馨室内）' },
+      { k: 'fluoro', label: '차가운 형광등 ⚡확장', value: '冷色荧光灯光（办公室）' },
+      { k: 'candle', label: '촛불 — 따뜻한 흔들림 ⚡확장', value: '烛光（温暖摇曳的暖光）' },
+      { k: 'moon',   label: '달빛 — 차가운 은은함 ⚡확장', value: '月光（清冷柔和的银白色光线）' },
+      { k: 'spot',   label: '스포트라이트 — 한 사람을 비춤 ⚡확장', value: '聚光灯（突出主体的舞台式照明）' },
+      { k: 'window', label: '창문 빛 — 자연스러운 역광 ⚡확장', value: '窗户光（透过窗棂的自然光束）' },
+    ]
+  },
+  {
+    id: 'textgen', title: '㉓ 화면 글자', tag: 'opt', type: 'single', group: 'F. 마무리 — 화질·스타일·제약',
+    desc: '화면에 글자 넣기 (광고 문구·자막·말풍선) — 글자는 AI가 틀리기 쉬우니 최소화 권장. 폰 화면은 빈 화면으로 두고 나중에 합성',
+    requires: ['t2v','r2v'],
+    options: [
+      { k: 'none',    label: '글자 없음', value: '' },
+      { k: 'slogan',  label: '광고 문구 — 화면 중앙', value: '' },
+      { k: 'cta',     label: '클릭 유도 (CTA) — 구독·구매 버튼 문구 ⚡확장', value: '' },
+      { k: 'subtitle',label: '자막 — 하단, 소리와 동기화', value: '' },
+      { k: 'bubble',  label: '말풍선 — 캐릭터 옆', value: '' },
+      { k: 'both',    label: '자막+말풍선 동시 ⚡확장', value: '' },
+    ]
+  },
+  /* ============ 그룹 G: 참조 재료 (R2V 전용 — 작업 유형=참조일 때만) ============ */
+  {
+    id: 'refmat', title: '㉔ 참고 자료 (참조 전용)', tag: 'r2v', type: 'multi', group: 'G. 참조 재료 (R2V 전용)',
+    desc: '참고할 이미지·영상·음성 선택 — 업로드 순서대로 번호(图N/视频N/音频N)가 자동 부여됩니다. 제한: 이미지 30장·영상 10개·오디오 10개 (총 50개) · 실사 얼굴 참조 업로드 불가(공식) · 주체는 1~5개 권장 · 오디오 단독 참조 가능(2.5)',
+    options: [
+      { k: 'imgchar',   label: '이미지 — 인물 외형·얼굴', value: '图N 图片参考：定义<主体>的外貌、发型与服装' },
+      { k: 'imgscene',  label: '이미지 — 배경·장면·스타일', value: '图N 图片参考：定义场景的空间、材质与光线' },
+      { k: 'imgmulti',  label: '이미지 — 여러 주체 각각 바인딩', value: '图N 图片参考：分别定义不同主体' },
+      { k: 'imgview',   label: '이미지 — 같은 대상의 다중 뷰 (2.5 전용)', value: '图N 图片参考：同一主体的多视角图，分别定义正面/侧面/背面，全程保持同一主体' },
+      { k: 'videoact',  label: '영상 — 동작·운경·리듬', value: '视频N 视频参考：定义动作、运镜与节奏' },
+      { k: 'videofx',   label: '영상 — 특수효과·스타일', value: '视频N 视频参考：定义特效与画面风格' },
+      { k: 'audiovoice',label: '음성 — 목소리·음색', value: '音频N 音频参考：定义角色的音色与语气' },
+    ]
+  },
+  {
+    id: 'storyboard', title: '㉕ 콘티 그림 분할 (참조 전용)', tag: 'r2v', type: 'single', group: 'G. 참조 재료 (R2V 전용)',
+    desc: '여러 장면을 한 장의 콘티 그림으로 설계 — 15칸 이하·선화/막대인간 권장',
+    options: [
+      { k: 'none',   label: '사용 안 함', value: '' },
+      { k: 'grid',   label: '다중 그리드 콘티 사용 (15칸 이하·선화 권장)', value: '参考分镜图的镜头顺序与大致构图，按从左到右、从上到下的顺序读取；不采用图中的线稿画风与文字标注' },
+      { k: 'line',   label: '선화/막대인간 콘티 (추천)', value: '火柴人/线稿分镜，按分镜顺序完整描述情节，补齐分镜图中没有的信息' },
+    ]
+  },
+  {
+    id: 'subjectdef', title: '㉖ 주인공 지정 (참조 전용)', tag: 'r2v', type: 'single', group: 'G. 참조 재료 (R2V 전용)',
+    desc: '참고 이미지의 인물을 주인공으로 쓰는 방법 — 2.0 문서 추천 구성: 얼굴大头照(특징) + 전신全身照(의상·체형) · 주체 ≤ 4명 권장 · 다중 뷰 금지(2.0)',
+    options: [
+      { k: 'single',   label: '단일 주체 — 주인공 1명', value: '将<图片N>中的主体定义为主角，全程保持同一主体' },
+      { k: 'multi1',   label: '한 주체에 여러 재료 — 얼굴(大头照)+전신(全身照) ⚡2.0추천', value: '将<图片N>中的面部特征（大头照）与<图片N+1>中的妆造体态（全身照）合并定义为同一主体，全程保持同一主体' },
+      { k: 'multisub', label: '주인공마다 재료 지정', value: '主体1@<图片N>，主体2@<图片N+1>，多主体逐一列清映射关系，分别保持各自特征' },
+    ]
+  },
+  {
+    id: 'whitemodel', title: '㉗ 흰 3D 모형 (참조 전용)', tag: 'r2v', type: 'single', group: 'G. 참조 재료 (R2V 전용)',
+    desc: '흰색 3D 모형 영상으로 움직임·구도를 먼저 설계 — 동작·카메라·소리 흐름을 참조',
+    options: [
+      { k: 'none',   label: '사용 안 함', value: '' },
+      { k: 'coarse', label: '동작·동선·기종 골격만', value: '白模参考：仅提供动作路径、机位、运镜、切镜、光影变化、声音节奏等时序信息' },
+      { k: 'fine',   label: '완성 구조 + 재질·스타일 변경', value: '白模参考：保持结构、动作与镜头，重渲染材质与视觉风格' },
+    ]
+  },
+  {
+    id: 'keyframe', title: '㉘ 핵심 장면 (참조 전용)', tag: 'r2v', type: 'single', group: 'G. 참조 재료 (R2V 전용)',
+    desc: '꼭 넣고 싶은 장면 이미지 지정 — 그 순서대로 진행하거나 시작·끝 프레임만 고정',
+    options: [
+      { k: 'none',  label: '사용 안 함', value: '' },
+      { k: 'kf',    label: 'N장 순서대로 고정 (첫 문장에 명시)', value: '以图片1至图片N的顺序作为关键帧' },
+      { k: 'fl',    label: '시작·끝 프레임만', value: '' },
+    ]
+  },
+];
+
+/* ================================================================
+   렌더링
+   ================================================================ */
+const state = {};   // axisId -> Set(선택된 option key)
+AXES.forEach(a => state[a.id] = new Set());
+
+const slotsEl = document.getElementById('slots');
+
+/* ========== 추가 UI 상태 (검색 필터 · 필수 축만) ========== */
+let searchQuery = '';
+let coreOnly = false;
+
+/* 헬퍼: 축 옵션 label 조회 (요약바/배지용) */
+function axisLabel(axisId, key) {
+  const a = AXES.find(x => x.id === axisId);
+  const o = a && a.options.find(x => x.k === key);
+  return o ? o.label : key;
+}
+
+function renderSlots() {
+  const curTask = state.task ? Array.from(state.task)[0] : '';
+  const isR2V = curTask === 'r2v';
+  const q = searchQuery.trim().toLowerCase();
+  let lastGroup = '';
+
+  /* ========== R2V 참조 슬롯 UI (refmat — 선택 순서 = 업로드 순서 번호) ========== */
+  function renderRefmatSlots(a, curTask, lockFinal) {
+    const TYPE_META = {
+      imgchar: { t: '이미지', icon: '🖼️' }, imgscene: { t: '이미지', icon: '🖼️' },
+      imgmulti: { t: '이미지', icon: '🖼️' }, imgview: { t: '이미지', icon: '🖼️' },
+      videoact: { t: '영상', icon: '🎬' }, videofx: { t: '영상', icon: '🎬' },
+      audiovoice: { t: '오디오', icon: '🎵' },
+    };
+    const order = Array.from(state.refmat || []);          // 선택 순서 = 번호 순서
+    let imgN = 0, vidN = 0, audN = 0;
+    const slots = order.map(k => {
+      const meta = TYPE_META[k] || { t: '?', icon: '❓' };
+      const label = (a.options.find(o => o.k === k) || {}).label || k;
+      const num = meta.t === '이미지' ? ++imgN : meta.t === '영상' ? ++vidN : ++audN;
+      return `<div class="refmat-slot">
+        <span class="rs-num">${meta.t === '이미지' ? '图' : meta.t === '영상' ? '视频' : '音频'} ${num}</span>
+        <span class="rs-icon">${meta.icon}</span>
+        <span class="rs-label">${label}</span>
+        <button class="rs-del" onclick="toggleOpt('refmat','${k}')" title="제거">✕</button>
+      </div>`;
+    }).join('');
+    return `
+      <div class="refmat-wrap">
+        <div class="refmat-slots">${slots || '<div class="rs-empty">참조 재료 없음 — 아래에서 추가 (선택 순서 = 업로드 번호)</div>'}</div>
+        ${lockFinal ? '' : `
+        <div class="refmat-groups">
+          <div class="rg-title">＋ 추가 (선택 순서대로 图1·视频1·音频1 번호 부여)</div>
+          <div class="rg-chips">
+            ${a.options.map(o => {
+              const meta = TYPE_META[o.k];
+              const sel = state.refmat.has(o.k);
+              return `<button class="rg-chip ${sel ? 'sel' : ''}" onclick="toggleOpt('refmat','${o.k}')">${meta.icon} ${o.label.replace(/^[^—]*—\s*/, '')}</button>`;
+            }).join('')}
+          </div>
+        </div>`}
+        <div class="refmat-note">⚠️ 실사 얼굴 참조 업로드 불가 · 총 50개(이미지 30·영상 10·오디오 10) · 주체 1~5개 권장 · 오디오 단독 참조 가능(2.5)</div>
+      </div>`;
+  }
+  const visible = AXES.filter(a => {
+    // R2V 전용 축: 작업 유형이 '참조(r2v)'일 때만 표시 (기존 로직 유지)
+    if (a.tag === 'r2v' && !isR2V) return false;
+    // 검색 필터: 제목·설명·옵션 라벨 키워드 매칭
+    if (q) {
+      const hay = (a.title + ' ' + a.desc + ' ' + a.options.map(o => o.label).join(' ')).toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    // 필수 축만 보기 토글 (R2V 모드에서는 R2V 축도 포함)
+    if (coreOnly && a.tag !== 'core' && !(a.tag === 'r2v' && isR2V)) return false;
+    return true;
+  });
+
+  slotsEl.innerHTML = visible.map(a => {
+    // requires 의존성: 현재 작업 유형이 요구 목록에 없으면 비활성화 (잠금) — 기존 로직 유지
+    const locked = a.requires && a.requires.length && !a.requires.includes(curTask);
+    // dependsOn 의존성: 부모 축의 특정 옵션이 선택돼야 활성화 (예: 음악 장르 ← audio.mus)
+    let depLocked = false;
+    let depNote = '';
+    if (a.dependsOn) {
+      const unmet = Object.entries(a.dependsOn).some(([pid, keys]) => {
+        const parentSel = state[pid] ? Array.from(state[pid]) : [];
+        return !keys.some(k => parentSel.includes(k));
+      });
+      if (unmet) {
+        depLocked = true;
+        depNote = Object.entries(a.dependsOn)
+          .map(([pid, keys]) => `"${AXES.find(x=>x.id===pid).title.replace(/^[^\s]*\s*/, '')}"에서 ${keys.map(k => (AXES.find(x=>x.id===pid).options.find(o=>o.k===k)||{}).label || k).join('/')} 선택 시`)
+          .join(' 그리고 ');
+      }
+    }
+    const lockFinal = locked || depLocked;
+    const nSel = state[a.id].size;
+    const isReq = a.tag === 'core' && !lockFinal;
+    const miss = isReq && nSel === 0;
+    const groupHtml = a.group && a.group !== lastGroup
+      ? `<div class="group-head">${a.group}</div>`
+      : '';
+    lastGroup = a.group;
+    const countBadge = `<span class="count-badge ${nSel ? 'has' : ''} ${miss ? 'miss' : ''}">선택됨: ${nSel}개${miss ? ' · 미선택!' : ''}</span>`;
+    return `${groupHtml}
+    <div class="axis ${lockFinal ? 'axis-locked' : ''} ${miss ? 'axis-warn' : ''}" data-axis="${a.id}">
+      <div class="axis-head" onclick="${lockFinal ? '' : `toggleAxis('${a.id}')`}" ${lockFinal ? 'style="cursor:not-allowed;opacity:.55"' : ''}>
+        <div class="axis-head-left">
+          <div class="axis-title">
+            ${a.title}
+            <span class="tag ${a.tag}">${a.tag === 'core' ? '필수' : a.tag === 'r2v' ? 'R2V' : '선택'}</span>
+            ${locked ? '<span class="tag lock-tag">🔒 현재 작업 해당 없음</span>' : ''}
+            ${depLocked ? `<span class="tag lock-tag">🔒 ${depNote}</span>` : ''}
+            ${countBadge}
+          </div>
+          <div class="axis-desc">${a.desc}</div>
+        </div>
+        <div class="axis-arrow">▼</div>
+      </div>
+      <div class="axis-body">
+        ${a.id === 'refmat' ? renderRefmatSlots(a, curTask, lockFinal) : `
+        <div class="options ${a.type}">
+          ${a.options.map(o => {
+            // 옵션 단위 잠금: 옵션에 requires가 있으면 현재 작업 유형이 포함돼야 활성화
+            const optLocked = lockFinal || (o.requires && o.requires.length && !o.requires.includes(curTask));
+            const lockLabel = optLocked ? (o.requires ? ` (①에서 ${o.requires.join('/')} 선택 시)` : '') : '';
+            return `
+            <div class="opt ${state[a.id].has(o.k) ? 'selected' : ''} ${optLocked ? 'opt-disabled' : ''}"
+                 onclick="${optLocked ? '' : `toggleOpt('${a.id}','${o.k}')`}" title="${(o.value || '').replace(/"/g, '&quot;')}">
+              <span class="check">✓</span>
+              <span class="k">${o.k}</span> ${o.label}${lockLabel}
+            </div>
+          `}).join('')}
+        </div>`}
+      </div>
+    </div>
+  `}).join('') || '<div class="no-result">🔍 조건에 맞는 축이 없습니다 — 검색어를 바꾸거나 필터를 해제하세요.</div>';
+
+  // 빈 상태 안내 (전체 미선택 시)
+  const hasAny = AXES.some(a => state[a.id].size > 0);
+  const hint = document.getElementById('emptyHint');
+  if (hint) hint.classList.toggle('show', !hasAny);
+
+  renderPrompt();
+  renderSummary();
+}
+
+/* ========== 선택 요약 바 (실시간) ========== */
+function renderSummary() {
+  const bar = document.getElementById('summaryBar');
+  if (!bar) return;
+  const curTask = state.task ? Array.from(state.task)[0] : '';
+  const chips = [];
+  AXES.forEach(a => {
+    if (state[a.id].size === 0) return;
+    const labels = Array.from(state[a.id]).map(k => axisLabel(a.id, k)).join(', ');
+    chips.push(`<span class="chip" title="${a.title}"><em>${a.title}</em><span class="c-txt">${labels}</span></span>`);
+  });
+  const missing = AXES.filter(a => a.tag === 'core'
+    && !(a.requires && a.requires.length && !a.requires.includes(curTask))
+    && state[a.id].size === 0);
+  const warnChips = missing.map(a =>
+    `<span class="chip warn"><em>⚠ 미선택 필수</em><span class="c-txt">${a.title}</span></span>`).join('');
+  const empty = (!chips.length && !warnChips.length)
+    ? '<span class="sb-empty">아직 선택된 축이 없습니다 — 왼쪽 패널에서 시작하세요 ✨</span>'
+    : '';
+  bar.innerHTML = `<span class="sb-label"><span class="dot"></span> 현재 선택</span>${chips.join('')}${warnChips}${empty}`;
+}
+
+function toggleAxis(id) {
+  document.querySelector(`[data-axis="${id}"]`).classList.toggle('collapsed');
+}
+/* dependsOn 정리: 부모 축의 요구 옵션이 없어지면 자식 축 선택값 자동 해제 (선택 착각 방지) */
+function cleanupDependsOn() {
+  AXES.forEach(ax => {
+    if (!ax.dependsOn) return;
+    const unmet = Object.entries(ax.dependsOn).some(([pid, keys]) => {
+      const parentSel = state[pid] ? Array.from(state[pid]) : [];
+      return !keys.some(k => parentSel.includes(k));
+    });
+    if (unmet) state[ax.id].clear();
+  });
+}
+function toggleOpt(axisId, key) {
+  const a = AXES.find(x => x.id === axisId);
+  const s = state[axisId];
+  if (a.type === 'single') { s.clear(); s.add(key); }
+  else { s.has(key) ? s.delete(key) : s.add(key); }
+  cleanupDependsOn();
+  renderSlots();
+}
+
+/* ================================================================
+   프롬프트 조립
+   ================================================================ */
+function sel(axisId) { return Array.from(state[axisId]); }
+
+function buildPrompt() {
+  const task = sel('task')[0] || 't2v';
+  const extra = sel('extra')[0] || 'none';
+  const dur  = sel('duration')[0] || '20s';
+  const lang = sel('lang')[0] || 'ko';
+  const emotions = sel('emotion');
+  const cameras  = sel('camera');
+  const shotsize = sel('shotsize')[0] || 'wide2wide';
+  const angle    = sel('angle')[0] || 'eye';
+  const optics   = sel('optical');
+  const audio    = sel('audio');
+  const quality  = sel('quality');
+  const textgen  = sel('textgen')[0] || 'none';
+  const refmat   = sel('refmat');
+  const storyboard = sel('storyboard')[0] || 'none';
+  const subjectdef = sel('subjectdef')[0] || '';
+  const whitemodel = sel('whitemodel')[0] || 'none';
+  const keyframe   = sel('keyframe')[0] || 'none';
+  const seqMode    = sel('shotseq')[0] || 'ts';
+  const genre      = sel('genre')[0] || 'none';
+  const voice      = sel('voice')[0] || 'soft';
+  const speaker    = sel('speaker');
+  const speakerflow = sel('speakerflow')[0] || 'none';
+  const cutprinciple = sel('cutprinciple')[0] || 'none';
+  const negaudio = sel('negaudio')[0] || 'none';
+  const emotionflow = sel('emotionflow')[0] || 'none';
+  const timeweather = sel('timeweather')[0] || 'none';
+  const composition = sel('composition')[0] || 'none';
+  const transition  = sel('transition')[0] || 'hard';
+  const musicgenre  = sel('musicgenre')[0] || 'none';
+  const fxpreset    = sel('fxpreset');
+  const stylepreset = sel('stylepreset')[0] || 'none';
+  const stylelock   = sel('stylelock')[0] || 'forward';
+  const lighting    = sel('lighting')[0] || 'none';
+
+  // 헬퍼
+  const optVal = (axisId, key) => AXES.find(a=>a.id===axisId).options.find(o=>o.k===key).value;
+  const optLabel = (axisId, key) => AXES.find(a=>a.id===axisId).options.find(o=>o.k===key).label;
+  const negAudioLine = negaudio !== 'none' ? optVal('negaudio', negaudio) : '';
+
+  /* ① 작업 유형 (공식 5종) + ①-2 추가 능력 + ② 장르 */
+  const taskNames = { t2v:'文生视频（텍스트로 새 영상）', r2v:'参考生视频（재료 참조）', edit:'编辑视频（기존 영상 수정）', ext:'延长视频（이어 만들기）', fl:'首尾帧生视频（시작·끝 프레임）' };
+  const taskBlock = `【任务类型】${taskNames[task] || taskNames.t2v}`;
+  const extraNames = { oc:'一键成片（사진 묶어 완성）', tr:'无缝转场（영상 간 자연 연결）', comb:'组合能力（여러 기능 병행）' };
+  const extraBlock = extra !== 'none' && (task === 't2v' || task === 'r2v') ? `\n【额外能力】${extraNames[extra]}` : '';
+  const genreVal = genre !== 'none' ? optVal('genre', genre) : '';
+
+  // 🔒 有锁定(편집/연장/首尾帧) 규칙: ratio=adaptive·duration 고정 + 트리거 키워드 (2607688)
+  const lockedTask = (task === 'edit' || task === 'ext' || task === 'fl');
+  const triggerNote = task === 'edit'
+    ? '【触发关键词】编辑视频、增加/加上、删除/去掉、修改/替换/改成 (2607688 两级判定)\n【音频编辑】BGM 제거 시 대사·口型·환경음·동작음 보존 명시 (2607689 删掉背景音乐 예시)'
+    : task === 'ext'
+      ? '【触发关键词】向前/向后延长、延续、续写 (2607688 两级判定)'
+      : task === 'fl'
+        ? '【触发关键词】首帧/首尾帧 — content.role = first_frame/last_frame'
+        : '';
+  const lockNote = lockedTask
+    ? '【有锁定】ratio=adaptive(强制) · duration=' + (task === 'edit' ? '-1(强制)' : '可自定[4,30]') + (task === 'ext' ? ' · 延长输出音量与输入可能有轻微差异（2.5 자가 생성 영상 연장 시 변화 작음 — 2607689）' : '') + ' — 违反时 InvalidParameter.TaskTypeConstraint 异步报错'
+    : '';
+
+  /* ③ 장면 분할 */
+const stageLabel = (seqMode === 'n' || seqMode === 'mix') ? '镜头' : '阶段';
+
+  /* R2V 참조 재료 — 타입별 업로드 순서 번호 자동 부여 (공식 규칙: 图N/视频N/音频N) */
+  const refLines = [];
+  if (refmat.length) {
+    let imgN = 0, vidN = 0, audN = 0;
+    refmat.forEach(k => {
+      const base = optVal('refmat', k);
+      let line = base;
+      if (base.startsWith('图N')) line = base.replace('图N', '图 ' + (++imgN));
+      else if (base.startsWith('视频N')) line = base.replace('视频N', '视频 ' + (++vidN));
+      else if (base.startsWith('音频N')) line = base.replace('音频N', '音频 ' + (++audN));
+      if (line) refLines.push(line);
+    });
+  }
+  const sbLine = storyboard !== 'none' ? `【多宫格分镜】${optVal('storyboard', storyboard)}` : '';
+  const subjLine = subjectdef ? `【主体定义】${optVal('subjectdef', subjectdef) || optLabel('subjectdef', subjectdef)}` : '';
+  const wmLine = whitemodel !== 'none' ? `【白模参考】${optVal('whitemodel', whitemodel)}` : '';
+  const kfLine = keyframe !== 'none' ? `【关键帧】${optVal('keyframe', keyframe) || optLabel('keyframe', keyframe)}` : '';
+  /* 참조 이미지 개수 → 공식 지칭 선언 (업로드 순서 번호 — 2607689) */
+  const refCountLine = contentInput.refcount
+    ? `【素材指代】共 ${contentInput.refcount} 张参考图片，按上传顺序编号：${Array.from({length: Math.min(parseInt(contentInput.refcount,10)||0, 30)}, (_, i) => '图 ' + (i+1)).join('、')}，每个素材进行文本绑定。`
+    : '';
+  /* 주체 바인딩 매트릭스 → 공식 매핑 문장 (2607689: img1-2 是人物 1，对应音频 1) */
+  const subjMapLine = (contentInput.subjects || []).some(s => s.name && s.img)
+    ? `【多主体映射】${contentInput.subjects.filter(s => s.name && s.img).map((s, idx) => {
+        const imgRef = s.img.includes('-') || s.img.includes('至') ? `img${s.img.replace(/-/g, '-')}` : `图片 ${s.img}`;
+        const audRef = s.aud ? `，对应音频 ${s.aud}` : '';
+        const roleRef = s.role ? `（${s.role}）` : '';
+        return `${s.name}${roleRef}：${imgRef}${audRef}`;
+      }).join('；')}。`
+    : '';
+  const r2vBlock = task === 'r2v' ? [...(refCountLine ? [refCountLine] : []), ...(subjMapLine ? [subjMapLine] : []), ...refLines, sbLine, subjLine, wmLine, kfLine].filter(Boolean).join('\n') : '';
+
+  /* ④ 인물·대사 + ⑤ 말투 */
+  const emoText = emotions.length
+    ? `整体情绪：${emotions.map(k => optVal('emotion', k)).join('；')}。`
+    : '';
+  const voiceText = optVal('voice', voice) || '语气温柔舒缓，语速缓慢';
+  /* 복수 화자 블록: 화자 N명 역할+특성 → 【人物声音设定】 자동 생성 (v3 드라마 패턴) */
+  const spCount = speakerflow === '2' ? 2 : speakerflow === '3' ? 3 : speakerflow === '4' ? 4 : 0;
+  let spBlock = '';
+  if (spCount > 0) {
+    const spLines = [];
+    for (let i = 1; i <= spCount; i++) {
+      const roleK = sel('sp' + i + '_role')[0];
+      const chars = sel('sp' + i + '_char');
+      if (roleK && chars.length) {
+        const role = optVal('sp' + i + '_role', roleK);
+        const trait = chars.map(k => optVal('sp' + i + '_char', k)).join('，');
+        spLines.push(`화자 ${role}（${trait}）`);
+      }
+    }
+    if (spLines.length) {
+      spBlock = `【人物声音设定】${spLines.join('\n')}\n전역에서 ${spLines.length}개의 목소리가 서로 섞이지 않게 유지。`;
+    }
+  }
+  const speakerLine = spCount > 0 ? spBlock : (speaker.length
+    ? `【人物声音设定】${speaker.map(k => optVal('speaker', k)).join('，')} — 全程保持该声线，多个声音不混合。`
+    : '');
+  const cutLine = cutprinciple !== 'none' ? optVal('cutprinciple', cutprinciple) : '';
+  const dialogLine = lang !== 'none'
+    ? `${optVal('lang', lang)}，${voiceText}。她说：{고양이야, 안녕?}`
+    : '人物自然闭口，无旁白、无对话，只保留指定环境音与音效，画面不显示字幕或标牌。';
+
+  /* ⑧ 감정 전환 4단계 */
+  const flowLine = emotionflow === 'flow'
+    ? '【情绪转折】整体情绪从<시작 감정>转为<끝 감정>。发生<트리거 사건>后，<주체>先出现<즉시 관찰 가능한 반응>。随后，<눈/미간/입/호흡/시선/손동작>逐渐<변화>。最终，<주체>以<표현>表达<목표 감정>。'
+    : emotionflow === 'arc'
+      ? optVal('emotionflow', 'arc')
+      : '';
+
+  /* ⑤ 화면 글자 */
+  const textLine = textgen === 'slogan'
+    ? '【文字生成】广告语：「<文案>」+ 出现时机 + 出现位置 + 出现方式，文字特征（颜色、风格）。'
+    : textgen === 'cta'
+      ? '【文字生成】CTA按钮文案：「<CTA 문구>」—— 화면 하단에 클릭 유도 버튼처럼 표시，出现时机 + 出现位置 + 出现方式，文字特征（颜色、风格）。'
+      : textgen === 'subtitle'
+        ? '【文字生成】字幕：画面底部出现字幕，字幕内容为"<내용>"，字幕需与音频节奏完全同步。'
+        : textgen === 'bubble'
+          ? '【文字生成】气泡台词：「角色」说："<대사>"，角色说话时周围出现气泡，气泡里写着台词。'
+          : textgen === 'both'
+            ? '【文字生成】画面底部出现字幕（与音频节奏同步）+ 气泡台词：「角色」说："<대사>"，气泡里写着台词。'
+            : '';
+
+  /* ⑥ 샷 크기 아크 */
+  const shotArcMap = {
+    wide2wide: ['全景', '中景', '特写', '全景（首尾呼应）'],
+    close2wide: ['特写', '中景', '全景'],
+    wide2close: ['全景', '中景', '特写'],
+    bust: ['头像', '胸像', '半身像', '全身像'],
+    wide2bust: ['全景', '特写'],
+    bust2wide: ['特写', '全景'],
+    extreme: ['大远景', '远景', '全景'],
+    close2bust: ['特写', '胸像'],
+    wmcm: ['全景', '中景', '特写', '中景'],
+  };
+  const shotArc = shotArcMap[shotsize] || shotArcMap.wide2wide;
+
+  /* ⑦ 카메라 + ⑭ 구도 + ⑮ 전환 */
+  const angleText = optVal('angle', angle) || '平视';
+  const compText = composition !== 'none' ? optVal('composition', composition) : '';
+  const transText = optVal('transition', transition) || '硬切';
+  const camSeqMap = {
+    A: ['全景平视，手持缓慢跟随，保持约三米距离', '低机位，缓慢推近至近景，目标锁定她与猫咪之间', '固定特写，浅景深背景完全虚化', '固定广角，与开场同构'],
+    B: ['慢速推轨（slow dolly-in）', '20度弧线环绕（arc orbit）', '固定中景，镜头呼吸感', '慢速后拉（pull-back）'],
+    C: ['一镜到底：镜头连续跟随主体，无剪辑', '一镜到底：持续跟随，景别随距离自然变化', '一镜到底：保持同机位推进', '一镜到底：完整收尾，无剪辑'],
+    D: ['FPV第一人称：镜头以她的视角穿行', 'FPV：跟随主体移动，视线高度一致', 'FPV：缓速推进，保持第一人称', 'FPV：第一人称视角收尾'],
+    E: ['手持晃动+快速硬切，纪录感', '手持跟随，现场纪实感', '手持微晃，保持观察感', '手持稳定，纪实收尾'],
+    F: ['希区柯克变焦：背景推近、主体放大（紧张感）', '希区柯克变焦：持续推拉，主体保持居中', '希区柯克变焦：背景与主体同步变化', '希区柯克变焦：稳定收尾，张力释放'],
+    G: ['航拍：高空俯瞰，缓慢推进', '航拍：环绕主体，鸟瞰视角', '航拍：拉升后下降，全景展开', '航拍：缓速拉升，远景收尾'],
+    H: ['子弹时间：慢速环绕定格瞬间', '子弹时间：周围时间减速，主体慢动作', '子弹时间：360度缓慢环绕', '子弹时间：恢复正常速度收尾'],
+    I: ['回弹变速：先快后缓再快（弹性节奏）', '回弹变速：动作回弹，节奏起伏', '回弹变速：速度交错，强调冲击', '回弹变速：缓速收尾，节奏归稳'],
+  };
+  const camSeq = camSeqMap[cameras[0]] || camSeqMap.A;
+  const optLine = optics.length ? optics.map(o=>optVal('optical',o)).join('，') : '';
+
+  /* ⑩ 시간대·날씨 */
+  const twText = timeweather !== 'none' ? optVal('timeweather', timeweather) : '';
+
+  const stageMap = { '10s': 3, '15s': 3, '20s': 4, '30s': 5, 'auto': 4 };
+  const timeSlotsMap = {
+    '10s': ['0-3','3-6','6-10'],
+    '15s': ['0-4','4-9','9-15'],
+    '20s': ['0-4','4-9','9-14','14-20'],
+    '30s': ['0-5','5-12','12-20','20-25','25-30'],
+    'auto': ['0-4','4-9','9-14','14-20'],
+  };
+const stageCount = stageMap[dur] || 4;
+const timeSlots = timeSlotsMap[dur] || timeSlotsMap['20s'];
+const timeNote = seqMode === 'ts' ? `（时间控制：${timeSlots.map(s => s + '秒').join('→')}…连续区间）`
+  : seqMode === 'point' ? '（时间控制：在第X秒指定事件）'
+  : seqMode === 'rel' ? '（时间控制：相对时间，如"按下按钮3秒后"）'
+  : seqMode === 'mix' ? '（时间控制：镜头N + 时间区间并用）'
+  : '（时间控制：以阶段划分，不指定精确秒数）';
+  const seqNames = (seqMode === 'n' || seqMode === 'mix') ? (i) => (i+1) : (i) => '一二三四五'[i];
+
+  let stages = '';
+  for (let i = 0; i < stageCount; i++) {
+    const tl = (contentInput.timeline && contentInput.timeline[i]) || {};
+    const emoHere = (i === 0 || i === 2) && emotions.length
+      ? `情绪外化：${emotions.map(k => optVal('emotion', k)).join('；')}。`
+      : '';
+    const timeTag = (seqMode === 'ts' || seqMode === 'mix') ? `(${timeSlots[i]}秒)` : '';
+    const twHere = (i === 0 && twText) ? `场景：<人物/场景/初始状态>。${twText}。` : '场景：<人物/场景/初始状态>。';
+    const compHere = (i === 0 && compText) ? `构图：${compText}。` : '';
+    /* 장면 타임라인 반영 (구간별 입력 우선) */
+    const hookHere = (i === 0 && contentInput.hook)
+      ? `【开头3秒钩子】${contentInput.hook}（强烈吸引眼球，保持观看）。\n`
+      : '';
+    const sceneHere = tl.scene ? `动作：${tl.scene}。` : '动作：<主要动作 — 肢体部位+程度+速度>。';
+    const camHere = tl.cam ? `运镜：${tl.cam}。` : `运镜：${camSeq[i] || camSeq[0]}。`;
+    const dialogHere = tl.dialog
+      ? `对话：{${tl.dialog}}。`
+      : (i === 1 ? dialogLine : '');
+    stages += `${hookHere}【${stageLabel}${seqNames(i)}】${timeTag}${i===0?timeNote:''}
+ 景别：${shotArc[i] || shotArc[shotArc.length-1]}。机位：${angleText}。${compHere}
+${twHere}
+${sceneHere}
+${camHere}（1镜头仅1种运镜 — ②③规则）
+${optLine ? `光学：${optLine}` : ''}
+${emoHere}
+${dialogHere}
+结束状态：<画面可见的结束状态>。切至<下一机位>（${transText}）。
+
+`;
+  }
+
+  /* ⑧ 사운드 + ⑰ 음악 + ⑱ 효과음 */
+  const fxPresetLine = fxpreset.length ? fxpreset.map(k=>optVal('fxpreset',k)).join('') : '';
+  const fx = audio.includes('fx') ? (fxPresetLine || '<音效列表>') : '';
+  const amb = audio.includes('amb') ? '环境音：<各场景环境音>' : '';
+  const musVal = musicgenre !== 'none' ? optVal('musicgenre', musicgenre) : '（<描述>，音量很低）';
+  const musDurMap = { '10s': '1至9秒', '15s': '1至14秒', '20s': '1至18秒', '30s': '1至25秒', 'auto': '1至18秒' };
+  const musDur = musDurMap[dur] || '1至18秒';
+  const mus = audio.includes('mus') ? `音乐：${musVal}，播放于${musDur}` : '';
+
+  /* ⑨ 화질 + ⑳ 시각스타일 + ㉑ 스타일고정 + ㉒ 조명 */
+  const qText = quality.map(k => optVal('quality', k)).join('，');
+  const styleText = stylepreset !== 'none' ? optVal('stylepreset', stylepreset) : '<风格一句话>';
+  const lightText = lighting !== 'none' ? optVal('lighting', lighting) : '光影方向：<如左上>';
+
+  // ㉑ 스타일 고정: 역방향 【严格排除】 — 선택한 스타일에 따라 반대 스타일 자동 금지 (공식 2607689)
+  const styleExcludes = {
+    docu:   '黑白、单色、灰度、去色；手绘、素描、线稿、插画、漫画、动画；塑料 CG、油腻过曝 CG；玩偶感、移轴微缩',
+    anime2d:'真人实拍、写实摄影、3D CG渲染、照片级质感',
+    cg3d:   '真人实拍、写实摄影、2D平涂、手绘线稿',
+    cyber:  '复古胶片、日系清新、自然纪实',
+    retro:  '赛博朋克、高饱和霓虹、日系清新',
+    vlog:   '电影级调色、科幻特效、动画渲染',
+    pixel:  '真人实拍、写实摄影、3D CG渲染、手绘水彩',
+    stopmotion: '真人实拍、写实摄影、3D CG渲染、2D平涂、流畅运动',
+  };
+  const styleLockNote = stylelock === 'both' && stylepreset !== 'none' && styleExcludes[stylepreset]
+    ? `【严格排除】${styleExcludes[stylepreset]}`
+    : stylelock === 'refimg'
+      ? '【风格参考】以参考图片/视频的风格为准，其余设定保持'
+      : '';
+
+  /* ⑩ 파라미터 */
+  const p_mode = document.getElementById('p_mode').value;
+  const p_model = document.getElementById('p_model').value;
+  const p_res = document.getElementById('p_res').value;
+  const p_ratio = document.getElementById('p_ratio').value;
+  const p_dur = document.getElementById('p_dur').value;
+  const p_audio = document.getElementById('p_audio').value;
+  const p_fmt = document.getElementById('p_fmt').value;
+  const p_wm = document.getElementById('p_wm').value;
+  const p_ret = document.getElementById('p_ret').value;
+  const suffixMap = { '720p':'--rs 720p', '480p':'--rs 480p' };
+  const ratioSuffix = p_ratio === 'adaptive' ? '--rt adaptive' : `--rt ${p_ratio}`;
+  const durSuffix = p_dur === '-1' ? '--dur -1' : `--dur ${p_dur}`;
+  const fmtNote = (task === 'edit' || task === 'ext') ? '\n(※ 编辑/延长 시 output_format=mov 권장 — H.264+yuv444p+PCM, 声画一致性 2607689)' : '';
+  const paramBlock = p_mode === 'suffix'
+    ? `═══ 生成参数（구방식 — 提示词 끝에 접미사로 추가, 2298881）═══
+프롬프트 끝에 추가: ${suffixMap[p_res]} ${ratioSuffix} ${durSuffix} --wm ${p_wm==='true'?'true':'false'}
+(※ 구방식은 약검증 — 오류 시 무시됨. 2.5는 request body 권장)
+model=${p_model} | generate_audio=${p_audio} | output_format=${p_fmt} | return_last_frame=${p_ret}${fmtNote}`
+    : `═══ 生成参数（写在提示词之外 — API/页面设置）═══
+model=${p_model}
+resolution=${p_res} | ratio=${p_ratio} | duration=${p_dur} | generate_audio=${p_audio}
+output_format=${p_fmt} | watermark=${p_wm} | return_last_frame=${p_ret}
+(※ Seedance 2.5 不支持 seed/camera_fixed — 仅 1.5 pro 及以下)${fmtNote}`;
+
+  const genHead = genreVal ? `${genreVal}，` : '';
+
+  let out = `${taskBlock}${extraBlock}
+${triggerNote ? triggerNote + '\n' : ''}${lockNote ? lockNote + '\n' : ''}${r2vBlock ? r2vBlock + '\n' : ''}
+【生成目标】 ← ① 一句话概述 (②③: 先锁定"谁"在"干什么")
+生成一段${genHead}<类型>风格的<${dur === 'auto' ? '-1' : dur}>短视频。核心主体是<主体>，主要事件是<事件概要>。${emoText}
+
+${cutLine ? cutLine + '\n' : ''}${speakerLine ? speakerLine + '\n' : ''}${flowLine ? flowLine + '\n' : ''}${textLine ? textLine + '\n' : ''}
+${stages}【声音总则】 ← 每阶段의 소리 4레인 통합 (②③: 音频信息属于镜头内描述)
+对话：${lang==='none'?'无 — 人物只说口型':'有 — <台词说明>，口型与台词精准对位（립싱크）'}。
+音效：${fx || '<所需音效>'}
+${amb || '环境音：<所需环境音>'}
+${mus || '音乐：（<如需音乐>）'}。结尾最后1秒环境音渐弱，随后0.5秒静音。
+
+【画质·风格·约束】 ← ②③: "最后用风格、画质和约束条件把结果收紧" — 본문 뒤에 배치
+画质：${qText || '高清，细节丰富，电影质感，色彩自然，光影柔和'}。
+风格：${styleText}。${lightText}。
+${styleLockNote ? styleLockNote + '。' : ''}
+约束：<整体基调一句话>。
+
+【保持一致】 ← 2차 장편 구조의 최종 고정 블록 (전역 불변량)
+保持<人物/道具/场景/光线>全程稳定。<颜色不漂移><数量固定>。无字幕、无水印、无Logo。
+
+【负向控制】 ← ① 负向控制: 화면은 긍정 서술 우선, 부정은 최소·최후
+保持无字幕，避免生成任何文字或字幕。不要生成水印，不要生成Logo。无多余人物，无变形的手，无模糊面部。실존 브랜드·실존 얼굴·실존 앱 UI 금지。폰 화면에 어떤 글자·아이콘·UI도 생성하지 말 것（빈 화면 유지，UI는 후편집 합성）。립싱크 불일치·로봇 목소리·부자연스러운 억양 금지。${negAudioLine ? negAudioLine + '。' : ''}
+
+${paramBlock}
+`;
+  /* ✍️ 콘텐츠 입력 치환 (비어 있으면 자리표시자 유지) */
+  if (contentInput.subject) out = out.split('<主体>').join(contentInput.subject);
+  if (contentInput.event) {
+    out = out.split('<事件概要>').join(contentInput.event);
+    out = out.split('<主要动作 — 肢体部位+程度+速度>').join(contentInput.event);
+  }
+  if (contentInput.scene) out = out.split('<人物/场景/初始状态>').join(contentInput.scene);
+  if (contentInput.dialog) {
+    out = out.split('{고양이야, 안녕?}').join('{' + contentInput.dialog + '}');
+    out = out.split('{Hello there.}').join('{' + contentInput.dialog + '}');
+  }
+  if (contentInput.ending) out = out.split('<画面可见的结束状态>').join(contentInput.ending);
+  if (contentInput.constraint) out = out.split('<整体基调一句话>').join(contentInput.constraint);
+  if (contentInput.cta) out = out.split('<CTA 문구>').join(contentInput.cta);
+  return out;
+}
+/* ================================================================
+   프롬프트 언어 토글 (중국어 원문 ↔ 한국어 해석)
+   ================================================================ */
+let promptLang = 'cn';   // 'cn' = 중국어 원문 (복사용) / 'ko' = 한국어 해석 표시
+const contentInput = { subject:'', event:'', scene:'', dialog:'', ending:'', constraint:'', cta:'', refcount:'', hook:'', timeline:[], subjects:[] };   // ✍️ 콘텐츠 입력 (자리표시자 채움)
+
+const CN_KO_MAP = [
+  /* ---- 문구 단위 (개별 단어보다 먼저 치환 — 결합 오류 방지) ---- */
+  ['全程保持该声线', '전체 과정에서 그 음색 유지'],
+  ['全程稳定', '전체 과정에서 안정 유지'],
+  ['保持无字幕', '자막 없음 유지'],
+  ['韩语，自然的首尔口音', '한국어, 자연스러운 서울 억양'],
+  ['美式英语', '미국식 영어'],
+  ['一句话概述', '한 줄 요약'],
+  ['整体情绪', '전체 감정'],
+  ['时间控制', '시간 제어'],
+  ['生成一段', '한 편 생성'],
+  ['避免生成任何文字或字幕', '어떤 글자나 자막도 생성 금지'],
+  ['声画一致性', '음화 일치성'],
+  ['每阶段', '각 단계'],
+  ['画面不显示字幕或标牌', '화면에 자막이나 표지판 없음'],
+  ['只保留指定环境音与音效', '지정된 환경음과 효과음만 유지'],
+  ['无旁白', '내레이션 없음'],
+  ['无对话', '대화 없음'],
+  ['全景（首尾呼应）', '풀샷（첫 장면과 동일）'],
+  ['大远景', '익스트림 와이드'],
+  ['全景', '풀샷'],
+  ['中景', '미디엄 샷'],
+  ['特写', '클로즈업'],
+  ['头像', '페이스 샷'],
+  ['胸像', '버스트 샷'],
+  ['半身像', '하프 샷'],
+  ['全身像', '풀바디 샷'],
+  ['远景', '롱 샷'],
+  ['平视', '눈높이'],
+  ['硬切', '하드컷'],
+  ['无水印', '워터마크 없음'],
+  ['无Logo', '로고 없음'],
+  ['道具', '소품'],
+  ['光线', '조명'],
+  ['秒', '초'],
+  ['文生视频', ''], ['参考生视频', ''], ['编辑视频', ''], ['延长视频', ''], ['首尾帧生视频', ''],
+  ['一键成片', ''], ['无缝转场', ''], ['组合能力', ''],
+  /* ---- 블록 헤더 ---- */
+  ['【任务类型】', '【작업 유형】'],
+  ['【额外能力】', '【추가 능력】'],
+  ['【触发关键词】', '【트리거 키워드】'],
+  ['【有锁定】', '【고정 규칙】'],
+  ['【多宫格分镜】', '【다중 그리드 분할】'],
+  ['【主体定义】', '【주체 정의】'],
+  ['【白模参考】', '【흰모형 참조】'],
+  ['【关键帧】', '【핵심 프레임】'],
+  ['【人物声音设定】', '【화자 음성 설정】'],
+  ['【镜头切换原则】', '【컷 전환 원칙】'],
+  ['【音频编辑】', '【오디오 편집】'],
+  ['【文字生成】', '【글자 생성】'],
+  ['【生成目标】', '【생성 목표】'],
+  ['【阶段一】', '【단계 1】'],
+  ['【阶段二】', '【단계 2】'],
+  ['【阶段三】', '【단계 3】'],
+  ['【阶段四】', '【단계 4】'],
+  ['【阶段五】', '【단계 5】'],
+  ['【阶段六】', '【단계 6】'],
+  ['【阶段七】', '【단계 7】'],
+  ['【镜头1】', '【컷 1】'], ['【镜头2】', '【컷 2】'], ['【镜头3】', '【컷 3】'], ['【镜头4】', '【컷 4】'], ['【镜头5】', '【컷 5】'], ['【镜头6】', '【컷 6】'], ['【镜头7】', '【컷 7】'],
+  ['【声音总则】', '【소리 총칙】'],
+  ['【画质·风格·约束】', '【화질·스타일·제약】'],
+  ['【严格排除】', '【엄격 제외】'],
+  ['【风格参考】', '【스타일 참조】'],
+  ['【保持一致】', '【일관성 유지】'],
+  ['【负向控制】', '【부정 제어】'],
+  ['【情绪转折】', '【감정 전환】'],
+  ['景别', '샷 크기'],
+  ['机位', '카메라 위치'],
+  ['构图', '구도'],
+  ['场景', '장면'],
+  ['动作', '동작'],
+  ['运镜', '운경'],
+  ['光学', '광학'],
+  ['情绪外化', '감정 외화'],
+  ['台词语言', '대사 언어'],
+  ['结束状态', '끝 상태'],
+  ['切至', '전환'],
+  ['画质', '화질'],
+  ['风格', '스타일'],
+  ['约束', '제약'],
+  ['保持', '유지'],
+  ['对话', '대화'],
+  ['音效', '효과음'],
+  ['环境音', '환경음'],
+  ['音乐', '음악'],
+  ['生成参数', '생성 파라미터'],
+  ['1镜头仅1种运镜', '1컷당 운경 1종'],
+  ['音频信息属于镜头内描述', '오디오 정보는 컷 내부에 기술'],
+  ['口型与台词精准对位', '입모양이 대사와 정확히 맞춰짐'],
+  ['多个声音不混合', '여러 목소리 섞이지 않음'],
+  ['该声线', '그 음색'],
+  ['先锁定', '먼저 고정'],
+  ['她说', '그녀가 말함'], ['他说', '그가 말함'],
+  ['无字幕', '자막 없음'],
+  ['不要生成水印', '워터마크 생성 금지'],
+  ['不要生成Logo', '로고 생성 금지'],
+  ['负向控制', '부정 제어'],
+  ['全程', '전체 과정'],
+  ['文字', '문자'],
+  ['人物', '인물'],
+];
+function translateToKorean(cn) {
+  let out = cn;
+  CN_KO_MAP.forEach(([a, b]) => { out = out.split(a).join(b); });
+  return out;
+}
+
+/* ✍️ 채워야 할 자리표시자 감지·표시 (콘텐츠 입력으로 채워진 곳은 자동 제외) */
+const PLACEHOLDER_MAP = {
+  '<主体>': '주체', '<事件概要>': '사건', '<类型>': '영상 유형',
+  '<人物/场景/初始状态>': '장면·배경', '<主要动作 — 肢体部位+程度+速度>': '동작',
+  '<画面可见的结束状态>': '끝 상태', '<下一机位>': '다음 장면', '<台词说明>': '대사 내용',
+  '<风格一句话>': '시각 스타일', '<如左上>': '조명 방향', '<整体基调一句话>': '전체 톤',
+  '<文案>': '광고 문구', '<所需音效>': '효과음', '<所需环境音>': '환경음',
+  '<如需音乐>': '배경 음악', '<描述>': '음악 설명', '<音效列表>': '효과음',
+  '<시작 감정>': '감정 아크: 시작 감정', '<끝 감정>': '감정 아크: 끝 감정', '<중간 감정들>': '감정 아크: 중간 감정',
+  '<트리거 사건>': '감정 전환: 트리거 사건', '<즉시 관찰 가능한 반응>': '감정 전환: 즉시 반응',
+  '<변화>': '감정 전환: 변화', '<표현>': '감정 전환: 표현', '<목표 감정>': '감정 전환: 목표 감정',
+  '<내용>': '자막 내용', '<대사>': '말풍선 대사', '<CTA 문구>': '클릭 유도 (CTA) 문구',
+  '<图片N>': '주인공 지정: 이미지 번호', '<图片N+1>': '주인공 지정: 다음 이미지 번호',
+  '<人物/道具/场景/光线>': '일관성: 인물·소품·장면·조명', '<颜色不漂移>': '일관성: 색 유지', '<数量固定>': '일관성: 수량 고정',
+};
+/* ========== 장면 타임라인 (시간 구간별 입력 — duration 연동) ========== */
+function renderTimeline() {
+  const wrap = document.getElementById('timelineWrap');
+  if (!wrap) return;
+  const dur = sel('duration')[0] || '20s';
+  const slotsMap = { '10s': ['0-3','3-6','6-10'], '15s': ['0-4','4-9','9-15'], '20s': ['0-4','4-9','9-14','14-20'], '30s': ['0-5','5-12','12-20','20-25','25-30'], 'auto': ['0-4','4-9','9-14','14-20'] };
+  const slots = slotsMap[dur] || slotsMap['20s'];
+  const prev = contentInput.timeline || [];
+  wrap.innerHTML = `
+    <div class="tl-head">⏱️ 장면 타임라인 — 구간별로 채우면 【阶段N】 문장에 자동 반영</div>
+    ${slots.map((s, i) => {
+      const p = prev[i] || {};
+      return `<div class="tl-row">
+        <div class="tl-sec">구간 ${i+1}<span class="tl-time">(${s}초)</span></div>
+        <div class="tl-fields">
+          <div class="tl-field"><div class="tl-label">장면·동작</div><input class="tl-scene" type="text" value="${(p.scene||'').replace(/"/g,'&quot;')}" placeholder="예: 제품 클로즈업, 포장 뜯는 손" oninput="renderPrompt()"></div>
+          <div class="tl-field"><div class="tl-label">대사 (공식 ${'{'}${'}'})</div><input class="tl-dialog" type="text" value="${(p.dialog||'').replace(/"/g,'&quot;')}" placeholder="예: 이거 진짜 좋아요" oninput="renderPrompt()"></div>
+          <div class="tl-field"><div class="tl-label">카메라·운경</div><input class="tl-cam" type="text" value="${(p.cam||'').replace(/"/g,'&quot;')}" placeholder="예: 느린 푸시인" oninput="renderPrompt()"></div>
+        </div>
+      </div>`;
+    }).join('')}`;
+}
+
+/* ========== 주체 바인딩 매트릭스 (다중 주체 ↔ 재료 번호 매핑 — 공식 패턴) ========== */
+function renderSubjectMatrix() {
+  const wrap = document.getElementById('subjectMatrixWrap');
+  if (!wrap) return;
+  const n = Math.max(1, (parseInt(contentInput.refcount, 10) || 0) === 0 ? 1 : 0);
+  const prev = contentInput.subjects || [];
+  const roles = SPEAKER_ROLE_OPTS.map(r => r.label).join('|');
+  const rows = contentInput.refcount ? Math.min(4, Math.max(1, Math.floor((parseInt(contentInput.refcount,10)||1)/2) || 1)) : 1;
+  const cnt = parseInt(contentInput.refcount, 10) || 0;
+  const rowCount = cnt >= 3 ? 2 : cnt >= 1 ? 1 : 1;
+  const html = `
+    <div class="sm-head">👥 주체 바인딩 매트릭스 — 주체마다 이미지/오디오 번호 지정 (공식: img1-2 是人物 1，对应音频 1)</div>
+    ${Array.from({length: rowCount}, (_, i) => {
+      const p = prev[i] || {};
+      return `<div class="sm-row">
+        <div class="sm-fields">
+          <div class="sm-field sm-name"><div class="sm-label">주체 ${i+1} 이름</div><input class="sm-name-in" type="text" value="${(p.name||'').replace(/"/g,'&quot;')}" placeholder="예: 주인공" oninput="renderPrompt()"></div>
+          <div class="sm-field"><div class="sm-label">이미지 번호</div><input class="sm-img" type="text" value="${(p.img||'').replace(/"/g,'&quot;')}" placeholder="예: 1-2" oninput="renderPrompt()"></div>
+          <div class="sm-field"><div class="sm-label">오디오 번호</div><input class="sm-aud" type="text" value="${(p.aud||'').replace(/"/g,'&quot;')}" placeholder="예: 1" oninput="renderPrompt()"></div>
+          <div class="sm-field"><div class="sm-label">역할 (선택)</div><select class="sm-role" onchange="renderPrompt()"><option value="">—</option>${roles.split('|').map(r => `<option ${p.role===r?'selected':''}>${r}</option>`).join('')}</select></div>
+        </div>
+      </div>`;
+    }).join('')}`;
+  wrap.innerHTML = html;
+}
+
+function renderPlaceholderWarn(cn) {
+  const el = document.getElementById('placeholderWarn');
+  if (!el) return;
+  const found = {};
+  const re = /<([^<>]+)>/g;
+  let m;
+  while ((m = re.exec(cn))) {
+    const ph = '<' + m[1] + '>';
+    if (/^<\d+s>$/.test(ph) || ph === '<-1>') continue;  // duration 값(이미 정해진 길이)은 자리표시자 아님
+    if (!found[ph]) found[ph] = PLACEHOLDER_MAP[ph] || m[1];
+  }
+  const keys = Object.keys(found);
+  el.innerHTML = keys.length
+    ? `<div class="phw-head">⚠️ 채울 곳 ${keys.length}개</div><div class="phw-list">${keys.map(k => `<span class="phw-chip">${found[k]}</span>`).join('')}</div>`
+    : '<div class="phw-ok">✅ 자리표시자 모두 채워짐</div>';
+}
+
+function renderPrompt() {
+  const out = document.getElementById('promptOut');
+  /* ✍️ 콘텐츠 입력 읽기 (DOM 입력 먼저 읽고 → 아래에서 렌더 재생성) */
+  ['subject','event','scene','dialog','ending','constraint','cta','refcount','hook'].forEach(k => {
+    const el = document.getElementById('ci_' + k);
+    if (el) contentInput[k] = el.value.trim();
+  });
+  /* 장면 타임라인 읽기 (구간별) */
+  contentInput.timeline = [];
+  const tlWrap = document.getElementById('timelineWrap');
+  if (tlWrap) {
+    const rows = tlWrap.querySelectorAll('.tl-row');
+    rows.forEach(r => {
+      const sc = r.querySelector('.tl-scene'); const dl = r.querySelector('.tl-dialog'); const cm = r.querySelector('.tl-cam');
+      contentInput.timeline.push({
+        scene: sc ? sc.value.trim() : '', dialog: dl ? dl.value.trim() : '', cam: cm ? cm.value.trim() : ''
+      });
+    });
+  }
+  /* 주체 바인딩 매트릭스 읽기 */
+  contentInput.subjects = [];
+  const smWrap = document.getElementById('subjectMatrixWrap');
+  if (smWrap) {
+    smWrap.querySelectorAll('.sm-row').forEach(r => {
+      const nm = r.querySelector('.sm-name-in'); const im = r.querySelector('.sm-img');
+      const au = r.querySelector('.sm-aud'); const rl = r.querySelector('.sm-role');
+      contentInput.subjects.push({ name: nm ? nm.value.trim() : '', img: im ? im.value.trim() : '', aud: au ? au.value.trim() : '', role: rl ? rl.value : '' });
+    });
+  }
+  /* DOM 렌더 재생성 (읽은 값으로 복원) */
+  renderTimeline();
+  renderSubjectMatrix();
+  const cn = buildPrompt();
+  out.textContent = promptLang === 'ko' ? translateToKorean(cn) : cn;
+  renderPlaceholderWarn(cn);
+
+  const meta = document.getElementById('metaBar');
+  meta.innerHTML = `
+    <span>작업: <b>${sel('task')[0] || 't2v'}</b></span>
+    <span>길이: <b>${sel('duration')[0] || '20s'}</b></span>
+    <span>언어: <b>${(() => { const lk = sel('lang')[0] || 'ko'; const lo = AXES.find(a=>a.id==='lang').options.find(o=>o.k===lk); return lk === 'none' ? '대사 없음' : (lo ? lo.label.replace(' (권장)','') : lk); })()}</b></span>
+    <span>운경: <b>${sel('camera')[0] || 'A'}</b></span>
+    <span>감정: <b>${sel('emotion').join(',') || '없음'}</b></span>
+    <span>분기: <b>${sel('shotseq')[0] || 'ts'}</b></span>
+    <span>백모: <b>${sel('whitemodel')[0] || 'none'}</b></span>
+    <span>핵심프레임: <b>${sel('keyframe')[0] || 'none'}</b></span>
+    <span class="warn-line">※ 파라미터(ratio·resolution·duration·generate_audio 등)는 프롬프트 밖 설정 — 공식 규칙</span>
+  `;
+}
+
+/* ================================================================
+   이벤트
+   ================================================================ */
+
+/* ---- 토스트 알림 ---- */
+let toastTimer = null;
+function showToast(msg, isErr) {
+  const t = document.getElementById('toast');
+  const m = document.getElementById('toastMsg');
+  if (!t || !m) return;
+  m.textContent = msg;
+  t.classList.toggle('toast-err', !!isErr);
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* ---- 복사 (기존 클립보드 로직 유지 + 토스트 피드백) ---- */
+document.getElementById('copyBtn').addEventListener('click', async () => {
+  const text = document.getElementById('promptOut').textContent;
+  try {
+    await navigator.clipboard.writeText(text);
+    showToast('📋 프롬프트가 복사되었습니다!');
+  } catch {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); ta.remove();
+      showToast('📋 프롬프트가 복사되었습니다!');
+    } catch (e) {
+      showToast('복사 실패 — 프롬프트를 직접 선택하세요', true);
+    }
+  }
+});
+
+/* ---- 초기화 (기존 로직 유지) ---- */
+document.getElementById('resetBtn').addEventListener('click', () => {
+  AXES.forEach(a => state[a.id].clear());
+  renderSlots();
+  showToast('🔄 모든 선택이 초기화되었습니다');
+});
+
+/* ---- 프롬프트 언어 토글 (중국어 ↔ 한국어) ---- */
+document.getElementById('langToggleBtn').addEventListener('click', () => {
+  promptLang = promptLang === 'cn' ? 'ko' : 'cn';
+  const btn = document.getElementById('langToggleBtn');
+  btn.textContent = promptLang === 'ko' ? '🌐 中文' : '🌐 한국어';
+  renderPrompt();
+  showToast(promptLang === 'ko' ? '🌐 한국어 해석 표시 (복사는 중국어 원문 권장)' : '🌐 중국어 원문 표시');
+});
+
+/* ---- 전체 접기 / 펼치기 ---- */
+document.getElementById('collapseAllBtn').addEventListener('click', () => {
+  document.querySelectorAll('.axis').forEach(el => el.classList.add('collapsed'));
+});
+document.getElementById('expandAllBtn').addEventListener('click', () => {
+  document.querySelectorAll('.axis').forEach(el => el.classList.remove('collapsed'));
+});
+
+/* ---- 검색 필터 ---- */
+document.getElementById('searchInput').addEventListener('input', e => {
+  searchQuery = e.target.value;
+  renderSlots();
+});
+
+/* ---- 필수 축만 보기 토글 ---- */
+document.getElementById('coreOnlyToggle').addEventListener('click', () => {
+  coreOnly = !coreOnly;
+  document.getElementById('coreOnlyToggle').classList.toggle('on', coreOnly);
+  renderSlots();
+});
+
+/* ---- 프리셋 (localStorage 저장/복원/삭제) ---- */
+const PRESET_KEY = 'seedance_presets_v1';
+function getPresets() {
+  try { return JSON.parse(localStorage.getItem(PRESET_KEY)) || []; }
+  catch (e) { return []; }
+}
+function setPresets(list) {
+  try { localStorage.setItem(PRESET_KEY, JSON.stringify(list)); }
+  catch (e) { showToast('저장 실패 — localStorage를 사용할 수 없습니다', true); }
+}
+function captureSelection() {
+  const axes = {};
+  AXES.forEach(a => axes[a.id] = Array.from(state[a.id]));
+  const params = {};
+  ['p_mode', 'p_model', 'p_res', 'p_ratio', 'p_dur', 'p_audio', 'p_fmt', 'p_wm', 'p_ret'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) params[id] = el.value;
+  });
+  return { axes, params };
+}
+function applySelection(data) {
+  if (!data || !data.axes) { showToast('프리셋 데이터가 올바르지 않습니다', true); return; }
+  AXES.forEach(a => { state[a.id] = new Set(data.axes[a.id] || []); });
+  if (data.params) Object.entries(data.params).forEach(([id, v]) => {
+    const el = document.getElementById(id);
+    if (el) el.value = v;
+  });
+  cleanupDependsOn();
+  renderSlots();
+}
+function renderPresetList() {
+  const list = getPresets();
+  const el = document.getElementById('presetList');
+  el.innerHTML = list.length
+    ? list.map((p, i) => `
+      <div class="preset-item">
+        <span class="pi-name" title="${(p.name || '').replace(/"/g, '&quot;')}">${p.name || '이름 없음'}</span>
+        <button class="pi-load" data-i="${i}">불러오기</button>
+        <button class="pi-del" data-i="${i}">삭제</button>
+      </div>`).join('')
+    : '<div class="preset-empty">아직 저장된 프리셋이 없습니다</div>';
+  el.querySelectorAll('.pi-load').forEach(b => b.addEventListener('click', () => {
+    const listNow = getPresets();
+    const p = listNow[+b.dataset.i];
+    if (p) { applySelection(p); showToast(`💾 "${p.name}" 불러오기 완료`); closePresetPop(); }
+  }));
+  el.querySelectorAll('.pi-del').forEach(b => b.addEventListener('click', () => {
+    const listNow = getPresets();
+    const name = listNow[+b.dataset.i] ? listNow[+b.dataset.i].name : '';
+    listNow.splice(+b.dataset.i, 1);
+    setPresets(listNow);
+    renderPresetList();
+    showToast(`🗑 "${name}" 프리셋 삭제됨`);
+  }));
+}
+function savePreset() {
+  const input = document.getElementById('presetName');
+  const name = input.value.trim();
+  if (!name) { showToast('프리셋 이름을 입력하세요', true); input.focus(); return; }
+  const list = getPresets();
+  list.push({ name, ts: Date.now(), ...captureSelection() });
+  setPresets(list);
+  input.value = '';
+  renderPresetList();
+  showToast(`💾 "${name}" 프리셋 저장 완료`);
+}
+function closePresetPop() {
+  document.getElementById('presetPop').classList.remove('open');
+}
+
+/* ================================================================
+   프리셋 2단계: 기본(basic=핵심 축) + 세부 확장(full=전 축)
+   ================================================================ */
+const BUILTIN_PRESETS = [
+  /* ---- 콘텐츠 12종 ---- */
+  {
+    id: 'travel', name: '🏞 여행 Vlog', icon: '🏞',
+    basic: { task:['t2v'], genre:['travel'], duration:['20s'], shotseq:['ts'], camera:['A'], stylepreset:['vlog'], stylelock:['both'], audio:['fx','amb','mus'] },
+    full: { task:['t2v'], genre:['travel'], duration:['20s'], shotseq:['ts'], lang:['ko'], voice:['bright'], speaker:['fem20','brightV'], emotion:['joy'], emotionflow:['none'], shotsize:['wide2wide'], timeweather:['evening'], camera:['A'], angle:['eye'], optical:['dof'], composition:['rule3'], transition:['cross'], audio:['fx','amb','mus'], musicgenre:['acoustic'], fxpreset:['nature'], quality:['hd','nat','warm'], stylepreset:['vlog'], stylelock:['both'], lighting:['golden'], textgen:['none'] }
+  },
+  {
+    id: 'ad', name: '📺 제품 광고', icon: '📺',
+    basic: { task:['t2v'], genre:['tvc'], duration:['15s'], shotseq:['ts'], camera:['B'], stylepreset:['docu'], stylelock:['both'], audio:['mus','amb'] },
+    full: { task:['t2v'], genre:['tvc'], duration:['15s'], shotseq:['ts'], lang:['ko'], voice:['calm'], speaker:['fem40','calmV'], emotion:['relief'], emotionflow:['none'], shotsize:['close2wide'], timeweather:['noon'], camera:['B'], angle:['high'], optical:['dof','macro'], composition:['center'], transition:['hard'], audio:['mus','amb'], musicgenre:['orchestra'], fxpreset:['tech'], quality:['hd','nat','skin'], stylepreset:['docu'], stylelock:['both'], lighting:['studio'], textgen:['slogan'] }
+  },
+  {
+    id: 'mood', name: '💫 감성 브이로그', icon: '💫',
+    basic: { task:['t2v'], genre:['brand'], duration:['30s'], shotseq:['ts'], camera:['E'], stylepreset:['vlog'], stylelock:['both'], audio:['amb','mus'] },
+    full: { task:['t2v'], genre:['brand'], duration:['30s'], shotseq:['ts'], lang:['ko'], voice:['soft'], speaker:['fem20','warmV'], emotion:['joy','relief'], emotionflow:['flow'], shotsize:['wide2close'], timeweather:['evening'], camera:['E'], angle:['low'], optical:['dof','bokeh'], composition:['diag'], transition:['cross'], audio:['amb','mus'], musicgenre:['acoustic'], fxpreset:['daily'], quality:['hd','nat','warm'], stylepreset:['vlog'], stylelock:['both'], lighting:['golden'], textgen:['none'] }
+  },
+  {
+    id: 'mv', name: '🎵 AI 뮤직비디오', icon: '🎵',
+    basic: { task:['t2v'], genre:['none'], duration:['20s'], shotseq:['mix'], camera:['D'], stylepreset:['cyber'], stylelock:['both'], audio:['mus'] },
+    full: { task:['t2v'], genre:['none'], duration:['20s'], shotseq:['mix'], lang:['ko'], voice:['excited'], speaker:['male20','lowV','fastP'], emotion:['angry','joy'], emotionflow:['flow'], shotsize:['wide2close'], timeweather:['night'], camera:['D'], angle:['fpv'], optical:['flare','slow'], composition:['center'], transition:['hard'], audio:['mus'], musicgenre:['hiphop'], fxpreset:['tech'], quality:['hd','nat'], stylepreset:['cyber'], stylelock:['both'], lighting:['neon'], textgen:['none'] }
+  },
+  {
+    id: 'demo', name: '📦 제품 시연 (참조)', icon: '📦',
+    basic: { task:['r2v'], genre:['ecom'], duration:['20s'], shotseq:['ts'], camera:['B'], stylepreset:['docu'], stylelock:['both'], audio:['fx','amb'], refmat:['imgchar','imgscene'], subjectdef:['single'] },
+    full: { task:['r2v'], genre:['ecom'], duration:['20s'], shotseq:['ts'], lang:['ko'], voice:['calm'], speaker:['fem40','calmV'], emotion:['relief'], emotionflow:['none'], shotsize:['close2wide'], timeweather:['noon'], camera:['B'], angle:['high'], optical:['dof','macro'], composition:['center'], transition:['hard'], audio:['fx','amb'], musicgenre:['none'], fxpreset:['tech'], quality:['hd','nat','skin'], stylepreset:['docu'], stylelock:['both'], lighting:['studio'], textgen:['slogan'], refmat:['imgchar','imgscene'], storyboard:['none'], subjectdef:['single'], whitemodel:['none'], keyframe:['none'] }
+  },
+  {
+    id: 'drama', name: '🎭 감정 드라마', icon: '🎭',
+    basic: { task:['t2v'], genre:['drama'], duration:['30s'], shotseq:['ts'], camera:['B'], stylepreset:['docu'], stylelock:['both'], audio:['amb','mus'] },
+    full: { task:['t2v'], genre:['drama'], duration:['30s'], shotseq:['ts'], lang:['ko'], voice:['calm'], speaker:['fem20','calmV','midP'], emotion:['sad','relief'], emotionflow:['flow'], shotsize:['wide2close'], timeweather:['evening'], camera:['B'], angle:['low'], optical:['dof','bokeh'], composition:['diag'], transition:['cross'], audio:['amb','mus'], musicgenre:['orchestra'], fxpreset:['daily'], quality:['hd','nat','warm'], stylepreset:['docu'], stylelock:['both'], lighting:['lowkey'], textgen:['subtitle'] }
+  },
+  {
+    id: 'saju_v3', name: '🎎 사주천궁 드라마 (v3)', icon: '🎎',
+    basic: { task:['t2v'], genre:['drama'], duration:['30s'], shotseq:['ts'], camera:['B'], stylepreset:['docu'], stylelock:['both'], audio:['amb','mus'], cutprinciple:['apply'] },
+    full: { task:['t2v'], genre:['drama'], duration:['30s'], shotseq:['ts'], lang:['ko'], voice:['calm'], speakerflow:['3'], sp1_role:['bf'], sp1_char:['male20','calmV','midP'], sp2_role:['mudang'], sp2_char:['fem40','warmV','slowP'], sp3_role:['gf'], sp3_char:['fem20','brightV','fastP'], emotion:['joy','sad','anx','relief'], emotionflow:['arc'], shotsize:['wide2close'], timeweather:['evening'], camera:['B'], angle:['eye'], optical:['dof','bokeh'], composition:['rule3'], transition:['cross'], audio:['amb','mus'], musicgenre:['acoustic'], quality:['hd','nat','warm'], stylepreset:['docu'], stylelock:['both'], lighting:['golden'], textgen:['none'], cutprinciple:['apply'] }
+  },
+  {
+    id: 'kdrama', name: '💗 K-드라마 로맨스', icon: '💗',
+    basic: { task:['t2v'], genre:['kdrama'], duration:['30s'], shotseq:['ts'], camera:['B'], stylepreset:['docu'], stylelock:['both'], audio:['amb','mus'] },
+    full: { task:['t2v'], genre:['kdrama'], duration:['30s'], shotseq:['ts'], lang:['ko'], voice:['soft'], speakerflow:['2'], sp1_role:['bf'], sp1_char:['male20','calmV','midP'], sp2_role:['gf'], sp2_char:['fem20','warmV','slowP'], emotion:['flutter','joy','relief'], emotionflow:['arc'], shotsize:['wide2close'], timeweather:['evening'], camera:['B'], angle:['eye'], optical:['dof','bokeh'], composition:['rule3'], transition:['cross'], audio:['amb','mus'], musicgenre:['ballad'], fxpreset:['nature'], quality:['hd','nat','warm'], stylepreset:['docu'], stylelock:['both'], lighting:['golden'], textgen:['subtitle'] }
+  },
+  {
+    id: 'sageuk', name: '⚔️ 사극 (조선 시대)', icon: '⚔️',
+    basic: { task:['t2v'], genre:['sageuk'], duration:['30s'], shotseq:['ts'], camera:['B'], stylepreset:['docu'], stylelock:['both'], audio:['amb','mus'] },
+    full: { task:['t2v'], genre:['sageuk'], duration:['30s'], shotseq:['ts'], lang:['ko'], voice:['deep'], speakerflow:['2'], sp1_role:['seonbi'], sp1_char:['male20','calmV','slowP'], sp2_role:['jumju'], sp2_char:['fem40','warmV','slowP'], emotion:['anx','relief'], emotionflow:['flow'], shotsize:['wide2wide'], timeweather:['evening'], camera:['B'], angle:['low'], optical:['dof'], composition:['center'], transition:['cross'], audio:['amb','mus'], musicgenre:['gugak'], fxpreset:['nature'], quality:['hd','grain','warm'], stylepreset:['docu'], stylelock:['both'], lighting:['golden'], textgen:['none'] }
+  },
+  {
+    id: 'mukbang', name: '🍜 먹방', icon: '🍜',
+    basic: { task:['t2v'], genre:['mukbang'], duration:['20s'], shotseq:['ts'], camera:['C'], stylepreset:['docu'], stylelock:['both'], audio:['fx','amb'] },
+    full: { task:['t2v'], genre:['mukbang'], duration:['20s'], shotseq:['ts'], lang:['ko'], voice:['bright'], speaker:['fem20','brightV','fastP'], emotion:['joy','amused'], emotionflow:['none'], shotsize:['bust'], timeweather:['noon'], camera:['C'], angle:['eye'], optical:['macro','dof'], composition:['center'], transition:['hard'], audio:['fx','amb'], musicgenre:['none'], fxpreset:['daily'], quality:['hd','nat','warm'], stylepreset:['docu'], stylelock:['both'], lighting:['studio'], textgen:['none'] }
+  },
+  {
+    id: 'livecomm', name: '🛒 라이브 커머스', icon: '🛒', category: '콘텐츠',
+    basic: { task:['t2v'], genre:['livecomm'], duration:['20s'], shotseq:['ts'], camera:['A'], stylepreset:['docu'], stylelock:['both'], audio:['mus','fx'] },
+    full: { task:['t2v'], genre:['livecomm'], duration:['20s'], shotseq:['ts'], lang:['ko'], voice:['sales'], speakerflow:['2'], sp1_role:['showhost'], sp1_char:['fem20','brightV','fastP'], sp2_role:['seller'], sp2_char:['male20','calmV'], emotion:['cheer','joy'], emotionflow:['none'], shotsize:['bust'], timeweather:['none'], camera:['A'], angle:['eye'], optical:['dof'], composition:['center'], transition:['hard'], audio:['mus','fx'], musicgenre:['kpop'], fxpreset:['tech'], quality:['hd','nat','clean'], stylepreset:['docu'], stylelock:['both'], lighting:['studio'], textgen:['cta'] }
+  },
+  {
+    id: 'food', name: '🍜 푸드 브이로그', icon: '🍜',
+    basic: { task:['t2v'], genre:['travel'], duration:['20s'], shotseq:['ts'], camera:['E'], stylepreset:['vlog'], stylelock:['both'], audio:['fx','amb'] },
+    full: { task:['t2v'], genre:['travel'], duration:['20s'], shotseq:['ts'], lang:['ko'], voice:['bright'], speaker:['fem20','brightV','midP'], emotion:['joy'], emotionflow:['none'], shotsize:['wide2close'], timeweather:['noon'], camera:['E'], angle:['eye'], optical:['macro','dof'], composition:['rule3'], transition:['cross'], audio:['fx','amb'], musicgenre:['acoustic'], fxpreset:['daily'], quality:['hd','nat','warm'], stylepreset:['vlog'], stylelock:['both'], lighting:['natural'], textgen:['none'] }
+  },
+  {
+    id: 'fashion', name: '👗 패션 룩북', icon: '👗',
+    basic: { task:['r2v'], genre:['brand'], duration:['15s'], shotseq:['mix'], camera:['B'], stylepreset:['retro'], stylelock:['both'], audio:['mus'], refmat:['imgchar'], subjectdef:['single'] },
+    full: { task:['r2v'], genre:['brand'], duration:['15s'], shotseq:['mix'], lang:['ko'], voice:['calm'], speaker:['fem20','calmV','midP'], emotion:['relief'], emotionflow:['none'], shotsize:['bust'], timeweather:['evening'], camera:['B'], angle:['high'], optical:['dof'], composition:['center'], transition:['cross'], audio:['mus'], musicgenre:['lounge'], quality:['hd','nat','skin'], stylepreset:['retro'], stylelock:['both'], lighting:['studio'], textgen:['none'], refmat:['imgchar','imgscene'], storyboard:['none'], subjectdef:['single'], whitemodel:['none'], keyframe:['none'] }
+  },
+  {
+    id: 'nature', name: '🌿 자연 다큐', icon: '🌿',
+    basic: { task:['t2v'], genre:['edu'], duration:['30s'], shotseq:['ts'], camera:['B'], stylepreset:['docu'], stylelock:['both'], audio:['amb','fx'] },
+    full: { task:['t2v'], genre:['edu'], duration:['30s'], shotseq:['ts'], lang:['ko'], voice:['calm'], speaker:['male40','lowV','slowP'], emotion:['relief'], emotionflow:['none'], shotsize:['wide2wide'], timeweather:['morning'], camera:['B'], angle:['low'], optical:['dof','macro'], composition:['rule3'], transition:['cross'], audio:['amb','fx'], musicgenre:['orchestra'], fxpreset:['nature'], quality:['hd','nat'], stylepreset:['docu'], stylelock:['both'], lighting:['natural'], textgen:['none'] }
+  },
+  {
+    id: 'gaming', name: '🎮 게임 소개', icon: '🎮',
+    basic: { task:['t2v'], genre:['none'], duration:['20s'], shotseq:['mix'], camera:['D'], stylepreset:['cg3d'], stylelock:['both'], audio:['mus','fx'] },
+    full: { task:['t2v'], genre:['none'], duration:['20s'], shotseq:['mix'], lang:['ko'], voice:['excited'], speaker:['male20','brightV','fastP'], emotion:['angry','joy'], emotionflow:['flow'], shotsize:['wide2close'], timeweather:['night'], camera:['D'], angle:['fpv'], optical:['flare','slow'], composition:['center'], transition:['hard'], audio:['mus','fx'], musicgenre:['hiphop'], fxpreset:['tech'], quality:['hd'], stylepreset:['cg3d'], stylelock:['both'], lighting:['neon'], textgen:['slogan'] }
+  },
+  {
+    id: 'realestate', name: '🏠 부동산 투어', icon: '🏠',
+    basic: { task:['t2v'], genre:['brand'], duration:['30s'], shotseq:['ts'], camera:['C'], stylepreset:['docu'], stylelock:['both'], audio:['amb','mus'] },
+    full: { task:['t2v'], genre:['brand'], duration:['30s'], shotseq:['ts'], lang:['ko'], voice:['calm'], speaker:['male40','calmV','slowP'], emotion:['relief'], emotionflow:['none'], shotsize:['wide2wide'], timeweather:['noon'], camera:['C'], angle:['high'], optical:['wide','dof'], composition:['rule3'], transition:['cross'], audio:['amb','mus'], musicgenre:['lounge'], fxpreset:['daily'], quality:['hd','nat'], stylepreset:['docu'], stylelock:['both'], lighting:['natural'], textgen:['none'] }
+  },
+  {
+    id: 'horror', name: '👻 공포/스릴러', icon: '👻',
+    basic: { task:['t2v'], genre:['drama'], duration:['30s'], shotseq:['ts'], camera:['E'], stylepreset:['docu'], stylelock:['both'], audio:['amb','fx'] },
+    full: { task:['t2v'], genre:['drama'], duration:['30s'], shotseq:['ts'], lang:['ko'], voice:['excited'], speaker:['fem20','calmV','slowP'], emotion:['anx','angry'], emotionflow:['flow'], shotsize:['close2wide'], timeweather:['night'], camera:['E'], angle:['low'], optical:['dof','fish'], composition:['diag'], transition:['hard'], audio:['amb','fx'], musicgenre:['none'], fxpreset:['tech'], quality:['hd'], stylepreset:['docu'], stylelock:['both'], lighting:['lowkey'], textgen:['none'] }
+  },
+  /* ---- 광고 10종 (기법·구조 기준 — 플랫폼 무관) ---- */
+  {
+    id: 'ad_showcase', name: '🏷️ 제품 소개형', icon: '🏷️', category: '광고',
+    basic: { task:['t2v'], genre:['tvc'], duration:['15s'], shotseq:['ts'], camera:['B'], stylepreset:['docu'], stylelock:['both'], audio:['mus','amb'] },
+    full: { task:['t2v'], genre:['tvc'], duration:['15s'], shotseq:['ts'], lang:['ko'], voice:['calm'], speaker:['male40','calmV','midP'], emotion:['joy'], emotionflow:['none'], shotsize:['close2wide'], timeweather:['noon'], camera:['B'], angle:['eye'], optical:['dof','macro'], composition:['center'], transition:['cross'], audio:['mus','amb'], musicgenre:['lounge'], fxpreset:['tech'], quality:['hd','nat','skin'], stylepreset:['docu'], stylelock:['both'], lighting:['studio'], textgen:['slogan'] }
+  },
+  {
+    id: 'ad_problem', name: '🩹 문제→해결형', icon: '🩹', category: '광고',
+    basic: { task:['t2v'], genre:['tvc'], duration:['30s'], shotseq:['ts'], camera:['B'], stylepreset:['docu'], stylelock:['both'], audio:['mus','amb'] },
+    full: { task:['t2v'], genre:['tvc'], duration:['30s'], shotseq:['ts'], lang:['ko'], voice:['calm'], speaker:['fem40','calmV','midP'], emotion:['anx','relief'], emotionflow:['flow'], shotsize:['close2wide'], timeweather:['evening'], camera:['B'], angle:['eye'], optical:['dof'], composition:['center'], transition:['cross'], audio:['mus','amb'], musicgenre:['orchestra'], fxpreset:['tech'], quality:['hd','nat'], stylepreset:['docu'], stylelock:['both'], lighting:['golden'], textgen:['slogan'] }
+  },
+  {
+    id: 'ad_story', name: '🎬 스토리텔링형', icon: '🎬', category: '광고',
+    basic: { task:['t2v'], genre:['brand'], duration:['30s'], shotseq:['ts'], camera:['B'], stylepreset:['docu'], stylelock:['both'], audio:['mus','amb'] },
+    full: { task:['t2v'], genre:['brand'], duration:['30s'], shotseq:['ts'], lang:['ko'], voice:['soft'], speaker:['fem20','warmV','slowP'], emotion:['joy','relief'], emotionflow:['flow'], shotsize:['wide2wide'], timeweather:['evening'], camera:['B'], angle:['eye'], optical:['dof','bokeh'], composition:['rule3'], transition:['cross'], audio:['mus','amb'], musicgenre:['acoustic'], fxpreset:['nature'], quality:['hd','nat','warm'], stylepreset:['docu'], stylelock:['both'], lighting:['golden'], textgen:['subtitle'] }
+  },
+  {
+    id: 'ad_montage', name: '⚡ 몽타주형 (속도감)', icon: '⚡', category: '광고',
+    basic: { task:['t2v'], genre:['tvc'], duration:['15s'], shotseq:['ts'], camera:['E'], stylepreset:['docu'], stylelock:['both'], audio:['mus','fx'] },
+    full: { task:['t2v'], genre:['tvc'], duration:['15s'], shotseq:['ts'], lang:['ko'], voice:['bright'], speaker:['male20','brightV','fastP'], emotion:['joy'], emotionflow:['none'], shotsize:['wide2close'], timeweather:['noon'], camera:['E'], angle:['eye'], optical:['wide','flare'], composition:['diag'], transition:['hard'], audio:['mus','fx'], musicgenre:['hiphop'], fxpreset:['city'], quality:['hd','nat'], stylepreset:['docu'], stylelock:['both'], lighting:['neon'], textgen:['slogan'] }
+  },
+  {
+    id: 'ad_ugc', name: '📱 UGC·리뷰형', icon: '📱', category: '광고',
+    basic: { task:['t2v'], genre:['ecom'], duration:['15s'], shotseq:['ts'], camera:['A'], stylepreset:['vlog'], stylelock:['both'], audio:['mus','fx'] },
+    full: { task:['t2v'], genre:['ecom'], duration:['15s'], shotseq:['ts'], lang:['ko'], voice:['bright'], speaker:['fem20','brightV','fastP'], emotion:['joy'], emotionflow:['none'], shotsize:['bust'], timeweather:['noon'], camera:['A'], angle:['eye'], optical:['dof'], composition:['rule3'], transition:['hard'], audio:['mus','fx'], musicgenre:['hiphop'], fxpreset:['daily'], quality:['hd','nat','warm'], stylepreset:['vlog'], stylelock:['both'], lighting:['natural'], textgen:['slogan'] }
+  },
+  {
+    id: 'ad_asmr', name: '🧖 ASMR·디테일형', icon: '🧖', category: '광고',
+    basic: { task:['t2v'], genre:['ecom'], duration:['20s'], shotseq:['ts'], camera:['C'], stylepreset:['docu'], stylelock:['both'], audio:['amb','fx'] },
+    full: { task:['t2v'], genre:['ecom'], duration:['20s'], shotseq:['ts'], lang:['ko'], voice:['soft'], speaker:['fem20','warmV','slowP'], emotion:['relief'], emotionflow:['none'], shotsize:['wide2close'], timeweather:['none'], camera:['C'], angle:['eye'], optical:['macro','slow'], composition:['center'], transition:['seamless'], audio:['amb','fx'], musicgenre:['acoustic'], fxpreset:['nature'], quality:['hd','nat'], stylepreset:['docu'], stylelock:['both'], lighting:['studio'], textgen:['none'] }
+  },
+  {
+    id: 'ad_compare', name: '⚖️ 비교·대조형', icon: '⚖️', category: '광고',
+    basic: { task:['t2v'], genre:['tvc'], duration:['15s'], shotseq:['ts'], camera:['B'], stylepreset:['docu'], stylelock:['both'], audio:['mus','amb'] },
+    full: { task:['t2v'], genre:['tvc'], duration:['15s'], shotseq:['ts'], lang:['ko'], voice:['calm'], speaker:['male40','calmV','midP'], emotion:['relief'], emotionflow:['none'], shotsize:['wide2wide'], timeweather:['noon'], camera:['B'], angle:['eye'], optical:['dof'], composition:['rule3'], transition:['match'], audio:['mus','amb'], musicgenre:['orchestra'], fxpreset:['tech'], quality:['hd','nat','skin'], stylepreset:['docu'], stylelock:['both'], lighting:['studio'], textgen:['slogan'] }
+  },
+  {
+    id: 'ad_demo', name: '🧰 데모·하우투형', icon: '🧰', category: '광고',
+    basic: { task:['t2v'], genre:['edu'], duration:['30s'], shotseq:['ts'], camera:['A'], stylepreset:['docu'], stylelock:['both'], audio:['fx','amb'] },
+    full: { task:['t2v'], genre:['edu'], duration:['30s'], shotseq:['ts'], lang:['ko'], voice:['calm'], speaker:['male20','calmV','midP'], emotion:['relief'], emotionflow:['none'], shotsize:['close2wide'], timeweather:['morning'], camera:['A'], angle:['eye'], optical:['macro','dof'], composition:['center'], transition:['cross'], audio:['fx','amb'], musicgenre:['none'], fxpreset:['daily'], quality:['hd','nat'], stylepreset:['docu'], stylelock:['both'], lighting:['natural'], textgen:['subtitle'] }
+  },
+  {
+    id: 'ad_luxury', name: '💎 럭셔리·브랜드 필름', icon: '💎', category: '광고',
+    basic: { task:['t2v'], genre:['brand'], duration:['20s'], shotseq:['ts'], camera:['B'], stylepreset:['docu'], stylelock:['both'], audio:['mus','amb'] },
+    full: { task:['t2v'], genre:['brand'], duration:['20s'], shotseq:['ts'], lang:['ko'], voice:['calm'], speaker:['fem40','lowV','slowP'], emotion:['relief'], emotionflow:['none'], shotsize:['close2wide'], timeweather:['evening'], camera:['B'], angle:['low'], optical:['dof','bokeh'], composition:['center'], transition:['cross'], audio:['mus','amb'], musicgenre:['orchestra'], fxpreset:['nature'], quality:['hd','nat','skin'], stylepreset:['docu'], stylelock:['both'], lighting:['lowkey'], textgen:['none'] }
+  },
+  {
+    id: 'ad_promo', name: '🎉 프로모션·이벤트형', icon: '🎉', category: '광고',
+    basic: { task:['t2v'], genre:['tvc'], duration:['15s'], shotseq:['ts'], camera:['E'], stylepreset:['vlog'], stylelock:['both'], audio:['mus','fx'] },
+    full: { task:['t2v'], genre:['tvc'], duration:['15s'], shotseq:['ts'], lang:['ko'], voice:['excited'], speaker:['male20','brightV','fastP'], emotion:['joy'], emotionflow:['none'], shotsize:['wide2close'], timeweather:['noon'], camera:['E'], angle:['eye'], optical:['flare','wide'], composition:['diag'], transition:['hard'], audio:['mus','fx'], musicgenre:['hiphop'], fxpreset:['city'], quality:['hd','nat','warm'], stylepreset:['vlog'], stylelock:['both'], lighting:['neon'], textgen:['slogan'] }
+  },
+  {
+    id: 'ad_ytshorts', name: '📱 유튜브 쇼츠 광고', icon: '📱', category: '광고',
+    basic: { task:['t2v'], genre:['ytshorts'], duration:['15s'], shotseq:['ts'], camera:['B'], stylepreset:['docu'], stylelock:['both'], audio:['mus','fx'] },
+    full: { task:['t2v'], genre:['ytshorts'], duration:['15s'], shotseq:['ts'], lang:['ko'], voice:['sales'], speaker:['fem20','brightV','fastP'], emotion:['joy','aegyo'], emotionflow:['none'], shotsize:['close2wide'], timeweather:['none'], camera:['B'], angle:['eye'], optical:['dof','macro'], composition:['center'], transition:['hard'], audio:['mus','fx'], musicgenre:['hiphop'], fxpreset:['tech'], quality:['hd','nat','clean'], stylepreset:['docu'], stylelock:['both'], lighting:['studio'], textgen:['cta'] }
+  },
+  {
+    id: 'ad_promo_sale', name: '🔥 한정 특가 세일', icon: '🔥', category: '광고',
+    basic: { task:['t2v'], genre:['promo'], duration:['15s'], shotseq:['ts'], camera:['E'], stylepreset:['vlog'], stylelock:['both'], audio:['mus','fx'] },
+    full: { task:['t2v'], genre:['promo'], duration:['15s'], shotseq:['ts'], lang:['ko'], voice:['urgent'], speaker:['male20','brightV','fastP'], emotion:['cheer'], emotionflow:['none'], shotsize:['close2wide'], timeweather:['night'], camera:['E'], angle:['eye'], optical:['flare','wide'], composition:['diag'], transition:['hard'], audio:['mus','fx'], musicgenre:['kpop'], fxpreset:['city'], quality:['hd','nat','warm'], stylepreset:['vlog'], stylelock:['both'], lighting:['neon'], textgen:['cta'] }
+  },
+  {
+    id: 'ad_brand_story', name: '🏺 브랜드 헤리티지', icon: '🏺', category: '광고',
+    basic: { task:['t2v'], genre:['brand'], duration:['30s'], shotseq:['ts'], camera:['B'], stylepreset:['docu'], stylelock:['both'], audio:['amb','mus'] },
+    full: { task:['t2v'], genre:['brand'], duration:['30s'], shotseq:['ts'], lang:['ko'], voice:['deep'], speaker:['male40','lowV','slowP'], emotion:['relief','dazed'], emotionflow:['flow'], shotsize:['wide2wide'], timeweather:['evening'], camera:['B'], angle:['low'], optical:['dof','bokeh'], composition:['center'], transition:['cross'], audio:['amb','mus'], musicgenre:['gugak'], fxpreset:['nature'], quality:['hd','grain','warm'], stylepreset:['docu'], stylelock:['both'], lighting:['lowkey'], textgen:['none'] }
+  },
+  /* ---- 영화 6종 ---- */
+  {
+    id: 'mv_trailer', name: '🎬 극장 예고편', icon: '🎬', category: '영화',
+    basic: { task:['t2v'], genre:['drama'], duration:['30s'], shotseq:['ts'], camera:['B'], stylepreset:['docu'], stylelock:['both'], audio:['mus','fx'] },
+    full: { task:['t2v'], genre:['drama'], duration:['30s'], shotseq:['ts'], lang:['ko'], voice:['excited'], speaker:['male40','lowV','midP'], emotion:['anx','angry'], emotionflow:['flow'], shotsize:['wide2wide'], timeweather:['night'], camera:['B'], angle:['low'], optical:['flare','dof'], composition:['diag'], transition:['hard'], audio:['mus','fx'], musicgenre:['orchestra'], fxpreset:['tech'], quality:['hd'], stylepreset:['docu'], stylelock:['both'], lighting:['lowkey'], textgen:['none'] }
+  },
+  {
+    id: 'mv_short', name: '📖 단편 영화', icon: '📖', category: '영화',
+    basic: { task:['t2v'], genre:['drama'], duration:['30s'], shotseq:['ts'], camera:['B'], stylepreset:['docu'], stylelock:['both'], audio:['amb','mus'] },
+    full: { task:['t2v'], genre:['drama'], duration:['30s'], shotseq:['ts'], lang:['ko'], voice:['soft'], speaker:['fem20','warmV','slowP'], emotion:['sad','relief'], emotionflow:['flow'], shotsize:['close2wide'], timeweather:['evening'], camera:['B'], angle:['eye'], optical:['dof','bokeh'], composition:['rule3'], transition:['cross'], audio:['amb','mus'], musicgenre:['acoustic'], fxpreset:['daily'], quality:['hd','nat','warm'], stylepreset:['docu'], stylelock:['both'], lighting:['golden'], textgen:['subtitle'] }
+  },
+  {
+    id: 'mv_docu', name: '🌍 다큐멘터리', icon: '🌍', category: '영화',
+    basic: { task:['t2v'], genre:['edu'], duration:['30s'], shotseq:['ts'], camera:['E'], stylepreset:['docu'], stylelock:['both'], audio:['amb','fx'] },
+    full: { task:['t2v'], genre:['edu'], duration:['30s'], shotseq:['ts'], lang:['ko'], voice:['calm'], speaker:['male40','lowV','slowP'], emotion:['relief'], emotionflow:['none'], shotsize:['wide2wide'], timeweather:['morning'], camera:['E'], angle:['eye'], optical:['dof','macro'], composition:['rule3'], transition:['cross'], audio:['amb','fx'], musicgenre:['none'], fxpreset:['nature'], quality:['hd','nat'], stylepreset:['docu'], stylelock:['both'], lighting:['natural'], textgen:['none'] }
+  },
+  {
+    id: 'mv_noir', name: '🕶️ 느와르·스릴러', icon: '🕶️', category: '영화',
+    basic: { task:['t2v'], genre:['drama'], duration:['20s'], shotseq:['ts'], camera:['B'], stylepreset:['docu'], stylelock:['both'], audio:['amb','mus'] },
+    full: { task:['t2v'], genre:['drama'], duration:['20s'], shotseq:['ts'], lang:['ko'], voice:['calm'], speaker:['male40','lowV','slowP'], emotion:['anx'], emotionflow:['flow'], shotsize:['close2wide'], timeweather:['night'], camera:['B'], angle:['low'], optical:['dof','fish'], composition:['diag'], transition:['cross'], audio:['amb','mus'], musicgenre:['orchestra'], fxpreset:['city'], quality:['hd'], stylepreset:['docu'], stylelock:['both'], lighting:['lowkey'], textgen:['none'] }
+  },
+  {
+    id: 'mv_romance', name: '💗 로맨스 필름', icon: '💗', category: '영화',
+    basic: { task:['t2v'], genre:['brand'], duration:['20s'], shotseq:['ts'], camera:['B'], stylepreset:['docu'], stylelock:['both'], audio:['mus','amb'] },
+    full: { task:['t2v'], genre:['brand'], duration:['20s'], shotseq:['ts'], lang:['ko'], voice:['soft'], speaker:['fem20','warmV','slowP'], emotion:['joy','relief'], emotionflow:['flow'], shotsize:['wide2close'], timeweather:['evening'], camera:['B'], angle:['eye'], optical:['dof','bokeh'], composition:['rule3'], transition:['cross'], audio:['mus','amb'], musicgenre:['acoustic'], fxpreset:['nature'], quality:['hd','nat','warm'], stylepreset:['docu'], stylelock:['both'], lighting:['golden'], textgen:['none'] }
+  },
+  {
+    id: 'mv_sf', name: '🛸 SF·판타지', icon: '🛸', category: '영화',
+    basic: { task:['t2v'], genre:['none'], duration:['20s'], shotseq:['ts'], camera:['D'], stylepreset:['cyber'], stylelock:['both'], audio:['mus','fx'] },
+    full: { task:['t2v'], genre:['none'], duration:['20s'], shotseq:['ts'], lang:['ko'], voice:['excited'], speaker:['male20','lowV','fastP'], emotion:['angry','joy'], emotionflow:['flow'], shotsize:['wide2close'], timeweather:['night'], camera:['D'], angle:['fpv'], optical:['flare','slow'], composition:['center'], transition:['hard'], audio:['mus','fx'], musicgenre:['hiphop'], fxpreset:['tech'], quality:['hd','nat'], stylepreset:['cyber'], stylelock:['both'], lighting:['neon'], textgen:['none'] }
+  },
+  {
+    id: 'mv_kfantasy', name: '🐉 한국 판타지 (도깨비·구미호)', icon: '🐉', category: '영화',
+    basic: { task:['t2v'], genre:['sageuk'], duration:['30s'], shotseq:['ts'], camera:['B'], stylepreset:['docu'], stylelock:['both'], audio:['amb','mus'] },
+    full: { task:['t2v'], genre:['sageuk'], duration:['30s'], shotseq:['ts'], lang:['ko'], voice:['deep'], speakerflow:['2'], sp1_role:['seonbi'], sp1_char:['male20','lowV','midP'], sp2_role:['mudang'], sp2_char:['fem40','warmV','slowP'], emotion:['fear','dazed','relief'], emotionflow:['arc'], shotsize:['wide2close'], timeweather:['night'], camera:['B'], angle:['low'], optical:['dof','flare'], composition:['center'], transition:['cross'], audio:['amb','mus'], musicgenre:['gugak'], fxpreset:['nature'], quality:['hd','grain'], stylepreset:['docu'], stylelock:['both'], lighting:['moon'], textgen:['none'] }
+  },
+];
+/* 기본/세부 렌더링 (카테고리 그룹화) */
+/* ========== 시나리오 위저드 (단계식 구성 — 고객사 입장) ========== */
+const WIZARD_SCENARIOS = {
+  yt_shorts: {
+    label: '유튜브 쇼츠 광고',
+    set: { task:['t2v'], genre:['ytshorts'], duration:['15s'], shotseq:['ts'], lang:['ko'], voice:['sales'], emotion:['joy','cheer'], emotionflow:['none'], shotsize:['close2wide'], camera:['B'], angle:['eye'], transition:['hard'], audio:['mus','fx'], musicgenre:['hiphop'], fxpreset:['tech'], quality:['hd','nat','clean'], stylepreset:['docu'], stylelock:['both'], lighting:['studio'], textgen:['cta'], params: { ratio:'9:16', duration:15 } }
+  },
+  live_comm: {
+    label: '라이브 커머스',
+    set: { task:['t2v'], genre:['livecomm'], duration:['20s'], shotseq:['ts'], lang:['ko'], voice:['sales'], speakerflow:['2'], sp1_role:['showhost'], sp1_char:['fem20','brightV','fastP'], sp2_role:['seller'], sp2_char:['male20'], emotion:['joy','cheer'], emotionflow:['none'], shotsize:['bust'], camera:['A'], angle:['eye'], transition:['hard'], audio:['mus','fx'], musicgenre:['hiphop'], fxpreset:['tech'], quality:['hd','nat'], stylepreset:['docu'], stylelock:['both'], lighting:['studio'], textgen:['cta'], params: { ratio:'16:9', duration:20 } }
+  },
+  k_drama: {
+    label: 'K-드라마',
+    set: { task:['t2v'], genre:['kdrama'], duration:['30s'], shotseq:['ts'], lang:['ko'], voice:['calm'], speakerflow:['3'], sp1_role:['bf'], sp1_char:['male20','calmV','midP'], sp2_role:['gf'], sp2_char:['fem20','warmV'], sp3_role:['mudang'], sp3_char:['fem40','warmV','slowP'], emotion:['sad','relief','choke'], emotionflow:['arc'], shotsize:['wide2close'], camera:['B'], angle:['low'], optical:['dof','bokeh'], composition:['rule3'], transition:['cross'], audio:['amb','mus'], musicgenre:['orchestra'], fxpreset:['nature'], quality:['hd','nat','warm'], stylepreset:['docu'], stylelock:['both'], lighting:['golden'], textgen:['subtitle'], params: { ratio:'16:9', duration:30 } }
+  },
+  saguek: {
+    label: '사극 (조선 시대)',
+    set: { task:['t2v'], genre:['sageuk'], duration:['30s'], shotseq:['ts'], lang:['ko'], voice:['deep'], speakerflow:['2'], sp1_role:['seonbi'], sp1_char:['male20','calmV'], sp2_role:['jumju'], sp2_char:['fem40','warmV','slowP'], emotion:['anx','relief'], emotionflow:['flow'], shotsize:['wide2wide'], camera:['B'], angle:['eye'], optical:['dof'], composition:['center'], transition:['cross'], audio:['amb','mus'], musicgenre:['gugak'], fxpreset:['nature'], quality:['hd','grain','warm'], stylepreset:['docu'], stylelock:['both'], lighting:['golden'], textgen:['none'], params: { ratio:'16:9', duration:30 } }
+  },
+  mukbang: {
+    label: '먹방',
+    set: { task:['t2v'], genre:['mukbang'], duration:['20s'], shotseq:['ts'], lang:['ko'], voice:['bright'], emotion:['joy','amused'], emotionflow:['none'], shotsize:['bust'], camera:['A'], angle:['eye'], optical:['macro','dof'], composition:['center'], transition:['hard'], audio:['fx','amb'], fxpreset:['daily'], quality:['hd','nat'], stylepreset:['docu'], stylelock:['both'], lighting:['studio'], textgen:['none'], params: { ratio:'16:9', duration:20 } }
+  },
+};
+function wizardApply(applyAll) {
+  const sc = document.getElementById('wz_scenario').value;
+  const subject = document.getElementById('wz_subject').value.trim();
+  const hook = document.getElementById('wz_hook').value.trim();
+  const cta = document.getElementById('wz_cta').value.trim();
+  const cfg = WIZARD_SCENARIOS[sc];
+  const resultEl = document.getElementById('wzResult');
+  if (!cfg) {
+    if (resultEl) resultEl.innerHTML = '';
+    return;
+  }
+  if (applyAll) {
+    // 모든 축 세팅 + 콘텐츠 입력 반영
+    const applied = [];
+    Object.entries(cfg.set).forEach(([axisId, keys]) => {
+      if (axisId === 'params') return;
+      state[axisId] = new Set(keys);
+      applied.push(AXES.find(x => x.id === axisId).title.replace(/^[^\s]*\s*/, ''));
+    });
+    if (cfg.set.params) {
+      const pr = cfg.set.params;
+      if (pr.ratio) document.getElementById('p_ratio').value = pr.ratio;
+      if (pr.duration) document.getElementById('p_dur').value = String(pr.duration);
+    }
+    if (subject) document.getElementById('ci_subject').value = subject;
+    if (hook) document.getElementById('ci_hook').value = hook;
+    if (cta) document.getElementById('ci_cta').value = cta;
+    renderSlots();
+    if (resultEl) {
+      resultEl.innerHTML = `✅ <b>"${cfg.label}"</b> 적용 완료 — 세팅된 축: ${applied.slice(0, 12).join(' · ')}${applied.length > 12 ? ' 외 ' + (applied.length - 12) + '개' : ''}<br>다음 단계: ⏱️ 장면 타임라인에 구간별 장면·대사를 채우세요.`;
+    }
+    showToast(`✨ "${cfg.label}" 구성 적용 완료 — 내용·훅·CTA를 채우세요`);
+    closePresetPop();
+  }
+}
+
+/* 🧙 시나리오로 시작 — 인라인 위저드 열기 */
+document.getElementById('wizardOpenBtn').addEventListener('click', () => {
+  const w = document.getElementById('wizardInline');
+  w.style.display = w.style.display === 'none' ? 'block' : 'none';
+  w.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.getElementById('wzResult').innerHTML = '';
+});
+
+function renderBuiltinPresets() {
+  const g = document.getElementById('presetGrid');
+  const gf = document.getElementById('presetGridFull');
+  if (!g || !gf) return;
+  const byCat = {};
+  BUILTIN_PRESETS.forEach(p => {
+    const cat = p.category || '콘텐츠';
+    (byCat[cat] = byCat[cat] || []).push(p);
+  });
+  const renderGrid = (grid, mode, cls) => {
+    grid.innerHTML = Object.entries(byCat).map(([cat, presets]) => `
+      <div class="preset-section-title">${cat}</div>
+      <div class="preset-grid" style="grid-column:1/-1;margin-bottom:6px">
+        ${presets.map(p => `<button class="preset-chip ${cls}" data-id="${p.id}" data-mode="${mode}">${p.icon} ${p.name.replace(/^[^\s]+\s/, '')}${mode==='full'?' ⚡':''}</button>`).join('')}
+      </div>`).join('');
+    grid.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+      const p = BUILTIN_PRESETS.find(x => x.id === b.dataset.id);
+      if (!p) return;
+      const data = b.dataset.mode === 'full' ? p.full : p.basic;
+      const extra = p.params ? { params: p.params } : {};
+      applySelection({ axes: data, ...extra });
+      showToast(`📁 "${p.name}" ${b.dataset.mode === 'full' ? '세부 확장' : '기본'} 적용 완료`);
+      closePresetPop();
+    }));
+  };
+  renderGrid(g, 'basic', '');
+  renderGrid(gf, 'full', 'chip-full');
+}
+
+document.getElementById('presetBtn').addEventListener('click', e => {
+  e.stopPropagation();
+  const open = document.getElementById('presetPop').classList.toggle('open');
+  if (open) { renderBuiltinPresets(); renderPresetList(); }
+});
+document.addEventListener('click', e => {
+  if (!e.target.closest('.preset-wrap')) closePresetPop();
+});
+document.getElementById('presetSave').addEventListener('click', savePreset);
+document.getElementById('presetName').addEventListener('keydown', e => {
+  if (e.key === 'Enter') savePreset();
+});
+
+/* ---- 버튼 리플 효과 ---- */
+document.querySelectorAll('.btn').forEach(b => b.addEventListener('click', e => {
+  const rect = b.getBoundingClientRect();
+  const size = Math.max(rect.width, rect.height);
+  const span = document.createElement('span');
+  span.className = 'ripple';
+  span.style.width = span.style.height = size + 'px';
+  span.style.left = (e.clientX - rect.left - size / 2) + 'px';
+  span.style.top = (e.clientY - rect.top - size / 2) + 'px';
+  b.appendChild(span);
+  setTimeout(() => span.remove(), 600);
+}));
+
+renderSlots();
+</script>
+</body>
+</html>

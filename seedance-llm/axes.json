@@ -1,0 +1,2703 @@
+{
+  "meta": {
+    "axesCount": 41,
+    "presetsCount": 37,
+    "updated": "2026-08-10"
+  },
+  "axes": [
+    {
+      "id": "task",
+      "title": "① 작업 유형 — 새로·참조·편집·연장",
+      "tag": "core",
+      "type": "single",
+      "group": "A. 장르·구조 — 뭘 만들지",
+      "requires": [],
+      "dependsOn": {},
+      "options": [
+        {
+          "key": "t2v",
+          "label": "텍스트만 — 새 영상"
+        },
+        {
+          "key": "r2v",
+          "label": "참조 — 이미지·영상 첨부"
+        },
+        {
+          "key": "edit",
+          "label": "편집 — 🔒고정, 기존 영상 수정"
+        },
+        {
+          "key": "ext",
+          "label": "연장 — 🔒고정, 영상 이어 만들기"
+        },
+        {
+          "key": "fl",
+          "label": "시작·끝 프레임 — 🔒고정"
+        }
+      ]
+    },
+    {
+      "id": "extra",
+      "title": "①-2 추가 기능 — 사진 묶기·영상 연결",
+      "tag": "opt",
+      "type": "single",
+      "group": "A. 장르·구조 — 뭘 만들지",
+      "requires": [
+        "t2v",
+        "r2v"
+      ],
+      "dependsOn": {},
+      "options": [
+        {
+          "key": "none",
+          "label": "사용 안 함"
+        },
+        {
+          "key": "oc",
+          "label": "사진 묶어 완성"
+        },
+        {
+          "key": "tr",
+          "label": "영상 간 자연 연결"
+        }
+      ]
+    },
+    {
+      "id": "genre",
+      "title": "② 장르 프리셋",
+      "tag": "opt",
+      "type": "single",
+      "group": "A. 장르·구조 — 뭘 만들지",
+      "requires": [
+        "t2v",
+        "r2v"
+      ],
+      "dependsOn": {},
+      "options": [
+        {
+          "key": "none",
+          "label": "선택 안 함"
+        },
+        {
+          "key": "tvc",
+          "label": "광고 (TVC)"
+        },
+        {
+          "key": "drama",
+          "label": "단편 드라마"
+        },
+        {
+          "key": "brand",
+          "label": "브랜드 스토리"
+        },
+        {
+          "key": "edu",
+          "label": "교육 영상"
+        },
+        {
+          "key": "ecom",
+          "label": "전자상거래 제품"
+        },
+        {
+          "key": "travel",
+          "label": "여행 Vlog"
+        },
+        {
+          "key": "docu",
+          "label": "다큐멘터리 ⚡확장"
+        },
+        {
+          "key": "mv",
+          "label": "뮤직비디오 ⚡확장"
+        },
+        {
+          "key": "game",
+          "label": "게임 소개 ⚡확장"
+        },
+        {
+          "key": "kdrama",
+          "label": "K-드라마 ⚡확장"
+        },
+        {
+          "key": "sageuk",
+          "label": "사극 (조선 시대) ⚡확장"
+        },
+        {
+          "key": "mukbang",
+          "label": "먹방 — 음식 먹는 방송 ⚡확장"
+        },
+        {
+          "key": "kvariety",
+          "label": "K-예능 ⚡확장"
+        },
+        {
+          "key": "trad",
+          "label": "한국 전통문화 ⚡확장"
+        },
+        {
+          "key": "livecomm",
+          "label": "라이브 커머스 — 실시간 방송 쇼핑 ⚡확장"
+        },
+        {
+          "key": "promo",
+          "label": "프로모션·세일 — 한정 특가 ⚡확장"
+        },
+        {
+          "key": "ytshorts",
+          "label": "유튜브 쇼츠 — 세로형 (9:16) ⚡확장"
+        }
+      ]
+    },
+    {
+      "id": "duration",
+      "title": "③ 길이·단계",
+      "tag": "core",
+      "type": "single",
+      "group": "A. 장르·구조 — 뭘 만들지",
+      "requires": [],
+      "dependsOn": {},
+      "options": [
+        {
+          "key": "10s",
+          "label": "10초 / 3단계"
+        },
+        {
+          "key": "15s",
+          "label": "15초 / 3단계"
+        },
+        {
+          "key": "20s",
+          "label": "20초 / 4단계 (기본)"
+        },
+        {
+          "key": "30s",
+          "label": "30초 / 5단계 (최대)"
+        },
+        {
+          "key": "auto",
+          "label": "-1 자동 (모델이 적절한 길이 선택)"
+        }
+      ]
+    },
+    {
+      "id": "shotseq",
+      "title": "④ 장면 분할 방식 — 영상을 어떻게 쪼갤지",
+      "tag": "opt",
+      "type": "single",
+      "group": "A. 장르·구조 — 뭘 만들지",
+      "requires": [
+        "t2v",
+        "r2v"
+      ],
+      "dependsOn": {},
+      "options": [
+        {
+          "key": "ts",
+          "label": "시간 구간 (추천) → 【阶段一】(0-4)【阶段二】(4-9)…"
+        },
+        {
+          "key": "point",
+          "label": "시간점 → \"第5秒에 장면 전환\" (이벤트 1개 지정)"
+        },
+        {
+          "key": "rel",
+          "label": "상대시간 → \"버튼 누른 뒤 3초 후\" (연속 액션용)"
+        },
+        {
+          "key": "mix",
+          "label": "혼합 → 【镜头1】(0-4)【镜头2】(4-9)…"
+        },
+        {
+          "key": "n",
+          "label": "장면 번호만 → 【镜头1】【镜头2】… (2.0 방식, 시간 없음, 비권장)"
+        }
+      ]
+    },
+    {
+      "id": "lang",
+      "title": "⑤ 대사 언어·억양",
+      "tag": "core",
+      "type": "single",
+      "group": "B. 인물·대사 — 누가 나오지",
+      "requires": [],
+      "dependsOn": {},
+      "options": [
+        {
+          "key": "ko",
+          "label": "한국어 + 서울 억양 (권장)"
+        },
+        {
+          "key": "gyeongsang",
+          "label": "한국어 + 경상도 (부산·대구) 사투리 ⚡확장"
+        },
+        {
+          "key": "jeolla",
+          "label": "한국어 + 전라도 사투리 ⚡확장"
+        },
+        {
+          "key": "chungcheong",
+          "label": "한국어 + 충청도 사투리 ⚡확장"
+        },
+        {
+          "key": "gangwon",
+          "label": "한국어 + 강원도 사투리 ⚡확장"
+        },
+        {
+          "key": "jeju",
+          "label": "한국어 + 제주도 사투리 ⚡확장"
+        },
+        {
+          "key": "none",
+          "label": "대사 없음 — 입모양만 (마임)"
+        }
+      ]
+    },
+    {
+      "id": "voice",
+      "title": "⑥ 말투 — 대사를 어떻게 말할지",
+      "tag": "opt",
+      "type": "single",
+      "group": "B. 인물·대사 — 누가 나오지",
+      "requires": [],
+      "dependsOn": {
+        "lang": [
+          "ko",
+          "gyeongsang",
+          "jeolla",
+          "chungcheong",
+          "gangwon",
+          "jeju"
+        ]
+      },
+      "options": [
+        {
+          "key": "soft",
+          "label": "부드럽고 느리게"
+        },
+        {
+          "key": "bright",
+          "label": "밝고 빠르게"
+        },
+        {
+          "key": "calm",
+          "label": "차분하고 격식 있게"
+        },
+        {
+          "key": "excited",
+          "label": "흥분되고 빠르게"
+        },
+        {
+          "key": "warm",
+          "label": "다정하고 부드럽게 ⚡확장"
+        },
+        {
+          "key": "firm",
+          "label": "단호하고 또렷하게 ⚡확장"
+        },
+        {
+          "key": "playful",
+          "label": "명랑하고 장난기 있게 ⚡확장"
+        },
+        {
+          "key": "deep",
+          "label": "무게감 있게 차분히 ⚡확장"
+        },
+        {
+          "key": "polite",
+          "label": "공손하고 예의 바르게 ⚡확장"
+        },
+        {
+          "key": "cute",
+          "label": "애교 있고 사랑스럽게 ⚡확장"
+        },
+        {
+          "key": "sarcastic",
+          "label": "냉소적이고 비꼬듯 ⚡확장"
+        },
+        {
+          "key": "awe",
+          "label": "경외심 가득하게 ⚡확장"
+        },
+        {
+          "key": "whisper",
+          "label": "속삭이듯 조용히 ⚡확장"
+        },
+        {
+          "key": "loud",
+          "label": "큰 소리로 힘차게 ⚡확장"
+        },
+        {
+          "key": "singing",
+          "label": "노래하듯 리드미컬하게 ⚡확장"
+        },
+        {
+          "key": "teary",
+          "label": "울먹이며 간절하게 ⚡확장"
+        },
+        {
+          "key": "laughing",
+          "label": "웃으며 대화하듯 ⚡확장"
+        },
+        {
+          "key": "flat",
+          "label": "무감정하게 또박또박 ⚡확장"
+        },
+        {
+          "key": "sales",
+          "label": "세일즈 톤 — 적극 호객·설득 ⚡확장"
+        },
+        {
+          "key": "urgent",
+          "label": "긴급·한정 특가 톤 ⚡확장"
+        }
+      ]
+    },
+    {
+      "id": "speaker",
+      "title": "⑥-2 화자 특성 — 목소리 특징",
+      "tag": "opt",
+      "type": "multi",
+      "group": "B. 인물·대사 — 누가 나오지",
+      "requires": [],
+      "dependsOn": {
+        "lang": [
+          "ko",
+          "gyeongsang",
+          "jeolla",
+          "chungcheong",
+          "gangwon",
+          "jeju"
+        ]
+      },
+      "options": [
+        {
+          "key": "teen",
+          "label": "10대"
+        },
+        {
+          "key": "fem20",
+          "label": "20대 여성"
+        },
+        {
+          "key": "thirties",
+          "label": "30대"
+        },
+        {
+          "key": "fem40",
+          "label": "40대 여성"
+        },
+        {
+          "key": "male20",
+          "label": "20대 남성"
+        },
+        {
+          "key": "male40",
+          "label": "40대 남성"
+        },
+        {
+          "key": "fifties",
+          "label": "50대"
+        },
+        {
+          "key": "sixties",
+          "label": "60대 이상"
+        },
+        {
+          "key": "calmV",
+          "label": "음색: 차분·안정"
+        },
+        {
+          "key": "brightV",
+          "label": "음색: 밝고 또렷"
+        },
+        {
+          "key": "warmV",
+          "label": "음색: 부드럽고 따뜻"
+        },
+        {
+          "key": "lowV",
+          "label": "음색: 낮고 무게감"
+        },
+        {
+          "key": "whisperV",
+          "label": "음색: 속삭이는 가벼움"
+        },
+        {
+          "key": "huskyV",
+          "label": "음색: 거칠고 쉰 목소리"
+        },
+        {
+          "key": "clearV",
+          "label": "음색: 맑고 청량"
+        },
+        {
+          "key": "fastP",
+          "label": "속도: 빠름"
+        },
+        {
+          "key": "vfastP",
+          "label": "속도: 매우 빠름"
+        },
+        {
+          "key": "midP",
+          "label": "속도: 보통"
+        },
+        {
+          "key": "slowP",
+          "label": "속도: 느림"
+        },
+        {
+          "key": "happyE",
+          "label": "감정기조: 명랑·외향"
+        },
+        {
+          "key": "excitedE",
+          "label": "감정기조: 흥분·격앙"
+        },
+        {
+          "key": "calmE",
+          "label": "감정기조: 차분·냉정"
+        },
+        {
+          "key": "softE",
+          "label": "감정기조: 다정·포근"
+        },
+        {
+          "key": "gloomyE",
+          "label": "감정기조: 우울·가라앉음"
+        }
+      ]
+    },
+    {
+      "id": "speakerflow",
+      "title": "⑥-3 복수 화자 — 여러 명 목소리 분리",
+      "tag": "opt",
+      "type": "single",
+      "group": "B. 인물·대사 — 누가 나오지",
+      "requires": [],
+      "dependsOn": {
+        "lang": [
+          "ko",
+          "gyeongsang",
+          "jeolla",
+          "chungcheong",
+          "gangwon",
+          "jeju"
+        ]
+      },
+      "options": [
+        {
+          "key": "none",
+          "label": "사용 안 함"
+        },
+        {
+          "key": "2",
+          "label": "화자 2명 — 목소리 분리"
+        },
+        {
+          "key": "3",
+          "label": "화자 3명 — 목소리 분리"
+        },
+        {
+          "key": "4",
+          "label": "화자 4명 — 목소리 분리 ⚡확장"
+        }
+      ]
+    },
+    {
+      "id": "sp1_role",
+      "title": "화자 1 — 역할",
+      "tag": "opt",
+      "type": "single",
+      "group": "B. 인물·대사 — 누가 나오지",
+      "requires": [],
+      "dependsOn": {
+        "speakerflow": [
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "options": [
+        {
+          "key": "bf",
+          "label": "남자친구/오빠"
+        },
+        {
+          "key": "gf",
+          "label": "여자친구"
+        },
+        {
+          "key": "mudang",
+          "label": "무당/상담사"
+        },
+        {
+          "key": "friend",
+          "label": "친구"
+        },
+        {
+          "key": "family",
+          "label": "가족 (부모·자녀)"
+        },
+        {
+          "key": "mom",
+          "label": "엄마"
+        },
+        {
+          "key": "dad",
+          "label": "아빠"
+        },
+        {
+          "key": "kid",
+          "label": "아이"
+        },
+        {
+          "key": "granny",
+          "label": "할머니"
+        },
+        {
+          "key": "grandpa",
+          "label": "할아버지"
+        },
+        {
+          "key": "police",
+          "label": "형사/경찰"
+        },
+        {
+          "key": "doctor",
+          "label": "의사/간호사"
+        },
+        {
+          "key": "boss",
+          "label": "사장님/보스"
+        },
+        {
+          "key": "reporter",
+          "label": "기자"
+        },
+        {
+          "key": "villain",
+          "label": "악당/빌런"
+        },
+        {
+          "key": "youtuber",
+          "label": "유튜버"
+        },
+        {
+          "key": "noona",
+          "label": "누나/언니 ⚡확장"
+        },
+        {
+          "key": "ajumma",
+          "label": "아주머니 ⚡확장"
+        },
+        {
+          "key": "seonbi",
+          "label": "선비 (사극) ⚡확장"
+        },
+        {
+          "key": "jumju",
+          "label": "주모 (사극) ⚡확장"
+        },
+        {
+          "key": "showhost",
+          "label": "쇼호스트 — 라이브 커머스 진행자 ⚡확장"
+        },
+        {
+          "key": "seller",
+          "label": "판매원/세일즈맨 ⚡확장"
+        },
+        {
+          "key": "teacher",
+          "label": "선생님"
+        },
+        {
+          "key": "customer",
+          "label": "고객"
+        },
+        {
+          "key": "employee",
+          "label": "직원/상담원"
+        },
+        {
+          "key": "narration",
+          "label": "내레이션"
+        }
+      ]
+    },
+    {
+      "id": "sp1_char",
+      "title": "화자 1 — 목소리 특성",
+      "tag": "opt",
+      "type": "multi",
+      "group": "B. 인물·대사 — 누가 나오지",
+      "requires": [],
+      "dependsOn": {
+        "speakerflow": [
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "options": [
+        {
+          "key": "teen",
+          "label": "10대"
+        },
+        {
+          "key": "fem20",
+          "label": "20대 여성"
+        },
+        {
+          "key": "thirties",
+          "label": "30대"
+        },
+        {
+          "key": "fem40",
+          "label": "40대 여성"
+        },
+        {
+          "key": "male20",
+          "label": "20대 남성"
+        },
+        {
+          "key": "male40",
+          "label": "40대 남성"
+        },
+        {
+          "key": "fifties",
+          "label": "50대"
+        },
+        {
+          "key": "sixties",
+          "label": "60대 이상"
+        },
+        {
+          "key": "calmV",
+          "label": "음색: 차분·안정"
+        },
+        {
+          "key": "brightV",
+          "label": "음색: 밝고 또렷"
+        },
+        {
+          "key": "warmV",
+          "label": "음색: 부드럽고 따뜻"
+        },
+        {
+          "key": "lowV",
+          "label": "음색: 낮고 무게감"
+        },
+        {
+          "key": "whisperV",
+          "label": "음색: 속삭이는 가벼움"
+        },
+        {
+          "key": "huskyV",
+          "label": "음색: 거칠고 쉰 목소리"
+        },
+        {
+          "key": "clearV",
+          "label": "음색: 맑고 청량"
+        },
+        {
+          "key": "fastP",
+          "label": "속도: 빠름"
+        },
+        {
+          "key": "vfastP",
+          "label": "속도: 매우 빠름"
+        },
+        {
+          "key": "midP",
+          "label": "속도: 보통"
+        },
+        {
+          "key": "slowP",
+          "label": "속도: 느림"
+        },
+        {
+          "key": "happyE",
+          "label": "감정기조: 명랑·외향"
+        },
+        {
+          "key": "excitedE",
+          "label": "감정기조: 흥분·격앙"
+        },
+        {
+          "key": "calmE",
+          "label": "감정기조: 차분·냉정"
+        },
+        {
+          "key": "softE",
+          "label": "감정기조: 다정·포근"
+        },
+        {
+          "key": "gloomyE",
+          "label": "감정기조: 우울·가라앉음"
+        }
+      ]
+    },
+    {
+      "id": "sp2_role",
+      "title": "화자 2 — 역할",
+      "tag": "opt",
+      "type": "single",
+      "group": "B. 인물·대사 — 누가 나오지",
+      "requires": [],
+      "dependsOn": {
+        "speakerflow": [
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "options": [
+        {
+          "key": "bf",
+          "label": "남자친구/오빠"
+        },
+        {
+          "key": "gf",
+          "label": "여자친구"
+        },
+        {
+          "key": "mudang",
+          "label": "무당/상담사"
+        },
+        {
+          "key": "friend",
+          "label": "친구"
+        },
+        {
+          "key": "family",
+          "label": "가족 (부모·자녀)"
+        },
+        {
+          "key": "mom",
+          "label": "엄마"
+        },
+        {
+          "key": "dad",
+          "label": "아빠"
+        },
+        {
+          "key": "kid",
+          "label": "아이"
+        },
+        {
+          "key": "granny",
+          "label": "할머니"
+        },
+        {
+          "key": "grandpa",
+          "label": "할아버지"
+        },
+        {
+          "key": "police",
+          "label": "형사/경찰"
+        },
+        {
+          "key": "doctor",
+          "label": "의사/간호사"
+        },
+        {
+          "key": "boss",
+          "label": "사장님/보스"
+        },
+        {
+          "key": "reporter",
+          "label": "기자"
+        },
+        {
+          "key": "villain",
+          "label": "악당/빌런"
+        },
+        {
+          "key": "youtuber",
+          "label": "유튜버"
+        },
+        {
+          "key": "noona",
+          "label": "누나/언니 ⚡확장"
+        },
+        {
+          "key": "ajumma",
+          "label": "아주머니 ⚡확장"
+        },
+        {
+          "key": "seonbi",
+          "label": "선비 (사극) ⚡확장"
+        },
+        {
+          "key": "jumju",
+          "label": "주모 (사극) ⚡확장"
+        },
+        {
+          "key": "showhost",
+          "label": "쇼호스트 — 라이브 커머스 진행자 ⚡확장"
+        },
+        {
+          "key": "seller",
+          "label": "판매원/세일즈맨 ⚡확장"
+        },
+        {
+          "key": "teacher",
+          "label": "선생님"
+        },
+        {
+          "key": "customer",
+          "label": "고객"
+        },
+        {
+          "key": "employee",
+          "label": "직원/상담원"
+        },
+        {
+          "key": "narration",
+          "label": "내레이션"
+        }
+      ]
+    },
+    {
+      "id": "sp2_char",
+      "title": "화자 2 — 목소리 특성",
+      "tag": "opt",
+      "type": "multi",
+      "group": "B. 인물·대사 — 누가 나오지",
+      "requires": [],
+      "dependsOn": {
+        "speakerflow": [
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "options": [
+        {
+          "key": "teen",
+          "label": "10대"
+        },
+        {
+          "key": "fem20",
+          "label": "20대 여성"
+        },
+        {
+          "key": "thirties",
+          "label": "30대"
+        },
+        {
+          "key": "fem40",
+          "label": "40대 여성"
+        },
+        {
+          "key": "male20",
+          "label": "20대 남성"
+        },
+        {
+          "key": "male40",
+          "label": "40대 남성"
+        },
+        {
+          "key": "fifties",
+          "label": "50대"
+        },
+        {
+          "key": "sixties",
+          "label": "60대 이상"
+        },
+        {
+          "key": "calmV",
+          "label": "음색: 차분·안정"
+        },
+        {
+          "key": "brightV",
+          "label": "음색: 밝고 또렷"
+        },
+        {
+          "key": "warmV",
+          "label": "음색: 부드럽고 따뜻"
+        },
+        {
+          "key": "lowV",
+          "label": "음색: 낮고 무게감"
+        },
+        {
+          "key": "whisperV",
+          "label": "음색: 속삭이는 가벼움"
+        },
+        {
+          "key": "huskyV",
+          "label": "음색: 거칠고 쉰 목소리"
+        },
+        {
+          "key": "clearV",
+          "label": "음색: 맑고 청량"
+        },
+        {
+          "key": "fastP",
+          "label": "속도: 빠름"
+        },
+        {
+          "key": "vfastP",
+          "label": "속도: 매우 빠름"
+        },
+        {
+          "key": "midP",
+          "label": "속도: 보통"
+        },
+        {
+          "key": "slowP",
+          "label": "속도: 느림"
+        },
+        {
+          "key": "happyE",
+          "label": "감정기조: 명랑·외향"
+        },
+        {
+          "key": "excitedE",
+          "label": "감정기조: 흥분·격앙"
+        },
+        {
+          "key": "calmE",
+          "label": "감정기조: 차분·냉정"
+        },
+        {
+          "key": "softE",
+          "label": "감정기조: 다정·포근"
+        },
+        {
+          "key": "gloomyE",
+          "label": "감정기조: 우울·가라앉음"
+        }
+      ]
+    },
+    {
+      "id": "sp3_role",
+      "title": "화자 3 — 역할",
+      "tag": "opt",
+      "type": "single",
+      "group": "B. 인물·대사 — 누가 나오지",
+      "requires": [],
+      "dependsOn": {
+        "speakerflow": [
+          "3",
+          "4"
+        ]
+      },
+      "options": [
+        {
+          "key": "bf",
+          "label": "남자친구/오빠"
+        },
+        {
+          "key": "gf",
+          "label": "여자친구"
+        },
+        {
+          "key": "mudang",
+          "label": "무당/상담사"
+        },
+        {
+          "key": "friend",
+          "label": "친구"
+        },
+        {
+          "key": "family",
+          "label": "가족 (부모·자녀)"
+        },
+        {
+          "key": "mom",
+          "label": "엄마"
+        },
+        {
+          "key": "dad",
+          "label": "아빠"
+        },
+        {
+          "key": "kid",
+          "label": "아이"
+        },
+        {
+          "key": "granny",
+          "label": "할머니"
+        },
+        {
+          "key": "grandpa",
+          "label": "할아버지"
+        },
+        {
+          "key": "police",
+          "label": "형사/경찰"
+        },
+        {
+          "key": "doctor",
+          "label": "의사/간호사"
+        },
+        {
+          "key": "boss",
+          "label": "사장님/보스"
+        },
+        {
+          "key": "reporter",
+          "label": "기자"
+        },
+        {
+          "key": "villain",
+          "label": "악당/빌런"
+        },
+        {
+          "key": "youtuber",
+          "label": "유튜버"
+        },
+        {
+          "key": "noona",
+          "label": "누나/언니 ⚡확장"
+        },
+        {
+          "key": "ajumma",
+          "label": "아주머니 ⚡확장"
+        },
+        {
+          "key": "seonbi",
+          "label": "선비 (사극) ⚡확장"
+        },
+        {
+          "key": "jumju",
+          "label": "주모 (사극) ⚡확장"
+        },
+        {
+          "key": "showhost",
+          "label": "쇼호스트 — 라이브 커머스 진행자 ⚡확장"
+        },
+        {
+          "key": "seller",
+          "label": "판매원/세일즈맨 ⚡확장"
+        },
+        {
+          "key": "teacher",
+          "label": "선생님"
+        },
+        {
+          "key": "customer",
+          "label": "고객"
+        },
+        {
+          "key": "employee",
+          "label": "직원/상담원"
+        },
+        {
+          "key": "narration",
+          "label": "내레이션"
+        }
+      ]
+    },
+    {
+      "id": "sp3_char",
+      "title": "화자 3 — 목소리 특성",
+      "tag": "opt",
+      "type": "multi",
+      "group": "B. 인물·대사 — 누가 나오지",
+      "requires": [],
+      "dependsOn": {
+        "speakerflow": [
+          "3",
+          "4"
+        ]
+      },
+      "options": [
+        {
+          "key": "teen",
+          "label": "10대"
+        },
+        {
+          "key": "fem20",
+          "label": "20대 여성"
+        },
+        {
+          "key": "thirties",
+          "label": "30대"
+        },
+        {
+          "key": "fem40",
+          "label": "40대 여성"
+        },
+        {
+          "key": "male20",
+          "label": "20대 남성"
+        },
+        {
+          "key": "male40",
+          "label": "40대 남성"
+        },
+        {
+          "key": "fifties",
+          "label": "50대"
+        },
+        {
+          "key": "sixties",
+          "label": "60대 이상"
+        },
+        {
+          "key": "calmV",
+          "label": "음색: 차분·안정"
+        },
+        {
+          "key": "brightV",
+          "label": "음색: 밝고 또렷"
+        },
+        {
+          "key": "warmV",
+          "label": "음색: 부드럽고 따뜻"
+        },
+        {
+          "key": "lowV",
+          "label": "음색: 낮고 무게감"
+        },
+        {
+          "key": "whisperV",
+          "label": "음색: 속삭이는 가벼움"
+        },
+        {
+          "key": "huskyV",
+          "label": "음색: 거칠고 쉰 목소리"
+        },
+        {
+          "key": "clearV",
+          "label": "음색: 맑고 청량"
+        },
+        {
+          "key": "fastP",
+          "label": "속도: 빠름"
+        },
+        {
+          "key": "vfastP",
+          "label": "속도: 매우 빠름"
+        },
+        {
+          "key": "midP",
+          "label": "속도: 보통"
+        },
+        {
+          "key": "slowP",
+          "label": "속도: 느림"
+        },
+        {
+          "key": "happyE",
+          "label": "감정기조: 명랑·외향"
+        },
+        {
+          "key": "excitedE",
+          "label": "감정기조: 흥분·격앙"
+        },
+        {
+          "key": "calmE",
+          "label": "감정기조: 차분·냉정"
+        },
+        {
+          "key": "softE",
+          "label": "감정기조: 다정·포근"
+        },
+        {
+          "key": "gloomyE",
+          "label": "감정기조: 우울·가라앉음"
+        }
+      ]
+    },
+    {
+      "id": "sp4_role",
+      "title": "화자 4 — 역할",
+      "tag": "opt",
+      "type": "single",
+      "group": "B. 인물·대사 — 누가 나오지",
+      "requires": [],
+      "dependsOn": {
+        "speakerflow": [
+          "4"
+        ]
+      },
+      "options": [
+        {
+          "key": "bf",
+          "label": "남자친구/오빠"
+        },
+        {
+          "key": "gf",
+          "label": "여자친구"
+        },
+        {
+          "key": "mudang",
+          "label": "무당/상담사"
+        },
+        {
+          "key": "friend",
+          "label": "친구"
+        },
+        {
+          "key": "family",
+          "label": "가족 (부모·자녀)"
+        },
+        {
+          "key": "mom",
+          "label": "엄마"
+        },
+        {
+          "key": "dad",
+          "label": "아빠"
+        },
+        {
+          "key": "kid",
+          "label": "아이"
+        },
+        {
+          "key": "granny",
+          "label": "할머니"
+        },
+        {
+          "key": "grandpa",
+          "label": "할아버지"
+        },
+        {
+          "key": "police",
+          "label": "형사/경찰"
+        },
+        {
+          "key": "doctor",
+          "label": "의사/간호사"
+        },
+        {
+          "key": "boss",
+          "label": "사장님/보스"
+        },
+        {
+          "key": "reporter",
+          "label": "기자"
+        },
+        {
+          "key": "villain",
+          "label": "악당/빌런"
+        },
+        {
+          "key": "youtuber",
+          "label": "유튜버"
+        },
+        {
+          "key": "noona",
+          "label": "누나/언니 ⚡확장"
+        },
+        {
+          "key": "ajumma",
+          "label": "아주머니 ⚡확장"
+        },
+        {
+          "key": "seonbi",
+          "label": "선비 (사극) ⚡확장"
+        },
+        {
+          "key": "jumju",
+          "label": "주모 (사극) ⚡확장"
+        },
+        {
+          "key": "showhost",
+          "label": "쇼호스트 — 라이브 커머스 진행자 ⚡확장"
+        },
+        {
+          "key": "seller",
+          "label": "판매원/세일즈맨 ⚡확장"
+        },
+        {
+          "key": "teacher",
+          "label": "선생님"
+        },
+        {
+          "key": "customer",
+          "label": "고객"
+        },
+        {
+          "key": "employee",
+          "label": "직원/상담원"
+        },
+        {
+          "key": "narration",
+          "label": "내레이션"
+        }
+      ]
+    },
+    {
+      "id": "sp4_char",
+      "title": "화자 4 — 목소리 특성",
+      "tag": "opt",
+      "type": "multi",
+      "group": "B. 인물·대사 — 누가 나오지",
+      "requires": [],
+      "dependsOn": {
+        "speakerflow": [
+          "4"
+        ]
+      },
+      "options": [
+        {
+          "key": "teen",
+          "label": "10대"
+        },
+        {
+          "key": "fem20",
+          "label": "20대 여성"
+        },
+        {
+          "key": "thirties",
+          "label": "30대"
+        },
+        {
+          "key": "fem40",
+          "label": "40대 여성"
+        },
+        {
+          "key": "male20",
+          "label": "20대 남성"
+        },
+        {
+          "key": "male40",
+          "label": "40대 남성"
+        },
+        {
+          "key": "fifties",
+          "label": "50대"
+        },
+        {
+          "key": "sixties",
+          "label": "60대 이상"
+        },
+        {
+          "key": "calmV",
+          "label": "음색: 차분·안정"
+        },
+        {
+          "key": "brightV",
+          "label": "음색: 밝고 또렷"
+        },
+        {
+          "key": "warmV",
+          "label": "음색: 부드럽고 따뜻"
+        },
+        {
+          "key": "lowV",
+          "label": "음색: 낮고 무게감"
+        },
+        {
+          "key": "whisperV",
+          "label": "음색: 속삭이는 가벼움"
+        },
+        {
+          "key": "huskyV",
+          "label": "음색: 거칠고 쉰 목소리"
+        },
+        {
+          "key": "clearV",
+          "label": "음색: 맑고 청량"
+        },
+        {
+          "key": "fastP",
+          "label": "속도: 빠름"
+        },
+        {
+          "key": "vfastP",
+          "label": "속도: 매우 빠름"
+        },
+        {
+          "key": "midP",
+          "label": "속도: 보통"
+        },
+        {
+          "key": "slowP",
+          "label": "속도: 느림"
+        },
+        {
+          "key": "happyE",
+          "label": "감정기조: 명랑·외향"
+        },
+        {
+          "key": "excitedE",
+          "label": "감정기조: 흥분·격앙"
+        },
+        {
+          "key": "calmE",
+          "label": "감정기조: 차분·냉정"
+        },
+        {
+          "key": "softE",
+          "label": "감정기조: 다정·포근"
+        },
+        {
+          "key": "gloomyE",
+          "label": "감정기조: 우울·가라앉음"
+        }
+      ]
+    },
+    {
+      "id": "emotion",
+      "title": "⑦ 감정 — 몸짓·표정으로 표현",
+      "tag": "core",
+      "type": "multi",
+      "group": "B. 인물·대사 — 누가 나오지",
+      "requires": [],
+      "dependsOn": {},
+      "options": [
+        {
+          "key": "joy",
+          "label": "기쁨"
+        },
+        {
+          "key": "sad",
+          "label": "슬픔"
+        },
+        {
+          "key": "anx",
+          "label": "긴장/불안"
+        },
+        {
+          "key": "angry",
+          "label": "분노"
+        },
+        {
+          "key": "relief",
+          "label": "해소"
+        },
+        {
+          "key": "embarrassed",
+          "label": "당황 ⚡확장"
+        },
+        {
+          "key": "flutter",
+          "label": "설렘 ⚡확장"
+        },
+        {
+          "key": "fear",
+          "label": "두려움 ⚡확장"
+        },
+        {
+          "key": "amused",
+          "label": "즐거움 ⚡확장"
+        },
+        {
+          "key": "aegyo",
+          "label": "애교 ⚡확장"
+        },
+        {
+          "key": "burst",
+          "label": "버럭 ⚡확장"
+        },
+        {
+          "key": "choke",
+          "label": "울컥 ⚡확장"
+        },
+        {
+          "key": "cheer",
+          "label": "쾌재 ⚡확장"
+        },
+        {
+          "key": "dazed",
+          "label": "허탈 ⚡확장"
+        }
+      ]
+    },
+    {
+      "id": "emotionflow",
+      "title": "⑧ 감정 전환 — 감정이 변하는 장면",
+      "tag": "opt",
+      "type": "single",
+      "group": "B. 인물·대사 — 누가 나오지",
+      "requires": [],
+      "dependsOn": {
+        "emotion": [
+          "joy",
+          "sad",
+          "anx",
+          "angry",
+          "relief",
+          "embarrassed",
+          "flutter",
+          "fear",
+          "amused",
+          "aegyo",
+          "burst",
+          "choke",
+          "cheer",
+          "dazed"
+        ]
+      },
+      "options": [
+        {
+          "key": "none",
+          "label": "사용 안 함"
+        },
+        {
+          "key": "flow",
+          "label": "감정 전환 4단계 적용"
+        },
+        {
+          "key": "arc",
+          "label": "전역 감정 아크 — 단계별 자연 전환"
+        }
+      ]
+    },
+    {
+      "id": "shotsize",
+      "title": "⑨ 화면 크기 — 인물을 얼마나 크게",
+      "tag": "opt",
+      "type": "single",
+      "group": "C. 장면 — 어떤 장면이지",
+      "requires": [
+        "t2v",
+        "r2v"
+      ],
+      "dependsOn": {},
+      "options": [
+        {
+          "key": "wide2wide",
+          "label": "전체→중간→클로즈업→전체 (시작과 끝 동일)"
+        },
+        {
+          "key": "close2wide",
+          "label": "클로즈업→중간→전체 (가까이서 멀리)"
+        },
+        {
+          "key": "wide2close",
+          "label": "전체→중간→클로즈업 (멀리서 가까이)"
+        },
+        {
+          "key": "bust",
+          "label": "인물: 얼굴→가슴→반신→전신"
+        },
+        {
+          "key": "wide2bust",
+          "label": "전체→클로즈업 직행 ⚡확장"
+        },
+        {
+          "key": "bust2wide",
+          "label": "클로즈업→전체 직행 ⚡확장"
+        },
+        {
+          "key": "extreme",
+          "label": "대전경 — 광활한 와이드 ⚡확장"
+        },
+        {
+          "key": "close2bust",
+          "label": "클로즈업→가슴 ⚡확장"
+        },
+        {
+          "key": "wmcm",
+          "label": "전→중→특→중 ⚡확장"
+        }
+      ]
+    },
+    {
+      "id": "timeweather",
+      "title": "⑩ 시간대·날씨",
+      "tag": "opt",
+      "type": "single",
+      "group": "C. 장면 — 어떤 장면이지",
+      "requires": [
+        "t2v",
+        "r2v"
+      ],
+      "dependsOn": {},
+      "options": [
+        {
+          "key": "none",
+          "label": "선택 안 함"
+        },
+        {
+          "key": "morning",
+          "label": "이른 아침 — 맑음"
+        },
+        {
+          "key": "noon",
+          "label": "정오 — 강한 햇빛"
+        },
+        {
+          "key": "evening",
+          "label": "저녁 — 노을"
+        },
+        {
+          "key": "night",
+          "label": "밤 — 인공조명"
+        },
+        {
+          "key": "rain",
+          "label": "비"
+        },
+        {
+          "key": "fog",
+          "label": "안개"
+        },
+        {
+          "key": "snow",
+          "label": "눈 ⚡확장"
+        },
+        {
+          "key": "storm",
+          "label": "폭풍 ⚡확장"
+        }
+      ]
+    },
+    {
+      "id": "cutprinciple",
+      "title": "⑩-2 장면 분리 — 각 장면을 완전히 다르게",
+      "tag": "opt",
+      "type": "single",
+      "group": "C. 장면 — 어떤 장면이지",
+      "requires": [
+        "t2v",
+        "r2v"
+      ],
+      "dependsOn": {},
+      "options": [
+        {
+          "key": "none",
+          "label": "사용 안 함"
+        },
+        {
+          "key": "apply",
+          "label": "적용 — 【镜头切换原则】 전역 블록"
+        },
+        {
+          "key": "strong",
+          "label": "강화 — 무봉제/연속 액션 전용 ⚡확장"
+        }
+      ]
+    },
+    {
+      "id": "camera",
+      "title": "⑪ 카메라 움직임 (운경)",
+      "tag": "core",
+      "type": "single",
+      "group": "D. 카메라 — 어떻게 찍지",
+      "requires": [
+        "t2v",
+        "r2v"
+      ],
+      "dependsOn": {},
+      "options": [
+        {
+          "key": "A",
+          "label": "A. 일상 Vlog — 따라가며 기록"
+        },
+        {
+          "key": "B",
+          "label": "B. 시네마틱 — 영화 같은 움직임"
+        },
+        {
+          "key": "C",
+          "label": "C. 원테이크 — 한 번에 끝까지"
+        },
+        {
+          "key": "D",
+          "label": "D. FPV — 1인칭 시점"
+        },
+        {
+          "key": "E",
+          "label": "E. 핸드헬드 다큐 — 현장감"
+        },
+        {
+          "key": "F",
+          "label": "F. 히치콕 줌 — 배경과 주체 반대 움직임 ⚡확장"
+        },
+        {
+          "key": "G",
+          "label": "G. 항공 촬영 — 하늘에서 내려다봄 ⚡확장"
+        },
+        {
+          "key": "H",
+          "label": "H. 불릿타임 — 시간이 느려지는 순간 ⚡확장"
+        },
+        {
+          "key": "I",
+          "label": "I. 리바운드 변속 — 빠름↔느림 리듬 ⚡확장"
+        }
+      ]
+    },
+    {
+      "id": "angle",
+      "title": "⑫ 카메라 각도 (세부)",
+      "tag": "opt",
+      "type": "single",
+      "group": "D. 카메라 — 어떻게 찍지",
+      "requires": [
+        "t2v",
+        "r2v"
+      ],
+      "dependsOn": {},
+      "options": [
+        {
+          "key": "eye",
+          "label": "눈높이"
+        },
+        {
+          "key": "low",
+          "label": "낮은 위치에서 올려보기"
+        },
+        {
+          "key": "high",
+          "label": "높은 위치에서 내려보기"
+        },
+        {
+          "key": "top",
+          "label": "위에서 정면 내려다보기"
+        },
+        {
+          "key": "fpv",
+          "label": "1인칭 시점"
+        },
+        {
+          "key": "ots",
+          "label": "어깨 너머로 보기"
+        },
+        {
+          "key": "3q",
+          "label": "옆으로 45도"
+        },
+        {
+          "key": "floor",
+          "label": "바닥 앵글 — 극저각 ⚡확장"
+        },
+        {
+          "key": "ceiling",
+          "label": "천장 앵글 — 극고각 ⚡확장"
+        }
+      ]
+    },
+    {
+      "id": "optical",
+      "title": "⑬ 렌즈 효과 (세부)",
+      "tag": "opt",
+      "type": "multi",
+      "group": "D. 카메라 — 어떻게 찍지",
+      "requires": [
+        "t2v",
+        "r2v"
+      ],
+      "dependsOn": {},
+      "options": [
+        {
+          "key": "dof",
+          "label": "배경 흐리게"
+        },
+        {
+          "key": "bokeh",
+          "label": "배경 불빛 동그랗게"
+        },
+        {
+          "key": "flare",
+          "label": "태양빛 가로줄"
+        },
+        {
+          "key": "slow",
+          "label": "느린 동작"
+        },
+        {
+          "key": "wide",
+          "label": "화면 가장자리 늘어남"
+        },
+        {
+          "key": "fish",
+          "label": "볼록하게 왜곡"
+        },
+        {
+          "key": "macro",
+          "label": "아주 가까운 초접사"
+        },
+        {
+          "key": "tilt",
+          "label": "미니어처 — 틸트시프트 ⚡확장"
+        },
+        {
+          "key": "zoomb",
+          "label": "줌 블러 — 초점 변화 ⚡확장"
+        },
+        {
+          "key": "star",
+          "label": "스타버스트 — 빛 방사 ⚡확장"
+        }
+      ]
+    },
+    {
+      "id": "composition",
+      "title": "⑭ 화면 배치·구도 (세부)",
+      "tag": "opt",
+      "type": "single",
+      "group": "D. 카메라 — 어떻게 찍지",
+      "requires": [
+        "t2v",
+        "r2v"
+      ],
+      "dependsOn": {},
+      "options": [
+        {
+          "key": "none",
+          "label": "선택 안 함"
+        },
+        {
+          "key": "rule3",
+          "label": "3분할 구도"
+        },
+        {
+          "key": "center",
+          "label": "중앙 구도"
+        },
+        {
+          "key": "diag",
+          "label": "대각선 구도"
+        },
+        {
+          "key": "ots2",
+          "label": "과견(어깨너머) 구도"
+        },
+        {
+          "key": "high2",
+          "label": "높은 앵글 구도"
+        },
+        {
+          "key": "sym",
+          "label": "대칭 구도 ⚡확장"
+        },
+        {
+          "key": "frame",
+          "label": "프레임 인 프레임 ⚡확장"
+        },
+        {
+          "key": "golden",
+          "label": "황금비 구도 ⚡확장"
+        },
+        {
+          "key": "circle",
+          "label": "원형 구도 ⚡확장"
+        }
+      ]
+    },
+    {
+      "id": "transition",
+      "title": "⑮ 장면 전환 (세부)",
+      "tag": "opt",
+      "type": "single",
+      "group": "D. 카메라 — 어떻게 찍지",
+      "requires": [
+        "t2v",
+        "r2v"
+      ],
+      "dependsOn": {},
+      "options": [
+        {
+          "key": "hard",
+          "label": "하드컷 (급전환)"
+        },
+        {
+          "key": "cross",
+          "label": "크로스페이드 (부드럽게)"
+        },
+        {
+          "key": "match",
+          "label": "매치컷 (유사 형태 연결)"
+        },
+        {
+          "key": "seamless",
+          "label": "무봉제 전환 (생성형)"
+        },
+        {
+          "key": "zoom",
+          "label": "줌 전환"
+        },
+        {
+          "key": "slide",
+          "label": "슬라이드 ⚡확장"
+        },
+        {
+          "key": "wipe",
+          "label": "와이프 ⚡확장"
+        },
+        {
+          "key": "fadeblack",
+          "label": "페이드 투 블랙 ⚡확장"
+        },
+        {
+          "key": "hold",
+          "label": "홀드 — 정지 프레임 ⚡확장"
+        },
+        {
+          "key": "whip",
+          "label": "윕 팬 — 빠른 회전 ⚡확장"
+        }
+      ]
+    },
+    {
+      "id": "audio",
+      "title": "⑯ 소리 종류 (4가지)",
+      "tag": "core",
+      "type": "multi",
+      "group": "E. 소리 — 무슨 소리지",
+      "requires": [],
+      "dependsOn": {},
+      "options": [
+        {
+          "key": "fx",
+          "label": "효과음"
+        },
+        {
+          "key": "amb",
+          "label": "배경 소음 (앰비언스)"
+        },
+        {
+          "key": "mus",
+          "label": "음악"
+        },
+        {
+          "key": "sub",
+          "label": "자막"
+        }
+      ]
+    },
+    {
+      "id": "musicgenre",
+      "title": "⑰ 배경 음악 장르",
+      "tag": "opt",
+      "type": "single",
+      "group": "E. 소리 — 무슨 소리지",
+      "requires": [],
+      "dependsOn": {
+        "audio": [
+          "mus"
+        ]
+      },
+      "options": [
+        {
+          "key": "none",
+          "label": "무음"
+        },
+        {
+          "key": "acoustic",
+          "label": "어쿠스틱 — 가볍고 따뜻"
+        },
+        {
+          "key": "orchestra",
+          "label": "오케스트라 — 웅장"
+        },
+        {
+          "key": "hiphop",
+          "label": "힙합 — 리듬감"
+        },
+        {
+          "key": "lounge",
+          "label": "라운지 — 여유"
+        },
+        {
+          "key": "synth",
+          "label": "신스웨이브 — 레트로 전자 ⚡확장"
+        },
+        {
+          "key": "jazz",
+          "label": "재즈 — 세련·여유 ⚡확장"
+        },
+        {
+          "key": "ballad",
+          "label": "발라드 — 서정적 ⚡확장"
+        },
+        {
+          "key": "beat",
+          "label": "카드박 — 비트에 맞춘 컷 전환 ⚡확장"
+        },
+        {
+          "key": "indie",
+          "label": "인디팝 — 경쾌·산뜻 ⚡확장"
+        },
+        {
+          "key": "classic",
+          "label": "클래식 — 장엄·우아 ⚡확장"
+        },
+        {
+          "key": "rnb",
+          "label": "R&B — 부드러운 리듬 ⚡확장"
+        },
+        {
+          "key": "gugak",
+          "label": "국악 — 가야금·대금·판소리 ⚡확장"
+        },
+        {
+          "key": "kpop",
+          "label": "K-POP — 대중적 신나는 비트 ⚡확장"
+        }
+      ]
+    },
+    {
+      "id": "fxpreset",
+      "title": "⑱ 효과음 세트",
+      "tag": "opt",
+      "type": "multi",
+      "group": "E. 소리 — 무슨 소리지",
+      "requires": [],
+      "dependsOn": {
+        "audio": [
+          "fx"
+        ]
+      },
+      "options": [
+        {
+          "key": "nature",
+          "label": "자연 — 파도·새·바람"
+        },
+        {
+          "key": "city",
+          "label": "도시 — 차량·건설·인파"
+        },
+        {
+          "key": "daily",
+          "label": "일상 — 전화·발소리·문"
+        },
+        {
+          "key": "tech",
+          "label": "기계 — 전자음·모터"
+        },
+        {
+          "key": "animal",
+          "label": "동물 — 새·짐승 ⚡확장"
+        },
+        {
+          "key": "sports",
+          "label": "스포츠 — 휘슬·관중 ⚡확장"
+        },
+        {
+          "key": "magic",
+          "label": "판타지 — 마법·불꽃 ⚡확장"
+        },
+        {
+          "key": "storm",
+          "label": "천둥·비 — 폭풍 ⚡확장"
+        },
+        {
+          "key": "combat",
+          "label": "전투 — 칼·타격 ⚡확장"
+        },
+        {
+          "key": "vehicle",
+          "label": "차량 — 엔진·경적 ⚡확장"
+        }
+      ]
+    },
+    {
+      "id": "quality",
+      "title": "⑲ 화질·분위기",
+      "tag": "core",
+      "type": "multi",
+      "group": "F. 마무리 — 화질·스타일·제약",
+      "requires": [],
+      "dependsOn": {},
+      "options": [
+        {
+          "key": "hd",
+          "label": "고화질+영화 느낌"
+        },
+        {
+          "key": "nat",
+          "label": "자연색·부드러운 빛"
+        },
+        {
+          "key": "skin",
+          "label": "실제 피부 질감"
+        },
+        {
+          "key": "warm",
+          "label": "따뜻한 색감"
+        },
+        {
+          "key": "grain",
+          "label": "필름 그레인 — 영화 입자 ⚡확장"
+        },
+        {
+          "key": "clean",
+          "label": "클린 룩 — 깔끔·선명 ⚡확장"
+        },
+        {
+          "key": "neg",
+          "label": "네거티브 감소 — 저대비 부드러움 ⚡확장"
+        },
+        {
+          "key": "vignette",
+          "label": "비네트 — 가장자리 어둡게 ⚡확장"
+        },
+        {
+          "key": "hdr",
+          "label": "HDR — 넓은 명암 표현 ⚡확장"
+        },
+        {
+          "key": "contrast",
+          "label": "고대비 — 강렬한 명암 ⚡확장"
+        },
+        {
+          "key": "pastel",
+          "label": "파스텔 톤 — 부드러운 색감 ⚡확장"
+        }
+      ]
+    },
+    {
+      "id": "negaudio",
+      "title": "⑲-2 만들지 않을 소리",
+      "tag": "opt",
+      "type": "single",
+      "group": "F. 마무리 — 화질·스타일·제약",
+      "requires": [],
+      "dependsOn": {},
+      "options": [
+        {
+          "key": "none",
+          "label": "제한 없음"
+        },
+        {
+          "key": "nobgm",
+          "label": "BGM 없음 — 환경음·동작음만"
+        },
+        {
+          "key": "silent",
+          "label": "완전 무음 — 어떤 소리도 금지"
+        },
+        {
+          "key": "noidia",
+          "label": "대사 자막 없음 — 배경음악 유지"
+        }
+      ]
+    },
+    {
+      "id": "stylepreset",
+      "title": "⑳ 영상 스타일 — 실사·애니",
+      "tag": "opt",
+      "type": "single",
+      "group": "F. 마무리 — 화질·스타일·제약",
+      "requires": [
+        "t2v",
+        "r2v"
+      ],
+      "dependsOn": {},
+      "options": [
+        {
+          "key": "none",
+          "label": "선택 안 함"
+        },
+        {
+          "key": "docu",
+          "label": "실사 다큐 — 실제 사람·실사"
+        },
+        {
+          "key": "anime2d",
+          "label": "2D 애니메이션"
+        },
+        {
+          "key": "cg3d",
+          "label": "3D CG — 3D 애니"
+        },
+        {
+          "key": "cyber",
+          "label": "사이버펑크"
+        },
+        {
+          "key": "retro",
+          "label": "레트로 필름"
+        },
+        {
+          "key": "vlog",
+          "label": "일상 Vlog"
+        },
+        {
+          "key": "pixel",
+          "label": "픽셀 아트 — 8bit ⚡확장"
+        },
+        {
+          "key": "stopmotion",
+          "label": "스톱모션 ⚡확장"
+        }
+      ]
+    },
+    {
+      "id": "stylelock",
+      "title": "㉑ 스타일 고정",
+      "tag": "opt",
+      "type": "single",
+      "group": "F. 마무리 — 화질·스타일·제약",
+      "requires": [
+        "t2v",
+        "r2v"
+      ],
+      "dependsOn": {},
+      "options": [
+        {
+          "key": "forward",
+          "label": "정방향만 — 스타일어로 지정"
+        },
+        {
+          "key": "both",
+          "label": "정방향+역방향 — 【严格排除】으로 반대 스타일 금지 (추천)"
+        },
+        {
+          "key": "refimg",
+          "label": "참조 이미지 — 스타일 기준 이미지 첨부"
+        }
+      ]
+    },
+    {
+      "id": "lighting",
+      "title": "㉒ 조명·분위기",
+      "tag": "opt",
+      "type": "single",
+      "group": "F. 마무리 — 화질·스타일·제약",
+      "requires": [
+        "t2v",
+        "r2v"
+      ],
+      "dependsOn": {},
+      "options": [
+        {
+          "key": "none",
+          "label": "선택 안 함"
+        },
+        {
+          "key": "golden",
+          "label": "골든아워 — 노을빛"
+        },
+        {
+          "key": "neon",
+          "label": "네온 — 도시 야간"
+        },
+        {
+          "key": "studio",
+          "label": "스튜디오 — 부드러운 조명"
+        },
+        {
+          "key": "natural",
+          "label": "자연광 — 부드럽게"
+        },
+        {
+          "key": "lowkey",
+          "label": "저조도 — 어둡고 묵직"
+        },
+        {
+          "key": "blue",
+          "label": "블루아워 — 푸른 황혼"
+        },
+        {
+          "key": "lamp",
+          "label": "따뜻한 실내등 ⚡확장"
+        },
+        {
+          "key": "fluoro",
+          "label": "차가운 형광등 ⚡확장"
+        },
+        {
+          "key": "candle",
+          "label": "촛불 — 따뜻한 흔들림 ⚡확장"
+        },
+        {
+          "key": "moon",
+          "label": "달빛 — 차가운 은은함 ⚡확장"
+        },
+        {
+          "key": "spot",
+          "label": "스포트라이트 — 한 사람을 비춤 ⚡확장"
+        },
+        {
+          "key": "window",
+          "label": "창문 빛 — 자연스러운 역광 ⚡확장"
+        }
+      ]
+    },
+    {
+      "id": "textgen",
+      "title": "㉓ 화면 글자",
+      "tag": "opt",
+      "type": "single",
+      "group": "F. 마무리 — 화질·스타일·제약",
+      "requires": [
+        "t2v",
+        "r2v"
+      ],
+      "dependsOn": {},
+      "options": [
+        {
+          "key": "none",
+          "label": "글자 없음"
+        },
+        {
+          "key": "slogan",
+          "label": "광고 문구 — 화면 중앙"
+        },
+        {
+          "key": "cta",
+          "label": "클릭 유도 (CTA) — 구독·구매 버튼 문구 ⚡확장"
+        },
+        {
+          "key": "subtitle",
+          "label": "자막 — 하단, 소리와 동기화"
+        },
+        {
+          "key": "bubble",
+          "label": "말풍선 — 캐릭터 옆"
+        },
+        {
+          "key": "both",
+          "label": "자막+말풍선 동시 ⚡확장"
+        }
+      ]
+    },
+    {
+      "id": "refmat",
+      "title": "㉔ 참고 자료 (참조 전용)",
+      "tag": "r2v",
+      "type": "multi",
+      "group": "G. 참조 재료 (R2V 전용)",
+      "requires": [],
+      "dependsOn": {},
+      "options": [
+        {
+          "key": "imgchar",
+          "label": "이미지 — 인물 외형·얼굴"
+        },
+        {
+          "key": "imgscene",
+          "label": "이미지 — 배경·장면·스타일"
+        },
+        {
+          "key": "imgmulti",
+          "label": "이미지 — 여러 주체 각각 바인딩"
+        },
+        {
+          "key": "imgview",
+          "label": "이미지 — 같은 대상의 다중 뷰 (2.5 전용)"
+        },
+        {
+          "key": "videoact",
+          "label": "영상 — 동작·운경·리듬"
+        },
+        {
+          "key": "videofx",
+          "label": "영상 — 특수효과·스타일"
+        },
+        {
+          "key": "audiovoice",
+          "label": "음성 — 목소리·음색"
+        }
+      ]
+    },
+    {
+      "id": "storyboard",
+      "title": "㉕ 콘티 그림 분할 (참조 전용)",
+      "tag": "r2v",
+      "type": "single",
+      "group": "G. 참조 재료 (R2V 전용)",
+      "requires": [],
+      "dependsOn": {},
+      "options": [
+        {
+          "key": "none",
+          "label": "사용 안 함"
+        },
+        {
+          "key": "grid",
+          "label": "다중 그리드 콘티 사용 (15칸 이하·선화 권장)"
+        },
+        {
+          "key": "line",
+          "label": "선화/막대인간 콘티 (추천)"
+        }
+      ]
+    },
+    {
+      "id": "subjectdef",
+      "title": "㉖ 주인공 지정 (참조 전용)",
+      "tag": "r2v",
+      "type": "single",
+      "group": "G. 참조 재료 (R2V 전용)",
+      "requires": [],
+      "dependsOn": {},
+      "options": [
+        {
+          "key": "single",
+          "label": "단일 주체 — 주인공 1명"
+        },
+        {
+          "key": "multi1",
+          "label": "한 주체에 여러 재료 — 얼굴(大头照)+전신(全身照) ⚡2.0추천"
+        },
+        {
+          "key": "multisub",
+          "label": "주인공마다 재료 지정"
+        }
+      ]
+    },
+    {
+      "id": "whitemodel",
+      "title": "㉗ 흰 3D 모형 (참조 전용)",
+      "tag": "r2v",
+      "type": "single",
+      "group": "G. 참조 재료 (R2V 전용)",
+      "requires": [],
+      "dependsOn": {},
+      "options": [
+        {
+          "key": "none",
+          "label": "사용 안 함"
+        },
+        {
+          "key": "coarse",
+          "label": "동작·동선·기종 골격만"
+        },
+        {
+          "key": "fine",
+          "label": "완성 구조 + 재질·스타일 변경"
+        }
+      ]
+    },
+    {
+      "id": "keyframe",
+      "title": "㉘ 핵심 장면 (참조 전용)",
+      "tag": "r2v",
+      "type": "single",
+      "group": "G. 참조 재료 (R2V 전용)",
+      "requires": [],
+      "dependsOn": {},
+      "options": [
+        {
+          "key": "none",
+          "label": "사용 안 함"
+        },
+        {
+          "key": "kf",
+          "label": "N장 순서대로 고정 (첫 문장에 명시)"
+        },
+        {
+          "key": "fl",
+          "label": "시작·끝 프레임만"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "id": "travel",
+      "name": "🏞 여행 Vlog",
+      "icon": "🏞",
+      "category": "콘텐츠"
+    },
+    {
+      "id": "ad",
+      "name": "📺 제품 광고",
+      "icon": "📺",
+      "category": "콘텐츠"
+    },
+    {
+      "id": "mood",
+      "name": "💫 감성 브이로그",
+      "icon": "💫",
+      "category": "콘텐츠"
+    },
+    {
+      "id": "mv",
+      "name": "🎵 AI 뮤직비디오",
+      "icon": "🎵",
+      "category": "콘텐츠"
+    },
+    {
+      "id": "demo",
+      "name": "📦 제품 시연 (참조)",
+      "icon": "📦",
+      "category": "콘텐츠"
+    },
+    {
+      "id": "drama",
+      "name": "🎭 감정 드라마",
+      "icon": "🎭",
+      "category": "콘텐츠"
+    },
+    {
+      "id": "saju_v3",
+      "name": "🎎 사주천궁 드라마 (v3)",
+      "icon": "🎎",
+      "category": "콘텐츠"
+    },
+    {
+      "id": "kdrama",
+      "name": "💗 K-드라마 로맨스",
+      "icon": "💗",
+      "category": "콘텐츠"
+    },
+    {
+      "id": "sageuk",
+      "name": "⚔️ 사극 (조선 시대)",
+      "icon": "⚔️",
+      "category": "콘텐츠"
+    },
+    {
+      "id": "mukbang",
+      "name": "🍜 먹방",
+      "icon": "🍜",
+      "category": "콘텐츠"
+    },
+    {
+      "id": "livecomm",
+      "name": "🛒 라이브 커머스",
+      "icon": "🛒",
+      "category": "콘텐츠"
+    },
+    {
+      "id": "food",
+      "name": "🍜 푸드 브이로그",
+      "icon": "🍜",
+      "category": "콘텐츠"
+    },
+    {
+      "id": "fashion",
+      "name": "👗 패션 룩북",
+      "icon": "👗",
+      "category": "콘텐츠"
+    },
+    {
+      "id": "nature",
+      "name": "🌿 자연 다큐",
+      "icon": "🌿",
+      "category": "콘텐츠"
+    },
+    {
+      "id": "gaming",
+      "name": "🎮 게임 소개",
+      "icon": "🎮",
+      "category": "콘텐츠"
+    },
+    {
+      "id": "realestate",
+      "name": "🏠 부동산 투어",
+      "icon": "🏠",
+      "category": "콘텐츠"
+    },
+    {
+      "id": "horror",
+      "name": "👻 공포/스릴러",
+      "icon": "👻",
+      "category": "콘텐츠"
+    },
+    {
+      "id": "ad_showcase",
+      "name": "🏷️ 제품 소개형",
+      "icon": "🏷️",
+      "category": "광고"
+    },
+    {
+      "id": "ad_problem",
+      "name": "🩹 문제→해결형",
+      "icon": "🩹",
+      "category": "광고"
+    },
+    {
+      "id": "ad_story",
+      "name": "🎬 스토리텔링형",
+      "icon": "🎬",
+      "category": "광고"
+    },
+    {
+      "id": "ad_montage",
+      "name": "⚡ 몽타주형 (속도감)",
+      "icon": "⚡",
+      "category": "광고"
+    },
+    {
+      "id": "ad_ugc",
+      "name": "📱 UGC·리뷰형",
+      "icon": "📱",
+      "category": "광고"
+    },
+    {
+      "id": "ad_asmr",
+      "name": "🧖 ASMR·디테일형",
+      "icon": "🧖",
+      "category": "광고"
+    },
+    {
+      "id": "ad_compare",
+      "name": "⚖️ 비교·대조형",
+      "icon": "⚖️",
+      "category": "광고"
+    },
+    {
+      "id": "ad_demo",
+      "name": "🧰 데모·하우투형",
+      "icon": "🧰",
+      "category": "광고"
+    },
+    {
+      "id": "ad_luxury",
+      "name": "💎 럭셔리·브랜드 필름",
+      "icon": "💎",
+      "category": "광고"
+    },
+    {
+      "id": "ad_promo",
+      "name": "🎉 프로모션·이벤트형",
+      "icon": "🎉",
+      "category": "광고"
+    },
+    {
+      "id": "ad_ytshorts",
+      "name": "📱 유튜브 쇼츠 광고",
+      "icon": "📱",
+      "category": "광고"
+    },
+    {
+      "id": "ad_promo_sale",
+      "name": "🔥 한정 특가 세일",
+      "icon": "🔥",
+      "category": "광고"
+    },
+    {
+      "id": "ad_brand_story",
+      "name": "🏺 브랜드 헤리티지",
+      "icon": "🏺",
+      "category": "광고"
+    },
+    {
+      "id": "mv_trailer",
+      "name": "🎬 극장 예고편",
+      "icon": "🎬",
+      "category": "영화"
+    },
+    {
+      "id": "mv_short",
+      "name": "📖 단편 영화",
+      "icon": "📖",
+      "category": "영화"
+    },
+    {
+      "id": "mv_docu",
+      "name": "🌍 다큐멘터리",
+      "icon": "🌍",
+      "category": "영화"
+    },
+    {
+      "id": "mv_noir",
+      "name": "🕶️ 느와르·스릴러",
+      "icon": "🕶️",
+      "category": "영화"
+    },
+    {
+      "id": "mv_romance",
+      "name": "💗 로맨스 필름",
+      "icon": "💗",
+      "category": "영화"
+    },
+    {
+      "id": "mv_sf",
+      "name": "🛸 SF·판타지",
+      "icon": "🛸",
+      "category": "영화"
+    },
+    {
+      "id": "mv_kfantasy",
+      "name": "🐉 한국 판타지 (도깨비·구미호)",
+      "icon": "🐉",
+      "category": "영화"
+    }
+  ]
+}
