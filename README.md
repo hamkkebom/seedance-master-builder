@@ -169,3 +169,71 @@ python -m http.server 8765 --directory "C:\Dev\2026-08-08_193228"
 - **참조 문형 근거 레벨 (PROJECT_SPEC 그룹 G)**: `[LvA]`=2.5 원문 직접 존재 · `[LvB]`=2.5가 2.0 문형을 명시 승계(`主体/运动/音频/风格参考的使用方式与 Seedance 2.0 一致` — 2607689) · `[LvC]`=2.0 전용이라 2.5 미확인(재검증·⚡확장 필요, 예: 음색 세밀화 문형). 모델 버전 갱신 시 LvA~C 문형이 바뀔 수 있어 태그로 재검증 대상을 추적
 - **대사 문형 (공식 2607688)**: `台词用 {}` + 비중국어는 `台词前明确语言` — 예: `台词语言：韩语，自然的首尔口音，她说：{…}`
 - **출력 보존**: 영상 URL 24시간 · 다운로드 100회 — 즉시 저장
+
+---
+
+## 🔌 개발자 통합 가이드 (LLM → 빌더)
+
+이 저장소는 단일 HTML 빌더일 뿐 아니라, **LLM이 정해진 41축 틀에서 벗어나지 않고 축·키를 선택**하도록 하는 개발 통합 자산을 포함합니다. "사용자 대화 → 축 선택 → 프롬프트 생성" 파이프라인을 자체 앱에 붙이는 방법입니다.
+
+### 통합 자산 구성
+
+| 자산 | 역할 |
+|---|---|
+| `axes.json` | **단일 진실 공급원** — 41축(id·tag·type·requires·dependsOn·옵션 키) + 프리셋 37종. 축·키 변경은 이 파일에서만 |
+| `PROMPT_LLM.md` | LLM 시스템 프롬프트 — 축 사용 규칙·4기호·출력 JSON 계약 (LLM에 주입) |
+| `seedance-llm/seedance-schema.js` | JSON Schema 생성기 — task 확정 후 유효 축만 enum으로 강제 (`additionalProperties:false`) |
+| `seedance-llm/seedance-validate.js` | 서버 검증기 — 무효 키 오류 · dependsOn 자동 정리 · 콘텐츠 규칙 |
+
+### 사용 플로우 (task-first 2단계)
+
+```
+1. buildTaskSchema() → LLM에 {task: enum 5종} 스키마 제시 → task 확정
+2. buildStateSchema(task) → task에 맞게 프루닝된 축 스키마 → LLM이 축·콘텐츠 JSON 반환
+3. validate(response) → { ok, axes, content, warnings, errors }
+4. errors 있으면 구조화된 오류 배열을 LLM에 돌려 재시도 (최대 2회)
+5. axes → 빌더 state에 반영 → renderPrompt() → 최종 프롬프트
+```
+
+### Node 예시
+
+```js
+const { buildTaskSchema, buildStateSchema } = require('./seedance-llm/seedance-schema');
+const { validate } = require('./seedance-llm/seedance-validate');
+
+// 1) task 결정
+const taskSchema = buildTaskSchema();          // { task: enum[t2v,r2v,edit,ext,fl] }
+// 2) task에 맞는 전체 스키마 (edit는 카메라 등 15축 자동 제외)
+const schema = buildStateSchema('t2v');
+// 3) LLM 응답 검증 (무효 키·dependsOn 자동 정리)
+const result = validate({
+  axes: { task:['t2v'], genre:['kdrama'], duration:['20s'], lang:['ko'],
+          emotion:['flutter','joy'], camera:['B'], audio:['mus'], musicgenre:['ballad'], quality:['hd'] },
+  content: { subject:'카페 테라스의 두 사람', dialog:'너랑 있으면 좋아' }
+});
+// 4) result.ok === true → axes를 빌더 state에 적용, renderPrompt()로 프롬프트 조립
+```
+
+### Python (pydantic) 예시
+
+```python
+from pydantic import BaseModel, ConfigDict
+from typing import Literal
+
+class BuilderState(BaseModel):
+    task: Literal['t2v','r2v','edit','ext','fl']
+    duration: Literal['10s','15s','20s','30s','auto']
+    emotion: list[Literal['joy','sad','anx','angry','relief','embarrassed','flutter','fear','amused','aegyo','burst','choke','cheer','dazed']] = []
+    model_config = ConfigDict(extra='forbid')   # additionalProperties:false 대응
+```
+
+### 검증 규칙 (LLM이 틀을 벗어날 때)
+
+- **무효 키**(축 옵션에 없는 값) → `errors[]` 반환 → 재시도. 절대 "가까운 키"로 임의 보정하지 않음
+- **dependsOn 위반**(예: audio에 `mus` 없이 musicgenre 선택) → **자동 초기화** + warning (빌더 `cleanupDependsOn`과 동일 시맨틱)
+- **requires 위반**(task=edit인데 camera 선택) → 자동 제외
+- **대사 `{}`** → 검증기가 제거, 빌더가 `台词语言：韩语…她说：{…}` 재부착
+
+### 키 변경 워크플로
+
+축·키 추가/삭제 시: `axes.json` 수정 → `node seedance-llm/seedance-schema.js`(스키마 재생성) → 빌더 HTML AXES와 동기화 확인 (QA 스크립트). LLM_RULES.md §13 축 요약은 axes.json의 생성 뷰입니다.
