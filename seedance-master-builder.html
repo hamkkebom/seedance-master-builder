@@ -1944,7 +1944,6 @@ ${paramBlock}
   if (contentInput.scene) out = out.split('<人物/场景/初始状态>').join(contentInput.scene);
   if (contentInput.dialog) {
     out = out.split('{고양이야, 안녕?}').join('{' + contentInput.dialog + '}');
-    out = out.split('{Hello there.}').join('{' + contentInput.dialog + '}');
   }
   if (contentInput.ending) out = out.split('<画面可见的结束状态>').join(contentInput.ending);
   if (contentInput.constraint) out = out.split('<整体基调一句话>').join(contentInput.constraint);
