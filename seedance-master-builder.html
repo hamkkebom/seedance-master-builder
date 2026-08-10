@@ -1099,20 +1099,20 @@ const AXES = [
     id: 'emotion', title: '⑦ 감정 — 몸짓·표정으로 표현', tag: 'core', type: 'multi', group: 'B. 인물·대사 — 누가 나오지',
     desc: '등장인물의 감정을 몸짓·표정으로 표현 — "슬프다" 대신 "눈가가 붉어짐"처럼 구체적으로',
     options: [
-      { k: 'joy',   label: '기쁨',   value: '입꼬리 억제할 수 없이 올라감, 미간·눈이 풀림, 발걸음이 가벼워짐' },
-      { k: 'sad',   label: '슬픔',   value: '고개를 숙임, 어깨가 미세하게 떨림, 눈가가 붉어짐, 눈물이 맴돌지만 떨어지지 않음' },
-      { k: 'anx',   label: '긴장/불안', value: '호흡이 급해짐, 시선이 회피됨, 손가락이 무의식적으로 움직임' },
-      { k: 'angry', label: '분노',   value: '양주먹을 꽉 쥠, 턱 라인이 긴장됨, 가슴이 격렬하게 움직임' },
-      { k: 'relief',label: '해소',   value: '길게 숨을 내쉼, 어깨가 완전히 이완됨, 오랜만의 미소가 번짐' },
-      { k: 'embarrassed', label: '당황 ⚡확장', value: '귀가 붉어지고 시선을 피하며 어색한 미소가 삐뚤어짐' },
-      { k: 'flutter', label: '설렘 ⚡확장', value: '심장이 두근거려 손끝을 만지작거리고 미소가 저절로 번짐' },
-      { k: 'fear',   label: '두려움 ⚡확장', value: '눈이 크게 열리고 숨이 멎으며 몸이 움찔함' },
-      { k: 'amused', label: '즐거움 ⚡확장', value: '입꼬리가 저절로 올라가고 어깨가 들썩임' },
-      { k: 'aegyo', label: '애교 ⚡확장', value: '눈을 깜빡이며 고개를 살짝 기울임, 입술을 삐죽이고 어깨를 움츠리며 애교 부림' },
-      { k: 'burst', label: '버럭 ⚡확장', value: '갑자기 눈을 부릅뜨고 버럭 화를 냄, 목소리가 커지고 몸이 앞으로 쏠림' },
-      { k: 'choke', label: '울컥 ⚡확장', value: '목이 메어 말을 잇지 못함, 눈물이 갑자기 차오르고 입가가 파르르 떨림' },
-      { k: 'cheer', label: '쾌재 ⚡확장', value: '주먹을 불끈 쥐고 쾌재를 부름, 눈빛이 반짝이고 발을 구름' },
-      { k: 'dazed', label: '허탈 ⚡확장', value: '허탈한 웃음이 새어 나옴, 어깨가 축 처지고 시선이 허공을 맴돎' },
+      { k: 'joy',   label: '기쁨',   value: '嘴角止不住地上扬，眉眼舒展，脚步轻快' },
+      { k: 'sad',   label: '슬픔',   value: '低下头，肩膀微微颤抖，眼眶泛红，泪水在眼眶里打转' },
+      { k: 'anx',   label: '긴장/불안', value: '呼吸变急促，目光闪躲，手指无意识地摩挲' },
+      { k: 'angry', label: '분노',   value: '握紧拳头，下颌紧绷，胸口剧烈起伏' },
+      { k: 'relief',label: '해소',   value: '长长地呼出一口气，肩膀完全放松，露出久违的微笑' },
+      { k: 'embarrassed', label: '당황 ⚡확장', value: '耳朵泛红，视线躲闪，尴尬地扯动嘴角' },
+      { k: 'flutter', label: '설렘 ⚡확장', value: '心跳加快，手指轻轻拨弄，笑容不自觉地浮上' },
+      { k: 'fear',   label: '두려움 ⚡확장', value: '睁大眼睛，屏住呼吸，身体猛地一颤' },
+      { k: 'amused', label: '즐거움 ⚡확장', value: '嘴角不自觉上扬，肩膀轻轻耸动' },
+      { k: 'aegyo', label: '애교 ⚡확장', value: '眨着眼睛，微微歪头，撅起嘴，缩着肩膀撒娇' },
+      { k: 'burst', label: '버럭 ⚡확장', value: '突然瞪圆双眼，猛地发火，声音变大，身体前倾' },
+      { k: 'choke', label: '울컥 ⚡확장', value: '喉咙哽住说不出话，泪水骤然涌上，嘴角微微颤抖' },
+      { k: 'cheer', label: '쾌재 ⚡확장', value: '攥紧拳头欢呼，眼睛发亮，跺脚' },
+      { k: 'dazed', label: '허탈 ⚡확장', value: '苦笑出声，肩膀垮下来，目光游离' },
     ]
   },
   {
@@ -1663,9 +1663,9 @@ function buildPrompt() {
   const negAudioLine = negaudio !== 'none' ? optVal('negaudio', negaudio) : '';
 
   /* ① 작업 유형 (공식 5종) + ①-2 추가 능력 + ② 장르 */
-  const taskNames = { t2v:'文生视频（텍스트로 새 영상）', r2v:'参考生视频（재료 참조）', edit:'编辑视频（기존 영상 수정）', ext:'延长视频（이어 만들기）', fl:'首尾帧生视频（시작·끝 프레임）' };
+  const taskNames = { t2v:'文生视频', r2v:'参考生视频', edit:'编辑视频', ext:'延长视频', fl:'首尾帧生视频' };
   const taskBlock = `【任务类型】${taskNames[task] || taskNames.t2v}`;
-  const extraNames = { oc:'一键成片（사진 묶어 완성）', tr:'无缝转场（영상 간 자연 연결）', comb:'组合能力（여러 기능 병행）' };
+  const extraNames = { oc:'一键成片', tr:'无缝转场', comb:'组合能力' };
   const extraBlock = extra !== 'none' && (task === 't2v' || task === 'r2v') ? `\n【额外能力】${extraNames[extra]}` : '';
   const genreVal = genre !== 'none' ? optVal('genre', genre) : '';
 
@@ -1745,7 +1745,7 @@ const stageLabel = (seqMode === 'n' || seqMode === 'mix') ? '镜头' : '阶段';
     : '');
   const cutLine = cutprinciple !== 'none' ? optVal('cutprinciple', cutprinciple) : '';
   const dialogLine = lang !== 'none'
-    ? `${optVal('lang', lang)}，${voiceText}。她说：{고양이야, 안녕?}`
+    ? `${optVal('lang', lang)}，${voiceText}，他说：{고양이야, 안녕?}`
     : '人物自然闭口，无旁白、无对话，只保留指定环境音与音效，画面不显示字幕或标牌。';
 
   /* ⑧ 감정 전환 4단계 */
@@ -1787,15 +1787,15 @@ const stageLabel = (seqMode === 'n' || seqMode === 'mix') ? '镜头' : '阶段';
   const compText = composition !== 'none' ? optVal('composition', composition) : '';
   const transText = optVal('transition', transition) || '硬切';
   const camSeqMap = {
-    A: ['全景平视，手持缓慢跟随，保持约三米距离', '低机位，缓慢推近至近景，目标锁定她与猫咪之间', '固定特写，浅景深背景完全虚化', '固定广角，与开场同构'],
-    B: ['慢速推轨（slow dolly-in）', '20度弧线环绕（arc orbit）', '固定中景，镜头呼吸感', '慢速后拉（pull-back）'],
-    C: ['一镜到底：镜头连续跟随主体，无剪辑', '一镜到底：持续跟随，景别随距离自然变化', '一镜到底：保持同机位推进', '一镜到底：完整收尾，无剪辑'],
-    D: ['FPV第一人称：镜头以她的视角穿行', 'FPV：跟随主体移动，视线高度一致', 'FPV：缓速推进，保持第一人称', 'FPV：第一人称视角收尾'],
-    E: ['手持晃动+快速硬切，纪录感', '手持跟随，现场纪实感', '手持微晃，保持观察感', '手持稳定，纪实收尾'],
-    F: ['希区柯克变焦：背景推近、主体放大（紧张感）', '希区柯克变焦：持续推拉，主体保持居中', '希区柯克变焦：背景与主体同步变化', '希区柯克变焦：稳定收尾，张力释放'],
-    G: ['航拍：高空俯瞰，缓慢推进', '航拍：环绕主体，鸟瞰视角', '航拍：拉升后下降，全景展开', '航拍：缓速拉升，远景收尾'],
-    H: ['子弹时间：慢速环绕定格瞬间', '子弹时间：周围时间减速，主体慢动作', '子弹时间：360度缓慢环绕', '子弹时间：恢复正常速度收尾'],
-    I: ['回弹变速：先快后缓再快（弹性节奏）', '回弹变速：动作回弹，节奏起伏', '回弹变速：速度交错，强调冲击', '回弹变速：缓速收尾，节奏归稳'],
+    A: ['手持缓慢跟随', '缓慢推近', '固定特写', '固定广角'],
+    B: ['缓慢向前推近', '缓慢环绕移动', '固定机位', '缓慢向后拉远'],
+    C: ['一镜到底，镜头连续跟随', '一镜到底，持续跟随', '一镜到底，保持推进', '一镜到底，完整收尾'],
+    D: ['第一人称视角穿行', '第一人称跟随', '第一人称缓速推进', '第一人称收尾'],
+    E: ['手持轻微晃动', '手持跟随', '手持微晃观察', '手持稳定收尾'],
+    F: ['背景推近、主体放大', '持续推拉，主体居中', '背景与主体同步变化', '稳定收尾'],
+    G: ['航拍高空俯瞰', '航拍环绕鸟瞰', '航拍拉升后下降', '航拍缓速拉升'],
+    H: ['慢速环绕定格', '时间减速，主体慢动作', '360度缓慢环绕', '恢复正常速度收尾'],
+    I: ['先快后缓再快', '动作回弹，节奏起伏', '速度交错，强调冲击', '缓速收尾，节奏归稳'],
   };
   const camSeq = camSeqMap[cameras[0]] || camSeqMap.A;
   const optLine = optics.length ? optics.map(o=>optVal('optical',o)).join('，') : '';
@@ -1818,37 +1818,27 @@ const timeNote = seqMode === 'ts' ? `（时间控制：${timeSlots.map(s => s + 
   : seqMode === 'rel' ? '（时间控制：相对时间，如"按下按钮3秒后"）'
   : seqMode === 'mix' ? '（时间控制：镜头N + 时间区间并用）'
   : '（时间控制：以阶段划分，不指定精确秒数）';
-  const seqNames = (seqMode === 'n' || seqMode === 'mix') ? (i) => (i+1) : (i) => '一二三四五'[i];
+  const seqNames = (seqMode === 'n' || seqMode === 'mix') ? (i) => (i+1) : (i) => (i+1);
 
   let stages = '';
   for (let i = 0; i < stageCount; i++) {
     const tl = (contentInput.timeline && contentInput.timeline[i]) || {};
     const emoHere = (i === 0 || i === 2) && emotions.length
-      ? `情绪外化：${emotions.map(k => optVal('emotion', k)).join('；')}。`
+      ? `，${emotions.map(k => optVal('emotion', k)).join('；')}`
       : '';
     const timeTag = (seqMode === 'ts' || seqMode === 'mix') ? `(${timeSlots[i]}秒)` : '';
-    const twHere = (i === 0 && twText) ? `场景：<人物/场景/初始状态>。${twText}。` : '场景：<人物/场景/初始状态>。';
-    const compHere = (i === 0 && compText) ? `构图：${compText}。` : '';
+    const twHere = (i === 0 && twText) ? `，${twText}` : '';
+    const compHere = (i === 0 && compText) ? `，${compText}` : '';
     /* 장면 타임라인 반영 (구간별 입력 우선) */
     const hookHere = (i === 0 && contentInput.hook)
-      ? `【开头3秒钩子】${contentInput.hook}（强烈吸引眼球，保持观看）。\n`
+      ? `【开头3秒钩子】${contentInput.hook}。\n`
       : '';
-    const sceneHere = tl.scene ? `动作：${tl.scene}。` : '动作：<主要动作 — 肢体部位+程度+速度>。';
-    const camHere = tl.cam ? `运镜：${tl.cam}。` : `运镜：${camSeq[i] || camSeq[0]}。`;
+    const sceneText = tl.scene || contentInput.event || '<主要动作>';
+    const camHere = tl.cam ? tl.cam : (camSeq[i] || camSeq[0]);
     const dialogHere = tl.dialog
-      ? `对话：{${tl.dialog}}。`
-      : (i === 1 ? dialogLine : '');
-    stages += `${hookHere}【${stageLabel}${seqNames(i)}】${timeTag}${i===0?timeNote:''}
- 景别：${shotArc[i] || shotArc[shotArc.length-1]}。机位：${angleText}。${compHere}
-${twHere}
-${sceneHere}
-${camHere}（1镜头仅1种运镜 — ②③规则）
-${optLine ? `光学：${optLine}` : ''}
-${emoHere}
-${dialogHere}
-结束状态：<画面可见的结束状态>。切至<下一机位>（${transText}）。
-
-`;
+      ? `，他说：{${tl.dialog}}`
+      : (i === 1 && dialogLine ? `，${dialogLine}` : '');
+    stages += `${hookHere}镜头 ${seqNames(i)}${timeTag}：${shotArc[i] || shotArc[shotArc.length-1]}${twHere}${compHere}，${sceneText}，${camHere}${emoHere}${dialogHere}。\n`;
   }
 
   /* ⑧ 사운드 + ⑰ 음악 + ⑱ 효과음 */
@@ -1863,7 +1853,7 @@ ${dialogHere}
   /* ⑨ 화질 + ⑳ 시각스타일 + ㉑ 스타일고정 + ㉒ 조명 */
   const qText = quality.map(k => optVal('quality', k)).join('，');
   const styleText = stylepreset !== 'none' ? optVal('stylepreset', stylepreset) : '<风格一句话>';
-  const lightText = lighting !== 'none' ? optVal('lighting', lighting) : '光影方向：<如左上>';
+  const lightText = lighting !== 'none' ? optVal('lighting', lighting) : '';
 
   // ㉑ 스타일 고정: 역방향 【严格排除】 — 선택한 스타일에 따라 반대 스타일 자동 금지 (공식 2607689)
   const styleExcludes = {
@@ -1911,27 +1901,17 @@ output_format=${p_fmt} | watermark=${p_wm} | return_last_frame=${p_ret}
 
   let out = `${taskBlock}${extraBlock}
 ${triggerNote ? triggerNote + '\n' : ''}${lockNote ? lockNote + '\n' : ''}${r2vBlock ? r2vBlock + '\n' : ''}
-【生成目标】 ← ① 一句话概述 (②③: 先锁定"谁"在"干什么")
-生成一段${genHead}<类型>风格的<${dur === 'auto' ? '-1' : dur}>短视频。核心主体是<主体>，主要事件是<事件概要>。${emoText}
+【生成目标】生成一段${genHead}${dur === 'auto' ? '时长由模型决定' : dur.replace('s', '') + '秒'}短视频。核心主体是<主体>，主要事件是<事件概要>。${emoText}
 
 ${cutLine ? cutLine + '\n' : ''}${speakerLine ? speakerLine + '\n' : ''}${flowLine ? flowLine + '\n' : ''}${textLine ? textLine + '\n' : ''}
-${stages}【声音总则】 ← 每阶段의 소리 4레인 통합 (②③: 音频信息属于镜头内描述)
-对话：${lang==='none'?'无 — 人物只说口型':'有 — <台词说明>，口型与台词精准对位（립싱크）'}。
-音效：${fx || '<所需音效>'}
-${amb || '环境音：<所需环境音>'}
-${mus || '音乐：（<如需音乐>）'}。结尾最后1秒环境音渐弱，随后0.5秒静音。
+${stages}
+【声音】对话${lang==='none'?'无 — 人物只说口型':'有 — 口型与台词精准对位'}。${fx ? '音效：' + fx + '。' : ''}${amb ? amb + '。' : ''}${mus ? mus + '。' : ''}结尾最后1秒环境音渐弱，随后0.5秒静音。
 
-【画质·风格·约束】 ← ②③: "最后用风格、画质和约束条件把结果收紧" — 본문 뒤에 배치
-画质：${qText || '高清，细节丰富，电影质感，色彩自然，光影柔和'}。
-风格：${styleText}。${lightText}。
-${styleLockNote ? styleLockNote + '。' : ''}
-约束：<整体基调一句话>。
+【画质·风格·约束】画质：${qText || '高清，细节丰富，电影质感，色彩自然，光影柔和'}。风格：${styleText}${lightText ? '，' + lightText : ''}。${styleLockNote ? styleLockNote + '。' : ''}约束：<整体基调一句话>。
 
-【保持一致】 ← 2차 장편 구조의 최종 고정 블록 (전역 불변량)
-保持<人物/道具/场景/光线>全程稳定。<颜色不漂移><数量固定>。无字幕、无水印、无Logo。
+【保持一致】保持<人物/道具/场景/光线>全程稳定。<颜色不漂移><数量固定>。无字幕、无水印、无Logo。
 
-【负向控制】 ← ① 负向控制: 화면은 긍정 서술 우선, 부정은 최소·최후
-保持无字幕，避免生成任何文字或字幕。不要生成水印，不要生成Logo。无多余人物，无变形的手，无模糊面部。실존 브랜드·실존 얼굴·실존 앱 UI 금지。폰 화면에 어떤 글자·아이콘·UI도 생성하지 말 것（빈 화면 유지，UI는 후편집 합성）。립싱크 불일치·로봇 목소리·부자연스러운 억양 금지。${negAudioLine ? negAudioLine + '。' : ''}
+【负向控制】保持无字幕，避免生成任何文字或字幕。不要生成水印，不要生成Logo。无多余人物，无变形的手，无模糊面部。실존 브랜드·실존 얼굴·실존 앱 UI 금지。폰 화면에 어떤 글자·아이콘·UI도 생성하지 말 것（빈 화면 유지，UI는 후편집 합성）。립싱크 불일치·로봇 목소리·부자연스러운 억양 금지。${negAudioLine ? negAudioLine + '。' : ''}
 
 ${paramBlock}
 `;
@@ -1939,7 +1919,7 @@ ${paramBlock}
   if (contentInput.subject) out = out.split('<主体>').join(contentInput.subject);
   if (contentInput.event) {
     out = out.split('<事件概要>').join(contentInput.event);
-    out = out.split('<主要动作 — 肢体部位+程度+速度>').join(contentInput.event);
+    out = out.split('<主要动作>').join(contentInput.event);
   }
   if (contentInput.scene) out = out.split('<人物/场景/初始状态>').join(contentInput.scene);
   if (contentInput.dialog) {
@@ -1948,6 +1928,23 @@ ${paramBlock}
   if (contentInput.ending) out = out.split('<画面可见的结束状态>').join(contentInput.ending);
   if (contentInput.constraint) out = out.split('<整体基调一句话>').join(contentInput.constraint);
   if (contentInput.cta) out = out.split('<CTA 문구>').join(contentInput.cta);
+  /* 메타 주석·잔류 자리표시자 정리 (최종 출력에서 노이즈 제거) */
+  out = out
+    .replace(/（1镜头仅1种运镜[^）]*）/g, '')
+    .replace(/（时间控制：[^）]*）/g, '')
+    .replace(/←[^\n]*\n/g, '')
+    .replace(/<类型>/g, '')
+    .replace(/<下一机位>/g, '')
+    .replace(/<画面可见的结束状态>/g, '')
+    .replace(/<台词说明>/g, '')
+    .replace(/<所需音效>/g, '')
+    .replace(/<所需环境音>/g, '')
+    .replace(/<如需音乐>/g, '')
+    .replace(/<风格一句话>/g, '')
+    .replace(/<如左上>/g, '')
+    .replace(/<人物\/场景\/初始状态>/g, '')
+    .replace(/<主要动作>/g, '')
+    .replace(/\n{3,}/g, '\n\n');
   return out;
 }
 /* ================================================================

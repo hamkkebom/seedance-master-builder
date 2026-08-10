@@ -11,7 +11,7 @@
 
 | 파일 | MD5 | 크기 |
 |---|---|---|
-| `seedance-master-builder.html` | `BDE96C7AC5F54EF32ED90C67B47A0F73` | 172,758 B (41축 v3.2 — 2.5 전용: 영어 잔재 제거) |
+| `seedance-master-builder.html` | `39897EB14FD214C7B984C2455AB98ACC` | 171,193 B (41축 v3.3 — 자연어 스타일: 라벨·메타주석 제거, 한국어 대사 전용) |
 | `README.md` | `23E422C8662840DFED316A51119A384B` | 14,670 B |
 | `PROJECT_SPEC.md` | `60903C85C11466B0D10768D0BEE728C5` | 41,487 B (2.5 단일 기준: 2.0 문구 정리) |
 | `LLM_RULES.md` | `8AAA48BDC634D66F6C1B6990D89BB241` | 15,735 B (2.5 단일 기준: 근거 레벨 단순화) |
