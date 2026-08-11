@@ -702,7 +702,7 @@
     <div class="preview-toolbar">
       <button class="btn primary" id="wizardOpenBtn">🧙 시나리오로 시작</button>
       <button class="btn primary" id="copyBtn">📋 프롬프트 복사</button>
-      <button class="btn ghost" id="langToggleBtn" title="프롬프트를 중국어/한국어로 보기">🌐 中文</button>
+      <button class="btn ghost" id="langToggleBtn" title="프롬프트를 중국어/한국어로 보기">🌐 중국어</button>
       <button class="btn ghost" id="resetBtn">초기화</button>
       <div class="preset-wrap">
         <button class="btn ghost" id="presetBtn">📁 프리셋</button>
@@ -759,29 +759,29 @@
       </div>
       <div class="axis-body">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          <div class="opt-row"><div class="opt-label">주체 — 核心主体 (누가)</div>
+          <div class="opt-row"><div class="opt-label">주체 (누가)</div>
             <input id="ci_subject" type="text" placeholder="예: 카페 테라스의 여자 친구 둘" oninput="renderPrompt()">
           </div>
-          <div class="opt-row"><div class="opt-label">사건·동작 — 主要事件 (무슨 일)</div>
+          <div class="opt-row"><div class="opt-label">사건·동작 (무슨 일)</div>
             <input id="ci_event" type="text" placeholder="예: B가 연애운을 보자고 제안한다" oninput="renderPrompt()">
           </div>
-          <div class="opt-row"><div class="opt-label">장면·배경 — 场景 (어디서)</div>
+          <div class="opt-row"><div class="opt-label">장면·배경 (어디서)</div>
             <input id="ci_scene" type="text" placeholder="예: 오후 햇살의 카페 야외 테라스" oninput="renderPrompt()">
           </div>
-          <div class="opt-row"><div class="opt-label">대사 — 台词 ({ } 안 내용)</div>
+          <div class="opt-row"><div class="opt-label">대사 ({ } 안 내용)</div>
             <input id="ci_dialog" type="text" placeholder="예: 야, 우리 연애운 볼까?" oninput="renderPrompt()">
           </div>
-          <div class="opt-row"><div class="opt-label">끝 상태 — 结束状态 (컷 마무리)</div>
+          <div class="opt-row"><div class="opt-label">끝 상태 (컷 마무리)</div>
             <input id="ci_ending" type="text" placeholder="예: 두 사람이 마주 보며 웃는다" oninput="renderPrompt()">
           </div>
-          <div class="opt-row"><div class="opt-label">전체 톤 — 约束 (한 줄 분위기)</div>
+          <div class="opt-row"><div class="opt-label">전체 톤 (한 줄 분위기)</div>
             <input id="ci_constraint" type="text" placeholder="예: 밝고 따뜻한 분위기" oninput="renderPrompt()">
           </div>
           <div class="opt-row"><div class="opt-label">클릭 유도 (CTA) — 구독·구매 문구</div>
             <input id="ci_cta" type="text" placeholder="예: 지금 구매하러 가기 / 구독 좋아요!" oninput="renderPrompt()">
           </div>
           <div class="opt-row"><div class="opt-label">참조 이미지 개수 — 업로드 순서 번호 (참조 모드)</div>
-            <input id="ci_refcount" type="number" min="1" max="30" placeholder="예: 3 (图 1、图 2、图 3 지칭 생성)" oninput="renderPrompt()">
+            <input id="ci_refcount" type="number" min="1" max="30" placeholder="예: 3 (이미지 1·2·3 지칭 생성)" oninput="renderPrompt()">
           </div>
           <div class="opt-row"><div class="opt-label">첫 3초 훅 — 유튜브 시청 유지용 강렬 장면</div>
             <input id="ci_hook" type="text" placeholder="예: 제품이 번쩍이며 테이블에 떨어진다" oninput="renderPrompt()">
@@ -993,11 +993,11 @@ const AXES = [
     id: 'shotseq', title: '④ 장면 분할 방식 — 영상을 어떻게 쪼갤지', tag: 'opt', type: 'single', group: 'A. 장르·구조 — 뭘 만들지', requires: ['t2v','r2v'],
     desc: '영상을 시간 또는 장면으로 어떻게 나눌지 — 시간 구간이 가장 추천',
     options: [
-      { k: 'ts',   label: '시간 구간 (추천) → 【阶段一】(0-4)【阶段二】(4-9)…', value: '' },
-      { k: 'point',label: '시간점 → "第5秒에 장면 전환" (이벤트 1개 지정)', value: '' },
+      { k: 'ts',   label: '시간 구간 (추천) → 【단계 1】(0-4)【단계 2】(4-9)…', value: '' },
+      { k: 'point',label: '시간점 → "5초에 장면 전환" (이벤트 1개 지정)', value: '' },
       { k: 'rel',  label: '상대시간 → "버튼 누른 뒤 3초 후" (연속 액션용)', value: '' },
-      { k: 'mix',  label: '혼합 → 【镜头1】(0-4)【镜头2】(4-9)…', value: '' },
-      { k: 'n',    label: '장면 번호만 → 【镜头1】【镜头2】… (2.0 방식, 시간 없음, 비권장)', value: '' },
+      { k: 'mix',  label: '혼합 → 【컷 1】(0-4)【컷 2】(4-9)…', value: '' },
+      { k: 'n',    label: '장면 번호만 → 【컷 1】【컷 2】… (2.0 방식, 시간 없음, 비권장)', value: '' },
     ]
   },
   /* ============ 그룹 B: 인물·대사 (누가 나오지) ============ */
@@ -1160,7 +1160,7 @@ const AXES = [
     desc: '각 장면을 완전히 다른 장면으로 분리 — 배경·의상·위치가 확실히 바뀌게 (드라마에 유용)',
     options: [
       { k: 'none',  label: '사용 안 함', value: '' },
-      { k: 'apply', label: '적용 — 【镜头切换原则】 전역 블록', value: '【镜头切换原则】각 阶段은 직전 컷과 겹치지 않는 독립된 장면이다。장면이 바뀔 때 배경·의상·소품·인물 위치가 확실히 전환되며，이전 컷의 인물이나 소품이 다음 컷에 이어지지 않는다。전환(하드컷/크로스페이드) 시점에 화면이 선명하게 새 장면으로 교체된다。' },
+      { k: 'apply', label: '적용 — 【컷 전환 원칙】 전역 블록', value: '【镜头切换原则】각 阶段은 직전 컷과 겹치지 않는 독립된 장면이다。장면이 바뀔 때 배경·의상·소품·인물 위치가 확실히 전환되며，이전 컷의 인물이나 소품이 다음 컷에 이어지지 않는다。전환(하드컷/크로스페이드) 시점에 화면이 선명하게 새 장면으로 교체된다。' },
       { k: 'strong', label: '강화 — 무봉제/연속 액션 전용 ⚡확장', value: '【镜头切换原则·强化】每个阶段是完全独立的画面，人物、道具在切换时绝不延续。转场时背景、光照、服装清晰更换。需要连续动作（无接缝）的段落明确指定流畅的生成式转场，其余镜头保持完全分离。' },
     ]
   },
@@ -1338,7 +1338,7 @@ const AXES = [
     desc: '스타일을 고정하는 방법 — 실사면 "애니 느낌 금지"처럼 반대 스타일을 막아줌',
     options: [
       { k: 'forward',   label: '정방향만 — 스타일어로 지정', value: '' },
-      { k: 'both',      label: '정방향+역방향 — 【严格排除】으로 반대 스타일 금지 (추천)', value: '' },
+      { k: 'both',      label: '정방향+역방향 — 【엄격 제외】으로 반대 스타일 금지 (추천)', value: '' },
       { k: 'refimg',    label: '참조 이미지 — 스타일 기준 이미지 첨부', value: '' },
     ]
   },
@@ -1377,7 +1377,7 @@ const AXES = [
   /* ============ 그룹 G: 참조 재료 (R2V 전용 — 작업 유형=참조일 때만) ============ */
   {
     id: 'refmat', title: '㉔ 참고 자료 (참조 전용)', tag: 'r2v', type: 'multi', group: 'G. 참조 재료 (R2V 전용)',
-    desc: '참고할 이미지·영상·음성 선택 — 업로드 순서대로 번호(图N/视频N/音频N)가 자동 부여됩니다. 제한: 이미지 30장·영상 10개·오디오 10개 (총 50개) · 실사 얼굴 참조 업로드 불가(공식) · 주체는 1~5개 권장 · 오디오 단독 참조 가능(2.5)',
+    desc: '참고할 이미지·영상·음성 선택 — 업로드 순서대로 번호(이미지N/영상N/음성N)가 자동 부여됩니다. 제한: 이미지 30장·영상 10개·오디오 10개 (총 50개) · 실사 얼굴 참조 업로드 불가(공식) · 주체는 1~5개 권장 · 오디오 단독 참조 가능(2.5)',
     options: [
       { k: 'imgchar',   label: '이미지 — 인물 외형·얼굴', value: '图N 图片参考：定义<主体>的外貌、发型与服装' },
       { k: 'imgscene',  label: '이미지 — 배경·장면·스타일', value: '图N 图片参考：定义场景的空间、材质与光线' },
@@ -1399,10 +1399,10 @@ const AXES = [
   },
   {
     id: 'subjectdef', title: '㉖ 주인공 지정 (참조 전용)', tag: 'r2v', type: 'single', group: 'G. 참조 재료 (R2V 전용)',
-    desc: '참고 이미지의 인물을 주인공으로 쓰는 방법 — 2.0 문서 추천 구성: 얼굴大头照(특징) + 전신全身照(의상·체형) · 주체 ≤ 4명 권장 · 다중 뷰 금지(2.0)',
+    desc: '참고 이미지의 인물을 주인공으로 쓰는 방법 — 2.0 문서 추천 구성: 얼굴 클로즈업(특징) + 전신 풀샷(의상·체형) · 주체 ≤ 4명 권장 · 다중 뷰 금지(2.0)',
     options: [
       { k: 'single',   label: '단일 주체 — 주인공 1명', value: '将<图片N>中的主体定义为主角，全程保持同一主体' },
-      { k: 'multi1',   label: '한 주체에 여러 재료 — 얼굴(大头照)+전신(全身照) ⚡2.0추천', value: '将<图片N>中的面部特征（大头照）与<图片N+1>中的妆造体态（全身照）合并定义为同一主体，全程保持同一主体' },
+      { k: 'multi1',   label: '한 주체에 여러 재료 — 얼굴(클로즈업)+전신(풀샷) ⚡2.0추천', value: '将<图片N>中的面部特征（大头照）与<图片N+1>中的妆造体态（全身照）合并定义为同一主体，全程保持同一主体' },
       { k: 'multisub', label: '주인공마다 재료 지정', value: '主体1@<图片N>，主体2@<图片N+1>，多主体逐一列清映射关系，分别保持各自特征' },
     ]
   },
@@ -1466,7 +1466,7 @@ function renderSlots() {
       const label = (a.options.find(o => o.k === k) || {}).label || k;
       const num = meta.t === '이미지' ? ++imgN : meta.t === '영상' ? ++vidN : ++audN;
       return `<div class="refmat-slot">
-        <span class="rs-num">${meta.t === '이미지' ? '图' : meta.t === '영상' ? '视频' : '音频'} ${num}</span>
+        <span class="rs-num">${meta.t === '이미지' ? '이미지' : meta.t === '영상' ? '영상' : '음성'} ${num}</span>
         <span class="rs-icon">${meta.icon}</span>
         <span class="rs-label">${label}</span>
         <button class="rs-del" onclick="toggleOpt('refmat','${k}')" title="제거">✕</button>
@@ -1477,7 +1477,7 @@ function renderSlots() {
         <div class="refmat-slots">${slots || '<div class="rs-empty">참조 재료 없음 — 아래에서 추가 (선택 순서 = 업로드 번호)</div>'}</div>
         ${lockFinal ? '' : `
         <div class="refmat-groups">
-          <div class="rg-title">＋ 추가 (선택 순서대로 图1·视频1·音频1 번호 부여)</div>
+          <div class="rg-title">＋ 추가 (선택 순서대로 이미지1·영상1·음성1 번호 부여)</div>
           <div class="rg-chips">
             ${a.options.map(o => {
               const meta = TYPE_META[o.k];
@@ -1683,7 +1683,6 @@ function buildPrompt() {
     : '';
 
   /* ③ 장면 분할 */
-const stageLabel = (seqMode === 'n' || seqMode === 'mix') ? '镜头' : '阶段';
 
   /* R2V 참조 재료 — 타입별 업로드 순서 번호 자동 부여 (공식 규칙: 图N/视频N/音频N) */
   const refLines = [];
@@ -2099,7 +2098,7 @@ function renderTimeline() {
   const slots = slotsMap[dur] || slotsMap['20s'];
   const prev = contentInput.timeline || [];
   wrap.innerHTML = `
-    <div class="tl-head">⏱️ 장면 타임라인 — 구간별로 채우면 【阶段N】 문장에 자동 반영</div>
+    <div class="tl-head">⏱️ 장면 타임라인 — 구간별로 채우면 【단계 N】 문장에 자동 반영</div>
     ${slots.map((s, i) => {
       const p = prev[i] || {};
       return `<div class="tl-row">
@@ -2124,7 +2123,7 @@ function renderSubjectMatrix() {
   const cnt = parseInt(contentInput.refcount, 10) || 0;
   const rowCount = cnt >= 3 ? 2 : cnt >= 1 ? 1 : 1;
   const html = `
-    <div class="sm-head">👥 주체 바인딩 매트릭스 — 주체마다 이미지/오디오 번호 지정 (공식: img1-2 是人物 1，对应音频 1)</div>
+    <div class="sm-head">👥 주체 바인딩 매트릭스 — 주체마다 이미지/오디오 번호 지정 (공식: 이미지 1·2 → 주체 1, 음성 1 대응)</div>
     ${Array.from({length: rowCount}, (_, i) => {
       const p = prev[i] || {};
       return `<div class="sm-row">
@@ -2252,7 +2251,7 @@ document.getElementById('resetBtn').addEventListener('click', () => {
 document.getElementById('langToggleBtn').addEventListener('click', () => {
   promptLang = promptLang === 'cn' ? 'ko' : 'cn';
   const btn = document.getElementById('langToggleBtn');
-  btn.textContent = promptLang === 'ko' ? '🌐 中文' : '🌐 한국어';
+  btn.textContent = promptLang === 'ko' ? '🌐 중국어' : '🌐 한국어';
   renderPrompt();
   showToast(promptLang === 'ko' ? '🌐 한국어 해석 표시 (복사는 중국어 원문 권장)' : '🌐 중국어 원문 표시');
 });

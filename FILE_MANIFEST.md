@@ -11,7 +11,7 @@
 
 | 파일 | MD5 | 크기 |
 |---|---|---|
-| `seedance-master-builder.html` | `54D3FA2667242D638CDEABDB18646177` | 171,683 B (41축 v3.3 — 자연어 스타일 최종: 부정제어 중국어화·감정 중국어화) |
+| `seedance-master-builder.html` | `E0FD098F3879111826BC47D17A912FBF` | 171,537 B (41축 v3.3 — 자연어 스타일 최종: 부정제어 중국어화·감정 중국어화 · UI 한자 제거) |
 | `README.md` | `A255240D5B6EE4A87C0302A18C755FF2` | 19,359 B (v3.3 자연어 스타일 가이드) |
 | `PROJECT_SPEC.md` | `5CE60304C5A40ADE93B922B4C2DDB908` | 43,650 B (2.5 단일 기준 + §15 자연어 개편) |
 | `LLM_RULES.md` | `6AE63B299E213AE86D358CBC5405F008` | 18,229 B (2.5 단일 + v3.3 자연어 규칙) |
