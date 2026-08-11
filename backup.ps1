@@ -12,6 +12,7 @@ New-Item -ItemType Directory -Path $backup -Force | Out-Null
 $files = @(
   'seedance-master-builder.html',
   'README.md',
+  'README.html',
   'PROJECT_SPEC.md',
   'LLM_RULES.md',
   'axes.json',

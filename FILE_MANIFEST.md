@@ -11,8 +11,9 @@
 
 | 파일 | MD5 | 크기 |
 |---|---|---|
-| `seedance-master-builder.html` | `5DD4A66BFD53EDADDCA66E54EA642C01` | 174,725 B (41축 v3.3 — UI 한자 제거 · 🎤 인터뷰 6종(사주천궁 포함) · 현재 선택 바 기본 숨김+토글) |
-| `README.md` | `B887A614E89F2797BF0C1ECA60E054AD` | 19,452 B (v3.3 자연어 스타일 가이드 + 인터뷰 6종 안내) |
+| `seedance-master-builder.html` | `028813D12AF89D0BA2B747C57A8214CC` | 174,707 B (41축 v3.3 — UI 한자 제거 · 🎤 인터뷰 6종(사주천궁 포함) · 현재 선택 바 토글 · 사용 가이드→README.html 링크) |
+| `README.md` | `B887A614E89F2797BF0C1ECA60E054AD` | 19,452 B (v3.3 자연어 스타일 가이드 + 인터뷰 6종 안내 — 원본) |
+| `README.html` | `D97ADCF29C5F0D766089D29B0EF9CE13` | 48,427 B (사용 가이드 HTML — UTF-8·다크테마·TOC 10개·한글 깨짐 해결) |
 | `PROJECT_SPEC.md` | `2DD474DCA5CAE1FE63F977E6D3133BD2` | 44,221 B (2.5 단일 기준 + §15 자연어 개편 + 인터뷰 §4 사주천궁) |
 | `LLM_RULES.md` | `6AE63B299E213AE86D358CBC5405F008` | 18,229 B (2.5 단일 + v3.3 자연어 규칙) |
 | `axes.json` | `41E64109008AB44B7496F3DAFCAF5E52` | 61,633 B (41축 레지스트리 — 단일 진실 공급원) |
