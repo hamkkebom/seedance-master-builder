@@ -11,7 +11,7 @@
 
 | 파일 | MD5 | 크기 |
 |---|---|---|
-| `seedance-master-builder.html` | `6A36EC5EF55CE657BB44261540D51D9A` | 173,556 B (41축 v3.3 — 장문 설명 축약: desc·title·라벨 21곳, 프로그램명·헤더 한글화) |
+| `seedance-master-builder.html` | `06DF9D8C902EAADC12C32EB0BD5E8361` | 173,592 B (41축 v3.3 — 장문 축약 + 그리드 오버플로 수정(min-width:0) + 한글화) |
 | `README.md` | `B887A614E89F2797BF0C1ECA60E054AD` | 19,452 B (v3.3 자연어 스타일 가이드 + 인터뷰 6종 안내 — 원본) |
 | `README.html` | `D97ADCF29C5F0D766089D29B0EF9CE13` | 48,427 B (사용 가이드 HTML — UTF-8·다크테마·TOC 10개·한글 깨짐 해결) |
 | `PROJECT_SPEC.md` | `2DD474DCA5CAE1FE63F977E6D3133BD2` | 44,221 B (2.5 단일 기준 + §15 자연어 개편 + 인터뷰 §4 사주천궁) |
