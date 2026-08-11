@@ -761,7 +761,7 @@
       <div class="axis-head" onclick="toggleAxis('content')">
         <div class="axis-head-left">
           <div class="axis-title">✍️ 콘텐츠 입력 <span class="tag opt">선택</span></div>
-          <div class="axis-desc">주체·사건·장면·대사·끝 상태·전체 톤·CTA를 채우면 프롬프트의 <...> 자리표시자가 완성됩니다 (비우면 자리표시자 유지) — 유튜브 광고 고객사 관점: 첫 3초 훅 + CTA로 시청·클릭 유도</div>
+          <div class="axis-desc">주체·사건·장면·대사·끝·톤·CTA 입력 — 비우면 <...> 유지</div>
         </div>
         <div class="axis-arrow">▼</div>
       </div>
@@ -785,13 +785,13 @@
           <div class="opt-row"><div class="opt-label">전체 톤 (한 줄 분위기)</div>
             <input id="ci_constraint" type="text" placeholder="예: 밝고 따뜻한 분위기" oninput="renderPrompt()">
           </div>
-          <div class="opt-row"><div class="opt-label">클릭 유도 (CTA) — 구독·구매 문구</div>
+          <div class="opt-row"><div class="opt-label">CTA 문구</div>
             <input id="ci_cta" type="text" placeholder="예: 지금 구매하러 가기 / 구독 좋아요!" oninput="renderPrompt()">
           </div>
-          <div class="opt-row"><div class="opt-label">참조 이미지 개수 — 업로드 순서 번호 (참조 모드)</div>
+          <div class="opt-row"><div class="opt-label">참조 이미지 개수 (참조 모드)</div>
             <input id="ci_refcount" type="number" min="1" max="30" placeholder="예: 3 (이미지 1·2·3 지칭 생성)" oninput="renderPrompt()">
           </div>
-          <div class="opt-row"><div class="opt-label">첫 3초 훅 — 유튜브 시청 유지용 강렬 장면</div>
+          <div class="opt-row"><div class="opt-label">첫 3초 훅</div>
             <input id="ci_hook" type="text" placeholder="예: 제품이 번쩍이며 테이블에 떨어진다" oninput="renderPrompt()">
           </div>
         </div>
@@ -805,8 +805,8 @@
     <div class="axis params-axis" data-axis="params">
       <div class="axis-head" onclick="toggleAxis('params')">
         <div class="axis-head-left">
-          <div class="axis-title">⚙️ 생성 파라미터 (Seedance 2.5 전용 — API/페이지 설정)</div>
-          <div class="axis-desc">프롬프트에 넣지 않음 — 비율·길이·해상도는 여기서만 설정 · seed/camera_fixed는 2.5 미지원이라 제외</div>
+          <div class="axis-title">⚙️ 생성 파라미터 (2.5 전용)</div>
+          <div class="axis-desc">프롬프트 미포함 — 비율·길이·해상도만 설정</div>
         </div>
         <div class="axis-arrow">▼</div>
       </div>
@@ -823,12 +823,12 @@
               <option value="doubao-seedance-2-5-260628" selected>doubao-seedance-2-5-260628</option>
             </select>
           </div>
-          <div class="opt-row"><div class="opt-label">resolution (2.5: 480p/720p만)</div>
+          <div class="opt-row"><div class="opt-label">resolution</div>
             <select id="p_res" onchange="renderPrompt()">
               <option value="720p">720p (기본)</option><option value="480p">480p</option>
             </select>
           </div>
-          <div class="opt-row"><div class="opt-label">ratio (편집/연장/시작·끝 프레임은 adaptive 고정)</div>
+          <div class="opt-row"><div class="opt-label">ratio (adaptive: 편집·연장·시작·끝)</div>
             <select id="p_ratio" onchange="renderPrompt()">
               <option value="16:9">16:9</option><option value="9:16">9:16</option>
               <option value="4:3">4:3</option><option value="3:4">3:4</option>
@@ -836,18 +836,18 @@
               <option value="adaptive" selected>adaptive (자동)</option>
             </select>
           </div>
-          <div class="opt-row"><div class="opt-label">duration (초, [4,30] 또는 -1)</div>
+          <div class="opt-row"><div class="opt-label">duration (초)</div>
             <select id="p_dur" onchange="renderPrompt()">
               <option value="20">20</option><option value="30">30</option><option value="15">15</option>
               <option value="-1" selected>-1 (모델 자동)</option>
             </select>
           </div>
-          <div class="opt-row"><div class="opt-label">generate_audio (한국어 대사 필수 true)</div>
+          <div class="opt-row"><div class="opt-label">generate_audio</div>
             <select id="p_audio" onchange="renderPrompt()">
               <option value="true" selected>true (유성)</option><option value="false">false (무성)</option>
             </select>
           </div>
-          <div class="opt-row"><div class="opt-label">output_format (2.5 전용)</div>
+          <div class="opt-row"><div class="opt-label">output_format</div>
             <select id="p_fmt" onchange="renderPrompt()">
               <option value="mp4" selected>mp4</option><option value="mov">mov (영화급 색정확도)</option>
             </select>
@@ -857,7 +857,7 @@
               <option value="false" selected>false (없음)</option><option value="true">true (AI 워터마크)</option>
             </select>
           </div>
-          <div class="opt-row"><div class="opt-label">return_last_frame (연속 생성용)</div>
+          <div class="opt-row"><div class="opt-label">return_last_frame</div>
             <select id="p_ret" onchange="renderPrompt()">
               <option value="false" selected>false</option><option value="true">true (끝 프레임 반환)</option>
             </select>
@@ -943,7 +943,7 @@ const AXES = [
   /* ============ 그룹 A: 장르·구조 (뭘 만들지) ============ */
   {
     id: 'task', title: '① 작업 유형 — 새로·참조·편집·연장', tag: 'core', type: 'single', group: 'A. 장르·구조 — 뭘 만들지',
-    desc: '영상을 새로 만들지, 참조·편집·연장할지 선택 — 첫 단계로 여기서 시작. 편집·연장은 기존 영상의 비율·길이가 유지됨',
+    desc: '새로·참조·편집·연장 중 선택 — 첫 단계. 편집·연장은 기존 비율·길이 유지',
     options: [
       { k: 't2v',  label: '텍스트만 — 새 영상', value: '' },
       { k: 'r2v',  label: '참조 — 이미지·영상 첨부', value: '' },
@@ -1001,11 +1001,11 @@ const AXES = [
     id: 'shotseq', title: '④ 장면 분할 방식 — 영상을 어떻게 쪼갤지', tag: 'opt', type: 'single', group: 'A. 장르·구조 — 뭘 만들지', requires: ['t2v','r2v'],
     desc: '영상을 시간 또는 장면으로 어떻게 나눌지 — 시간 구간이 가장 추천',
     options: [
-      { k: 'ts',   label: '시간 구간 (추천) → 【단계 1】(0-4)【단계 2】(4-9)…', value: '' },
+      { k: 'ts',   label: '시간 구간 (추천) → 【1】(0-4)【2】(4-9)…', value: '' },
       { k: 'point',label: '시간점 → "5초에 장면 전환" (이벤트 1개 지정)', value: '' },
       { k: 'rel',  label: '상대시간 → "버튼 누른 뒤 3초 후" (연속 액션용)', value: '' },
       { k: 'mix',  label: '혼합 → 【컷 1】(0-4)【컷 2】(4-9)…', value: '' },
-      { k: 'n',    label: '장면 번호만 → 【컷 1】【컷 2】… (2.0 방식, 시간 없음, 비권장)', value: '' },
+      { k: 'n',    label: '장면 번호만 → 【컷 1】【컷 2】… (2.0·비권장)', value: '' },
     ]
   },
   /* ============ 그룹 B: 인물·대사 (누가 나오지) ============ */
@@ -1105,7 +1105,7 @@ const AXES = [
   },
   {
     id: 'emotion', title: '⑦ 감정 — 몸짓·표정으로 표현', tag: 'core', type: 'multi', group: 'B. 인물·대사 — 누가 나오지',
-    desc: '등장인물의 감정을 몸짓·표정으로 표현 — "슬프다" 대신 "눈가가 붉어짐"처럼 구체적으로',
+    desc: '감정은 몸짓·표정으로 — "눈가가 붉어짐"처럼 구체적 표현',
     options: [
       { k: 'joy',   label: '기쁨',   value: '嘴角止不住地上扬，眉眼舒展，脚步轻快' },
       { k: 'sad',   label: '슬픔',   value: '低下头，肩膀微微颤抖，眼眶泛红，泪水在眼眶里打转' },
@@ -1164,8 +1164,8 @@ const AXES = [
     ]
   },
   {
-    id: 'cutprinciple', title: '⑩-2 장면 분리 — 각 장면을 완전히 다르게', tag: 'opt', type: 'single', group: 'C. 장면 — 어떤 장면이지', requires: ['t2v','r2v'],
-    desc: '각 장면을 완전히 다른 장면으로 분리 — 배경·의상·위치가 확실히 바뀌게 (드라마에 유용)',
+    id: 'cutprinciple', title: '⑩-2 장면 분리 (완전히 다르게)', tag: 'opt', type: 'single', group: 'C. 장면 — 어떤 장면이지', requires: ['t2v','r2v'],
+    desc: '각 장면을 완전히 다르게 — 배경·의상·위치 확실히 변경',
     options: [
       { k: 'none',  label: '사용 안 함', value: '' },
       { k: 'apply', label: '적용 — 【컷 전환 원칙】 전역 블록', value: '【镜头切换原则】각 阶段은 직전 컷과 겹치지 않는 독립된 장면이다。장면이 바뀔 때 배경·의상·소품·인물 위치가 확실히 전환되며，이전 컷의 인물이나 소품이 다음 컷에 이어지지 않는다。전환(하드컷/크로스페이드) 시점에 화면이 선명하게 새 장면으로 교체된다。' },
@@ -1371,7 +1371,7 @@ const AXES = [
   },
   {
     id: 'textgen', title: '㉓ 화면 글자', tag: 'opt', type: 'single', group: 'F. 마무리 — 화질·스타일·제약',
-    desc: '화면에 글자 넣기 (광고 문구·자막·말풍선) — 글자는 AI가 틀리기 쉬우니 최소화 권장. 폰 화면은 빈 화면으로 두고 나중에 합성',
+    desc: '화면 글자 (광고·자막·말풍선) — 글자 깨짐 최소화, 폰 화면은 비우고 후편집',
     requires: ['t2v','r2v'],
     options: [
       { k: 'none',    label: '글자 없음', value: '' },
@@ -1385,7 +1385,7 @@ const AXES = [
   /* ============ 그룹 G: 참조 재료 (R2V 전용 — 작업 유형=참조일 때만) ============ */
   {
     id: 'refmat', title: '㉔ 참고 자료 (참조 전용)', tag: 'r2v', type: 'multi', group: 'G. 참조 재료 (R2V 전용)',
-    desc: '참고할 이미지·영상·음성 선택 — 업로드 순서대로 번호(이미지N/영상N/음성N)가 자동 부여됩니다. 제한: 이미지 30장·영상 10개·오디오 10개 (총 50개) · 실사 얼굴 참조 업로드 불가(공식) · 주체는 1~5개 권장 · 오디오 단독 참조 가능(2.5)',
+    desc: '이미지·영상·음성 업로드 — 순서대로 번호(이미지N/영상N/음성N) 부여 · 제한: 이미지30·영상10·오디오10(총50) · 실사 얼굴 불가 · 주체1~5 · 오디오 단독 가능(2.5)',
     options: [
       { k: 'imgchar',   label: '이미지 — 인물 외형·얼굴', value: '图N 图片参考：定义<主体>的外貌、发型与服装' },
       { k: 'imgscene',  label: '이미지 — 배경·장면·스타일', value: '图N 图片参考：定义场景的空间、材质与光线' },
@@ -1407,7 +1407,7 @@ const AXES = [
   },
   {
     id: 'subjectdef', title: '㉖ 주인공 지정 (참조 전용)', tag: 'r2v', type: 'single', group: 'G. 참조 재료 (R2V 전용)',
-    desc: '참고 이미지의 인물을 주인공으로 쓰는 방법 — 2.0 문서 추천 구성: 얼굴 클로즈업(특징) + 전신 풀샷(의상·체형) · 주체 ≤ 4명 권장 · 다중 뷰 금지(2.0)',
+    desc: '참조 인물을 주인공으로 — 얼굴(클로즈업)+전신(풀샷) 권장 · 주체≤4 · 다중 뷰 금지',
     options: [
       { k: 'single',   label: '단일 주체 — 주인공 1명', value: '将<图片N>中的主体定义为主角，全程保持同一主体' },
       { k: 'multi1',   label: '한 주체에 여러 재료 — 얼굴(클로즈업)+전신(풀샷) ⚡확장', value: '将<图片N>中的面部特征（大头照）与<图片N+1>中的妆造体态（全身照）合并定义为同一主体，全程保持同一主体' },
@@ -1416,7 +1416,7 @@ const AXES = [
   },
   {
     id: 'whitemodel', title: '㉗ 흰 3D 모형 (참조 전용)', tag: 'r2v', type: 'single', group: 'G. 참조 재료 (R2V 전용)',
-    desc: '흰색 3D 모형 영상으로 움직임·구도를 먼저 설계 — 동작·카메라·소리 흐름을 참조',
+    desc: '흰 3D 모형으로 움직임·구도 설계 — 동작·카메라·소리 흐름 참조',
     options: [
       { k: 'none',   label: '사용 안 함', value: '' },
       { k: 'coarse', label: '동작·동선·기종 골격만', value: '白模参考：仅提供动作路径、机位、运镜、切镜、光影变化、声音节奏等时序信息' },
@@ -1425,7 +1425,7 @@ const AXES = [
   },
   {
     id: 'keyframe', title: '㉘ 핵심 장면 (참조 전용)', tag: 'r2v', type: 'single', group: 'G. 참조 재료 (R2V 전용)',
-    desc: '꼭 넣고 싶은 장면 이미지 지정 — 그 순서대로 진행하거나 시작·끝 프레임만 고정',
+    desc: '지정 장면 이미지 고정 — 순서대로 또는 시작·끝 프레임만',
     options: [
       { k: 'none',  label: '사용 안 함', value: '' },
       { k: 'kf',    label: 'N장 순서대로 고정 (첫 문장에 명시)', value: '以图片1至图片N的顺序作为关键帧' },
