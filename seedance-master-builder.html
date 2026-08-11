@@ -736,6 +736,7 @@
           <option value="">— 선택 —</option>
           <option value="yt_shorts">📱 유튜브 쇼츠 광고 (9:16, 첫 3초 훅+CTA)</option>
           <option value="live_comm">🛒 라이브 커머스 (쇼호스트+세일즈)</option>
+          <option value="saju">🎎 사주천궁 드라마 (상담 광고, 화자3+감정 아크)</option>
           <option value="k_drama">🎎 K-드라마 (감정 아크+화자 분리)</option>
           <option value="saguek">⚔️ 사극 (조선 시대)</option>
           <option value="mukbang">🍜 먹방 (음식 클로즈업)</option>
@@ -2548,6 +2549,10 @@ const WIZARD_SCENARIOS = {
   yt_shorts: {
     label: '유튜브 쇼츠 광고',
     set: { task:['t2v'], genre:['ytshorts'], duration:['15s'], shotseq:['ts'], lang:['ko'], voice:['sales'], emotion:['joy','cheer'], emotionflow:['none'], shotsize:['close2wide'], camera:['B'], angle:['eye'], transition:['hard'], audio:['mus','fx'], musicgenre:['hiphop'], fxpreset:['tech'], quality:['hd','nat','clean'], stylepreset:['docu'], stylelock:['both'], lighting:['studio'], textgen:['cta'], params: { ratio:'9:16', duration:15 } }
+  },
+  saju: {
+    label: '사주천궁 드라마 (상담 광고)',
+    set: { task:['t2v'], genre:['drama'], duration:['30s'], shotseq:['ts'], lang:['ko'], voice:['calm'], speakerflow:['3'], sp1_role:['bf'], sp1_char:['male20','calmV','midP'], sp2_role:['mudang'], sp2_char:['fem40','warmV','slowP'], sp3_role:['gf'], sp3_char:['fem20','brightV','fastP'], emotion:['joy','sad','anx','relief'], emotionflow:['arc'], shotsize:['wide2close'], timeweather:['evening'], camera:['B'], angle:['eye'], optical:['dof','bokeh'], composition:['rule3'], transition:['cross'], audio:['amb','mus'], musicgenre:['acoustic'], quality:['hd','nat','warm'], stylepreset:['docu'], stylelock:['both'], lighting:['golden'], textgen:['none'], cutprinciple:['apply'], params: { ratio:'16:9', duration:30 } }
   },
   live_comm: {
     label: '라이브 커머스',
