@@ -11,9 +11,9 @@
 
 | 파일 | MD5 | 크기 |
 |---|---|---|
-| `seedance-master-builder.html` | `98DA69A4EAE83DCD5635553BCAB4C2A7` | 171,537 B (41축 v3.3 — 자연어 스타일 최종: 부정제어 중국어화·감정 중국어화 · UI 한자 제거 · v3.3/41축 타이틀) |
-| `README.md` | `A255240D5B6EE4A87C0302A18C755FF2` | 19,359 B (v3.3 자연어 스타일 가이드) |
-| `PROJECT_SPEC.md` | `5CE60304C5A40ADE93B922B4C2DDB908` | 43,650 B (2.5 단일 기준 + §15 자연어 개편) |
+| `seedance-master-builder.html` | `8134F2D9BCD93EF48DE7141747BCF8BA` | 173,397 B (41축 v3.3 — UI 한자 제거 · v3.3/41축 타이틀 · 🎤 인터뷰 개편: 콘텐츠 8종 질문 · 자리표시자 경고=실제 키만) |
+| `README.md` | `921785869337A3CD971D86C0B74BC7CE` | 19,428 B (v3.3 자연어 스타일 가이드 + 인터뷰 안내) |
+| `PROJECT_SPEC.md` | `BEE46AE8CC5C4153D5648AA7FAB4FA77` | 43,947 B (2.5 단일 기준 + §15 자연어 개편 + 인터뷰 §4) |
 | `LLM_RULES.md` | `6AE63B299E213AE86D358CBC5405F008` | 18,229 B (2.5 단일 + v3.3 자연어 규칙) |
 | `axes.json` | `41E64109008AB44B7496F3DAFCAF5E52` | 61,633 B (41축 레지스트리 — 단일 진실 공급원) |
 | `PROMPT_LLM.md` | `0D1D4DE864C794FA335107B35956053A` | 5,753 B (LLM 주입용 시스템 프롬프트 — v3.3 왕만두 예시) |

@@ -357,7 +357,7 @@
   }
   .sm-field input:focus, .sm-field select:focus { border-color: rgba(108,140,255,.5); outline: none; }
 
-  /* ===== 시나리오 위저드 ===== */
+  /* ===== 인터뷰 (질문 답변 → 프롬프트 구성) ===== */
   .wizard {
     border: 1px solid rgba(108,140,255,.35);
     background: rgba(108,140,255,.06);
@@ -700,7 +700,7 @@
   <!-- ===================== 오른쪽: 프롬프트 프리뷰 ===================== -->
   <main class="preview">
     <div class="preview-toolbar">
-      <button class="btn primary" id="wizardOpenBtn">🧙 시나리오로 시작</button>
+      <button class="btn primary" id="wizardOpenBtn">🎤 인터뷰로 시작</button>
       <button class="btn primary" id="copyBtn">📋 프롬프트 복사</button>
       <button class="btn ghost" id="langToggleBtn" title="프롬프트를 중국어/한국어로 보기">🌐 중국어</button>
       <button class="btn ghost" id="resetBtn">초기화</button>
@@ -725,14 +725,14 @@
       </div>
     </div>
 
-    <!-- ===== 🧙 인라인 시나리오 위저드 (메인 노출 — 발견성 개선) ===== -->
+    <!-- ===== 🎤 인라인 인터뷰 (메인 노출 — 발견성 개선) ===== -->
     <div class="wizard wizard-inline" id="wizardInline" style="display:none">
       <div class="wz-head">
-        <span class="wz-title">🧙 시나리오 위저드 — 고객사 입장으로 한 번에 구성</span>
+        <span class="wz-title">🎤 인터뷰 — 질문에 답하면 영상 프롬프트를 한 번에 구성</span>
         <button class="wz-close" onclick="document.getElementById('wizardInline').style.display='none'">✕</button>
       </div>
       <div class="wz-steps">
-        <div class="wz-step"><div class="wz-label">1. 시나리오</div><select id="wz_scenario" onchange="wizardApply()">
+        <div class="wz-step"><div class="wz-label">1. 어떤 영상?</div><select id="wz_scenario" onchange="wizardApply()">
           <option value="">— 선택 —</option>
           <option value="yt_shorts">📱 유튜브 쇼츠 광고 (9:16, 첫 3초 훅+CTA)</option>
           <option value="live_comm">🛒 라이브 커머스 (쇼호스트+세일즈)</option>
@@ -741,9 +741,14 @@
           <option value="mukbang">🍜 먹방 (음식 클로즈업)</option>
         </select></div>
         <div class="wz-step"><div class="wz-label">2. 주체·제품</div><input id="wz_subject" type="text" placeholder="예: 광고할 스킨케어 제품" oninput="wizardApply()"></div>
-        <div class="wz-step"><div class="wz-label">3. 훅 (첫 3초)</div><input id="wz_hook" type="text" placeholder="예: 제품이 번쩍이며 화면 중앙에 떨어진다" oninput="wizardApply()"></div>
-        <div class="wz-step"><div class="wz-label">4. CTA</div><input id="wz_cta" type="text" placeholder="예: 지금 구매하러 가기" oninput="wizardApply()"></div>
-        <button class="btn primary" id="wzApplyBtn" onclick="wizardApply(true)">✨ 구성 적용</button>
+        <div class="wz-step"><div class="wz-label">3. 사건·동작</div><input id="wz_event" type="text" placeholder="예: 제품을 개봉해 손등에 펌핑해 바른다" oninput="wizardApply()"></div>
+        <div class="wz-step"><div class="wz-label">4. 장면·배경</div><input id="wz_scene" type="text" placeholder="예: 밝은 화장대 조명의 라이브 스튜디오" oninput="wizardApply()"></div>
+        <div class="wz-step"><div class="wz-label">5. 대사</div><input id="wz_dialog" type="text" placeholder="예: 촉촉함이 살아있네요, 지금 바로 느껴보세요" oninput="wizardApply()"></div>
+        <div class="wz-step"><div class="wz-label">6. 끝 상태</div><input id="wz_ending" type="text" placeholder="예: 제품을 들고 카메라를 보며 웃는다" oninput="wizardApply()"></div>
+        <div class="wz-step"><div class="wz-label">7. 전체 톤</div><input id="wz_constraint" type="text" placeholder="예: 밝고 세련된 라이브 분위기" oninput="wizardApply()"></div>
+        <div class="wz-step"><div class="wz-label">8. 훅 (첫 3초)</div><input id="wz_hook" type="text" placeholder="예: 제품이 번쩍이며 화면 중앙에 떨어진다" oninput="wizardApply()"></div>
+        <div class="wz-step"><div class="wz-label">9. CTA</div><input id="wz_cta" type="text" placeholder="예: 지금 구매하러 가기" oninput="wizardApply()"></div>
+        <button class="btn primary" id="wzApplyBtn" onclick="wizardApply(true)">✨ 인터뷰 적용</button>
       </div>
       <div class="wz-result" id="wzResult"></div>
     </div>
@@ -2141,14 +2146,11 @@ function renderSubjectMatrix() {
 function renderPlaceholderWarn(cn) {
   const el = document.getElementById('placeholderWarn');
   if (!el) return;
+  // 실제 자리표시자(PLACEHOLDER_MAP 키)만 추적 — 공식 효과음 기호 <..>(<> 래핑)는 제외
   const found = {};
-  const re = /<([^<>]+)>/g;
-  let m;
-  while ((m = re.exec(cn))) {
-    const ph = '<' + m[1] + '>';
-    if (/^<\d+s>$/.test(ph) || ph === '<-1>') continue;  // duration 값(이미 정해진 길이)은 자리표시자 아님
-    if (!found[ph]) found[ph] = PLACEHOLDER_MAP[ph] || m[1];
-  }
+  Object.keys(PLACEHOLDER_MAP).forEach(ph => {
+    if (cn.includes(ph) && !found[ph]) found[ph] = PLACEHOLDER_MAP[ph];
+  });
   const keys = Object.keys(found);
   el.innerHTML = keys.length
     ? `<div class="phw-head">⚠️ 채울 곳 ${keys.length}개</div><div class="phw-list">${keys.map(k => `<span class="phw-chip">${found[k]}</span>`).join('')}</div>`
@@ -2541,7 +2543,7 @@ const BUILTIN_PRESETS = [
   },
 ];
 /* 기본/세부 렌더링 (카테고리 그룹화) */
-/* ========== 시나리오 위저드 (단계식 구성 — 고객사 입장) ========== */
+/* ========== 인터뷰 (질문 답변 → 축·콘텐츠 일괄 구성) ========== */
 const WIZARD_SCENARIOS = {
   yt_shorts: {
     label: '유튜브 쇼츠 광고',
@@ -2567,6 +2569,11 @@ const WIZARD_SCENARIOS = {
 function wizardApply(applyAll) {
   const sc = document.getElementById('wz_scenario').value;
   const subject = document.getElementById('wz_subject').value.trim();
+  const event = document.getElementById('wz_event').value.trim();
+  const scene = document.getElementById('wz_scene').value.trim();
+  const dialog = document.getElementById('wz_dialog').value.trim();
+  const ending = document.getElementById('wz_ending').value.trim();
+  const constraint = document.getElementById('wz_constraint').value.trim();
   const hook = document.getElementById('wz_hook').value.trim();
   const cta = document.getElementById('wz_cta').value.trim();
   const cfg = WIZARD_SCENARIOS[sc];
@@ -2589,18 +2596,24 @@ function wizardApply(applyAll) {
       if (pr.duration) document.getElementById('p_dur').value = String(pr.duration);
     }
     if (subject) document.getElementById('ci_subject').value = subject;
+    if (event) document.getElementById('ci_event').value = event;
+    if (scene) document.getElementById('ci_scene').value = scene;
+    if (dialog) document.getElementById('ci_dialog').value = dialog;
+    if (ending) document.getElementById('ci_ending').value = ending;
+    if (constraint) document.getElementById('ci_constraint').value = constraint;
     if (hook) document.getElementById('ci_hook').value = hook;
     if (cta) document.getElementById('ci_cta').value = cta;
     renderSlots();
+    const filledCount = [subject, event, scene, dialog, ending, constraint, hook, cta].filter(Boolean).length;
     if (resultEl) {
-      resultEl.innerHTML = `✅ <b>"${cfg.label}"</b> 적용 완료 — 세팅된 축: ${applied.slice(0, 12).join(' · ')}${applied.length > 12 ? ' 외 ' + (applied.length - 12) + '개' : ''}<br>다음 단계: ⏱️ 장면 타임라인에 구간별 장면·대사를 채우세요.`;
+      resultEl.innerHTML = `✅ <b>"${cfg.label}"</b> 인터뷰 적용 완료 — 세팅된 축: ${applied.slice(0, 12).join(' · ')}${applied.length > 12 ? ' 외 ' + (applied.length - 12) + '개' : ''}<br>콘텐츠 ${filledCount}/8 항목 입력됨 — 다음 단계: ⏱️ 장면 타임라인에 구간별 장면·대사를 채우세요.`;
     }
-    showToast(`✨ "${cfg.label}" 구성 적용 완료 — 내용·훅·CTA를 채우세요`);
+    showToast(`✨ "${cfg.label}" 인터뷰 적용 완료 — 콘텐츠 ${filledCount}/8 항목 반영`);
     closePresetPop();
   }
 }
 
-/* 🧙 시나리오로 시작 — 인라인 위저드 열기 */
+/* 🎤 인터뷰로 시작 — 인라인 인터뷰 열기 */
 document.getElementById('wizardOpenBtn').addEventListener('click', () => {
   const w = document.getElementById('wizardInline');
   w.style.display = w.style.display === 'none' ? 'block' : 'none';
