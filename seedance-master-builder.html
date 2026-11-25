@@ -891,7 +891,7 @@
             <div class="ai-field">
               <label for="aiModel">모델</label>
               <select id="aiModel" name="deepseek-model" aria-describedby="aiStatus">
-                <option value="deepseek-v4-flash" selected>deepseek-v4-flash</option>
+                <option value="deepseek-flash" selected>deepseek-flash</option>
                 <option value="deepseek-v4-pro">deepseek-v4-pro</option>
               </select>
             </div>
@@ -1597,7 +1597,7 @@ const AXES = [
 const DEEPSEEK_ENDPOINT = 'https://api.deepseek.com/chat/completions';
 const DEEPSEEK_TIMEOUT_MS = 45000;
 const AI_TASKS = Object.freeze(['t2v', 'r2v', 'edit', 'ext', 'fl']);
-const AI_MODELS = Object.freeze(['deepseek-v4-flash', 'deepseek-v4-pro']);
+const AI_MODELS = Object.freeze(['deepseek-flash', 'deepseek-v4-pro']);
 const AI_CONTENT_FIELDS = Object.freeze(['subject', 'event', 'scene', 'dialog', 'ending', 'constraint', 'cta', 'hook']);
 const AI_TIMELINE_FIELDS = Object.freeze(['scene', 'dialog']);
 const AI_STAGE_COUNT = Object.freeze({ '10s': 3, '15s': 3, '20s': 4, '30s': 5, 'auto': 4 });
