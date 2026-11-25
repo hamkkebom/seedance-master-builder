@@ -655,6 +655,30 @@
     position: absolute; right: 2px; top: 2px; width: 18px; height: 18px; border-radius: 50%;
     border: none; background: rgba(0,0,0,.7); color: #fff; font-size: 11px; line-height: 1; cursor: pointer; padding: 0;
   }
+  .ai-suggest { display: flex; flex-wrap: wrap; gap: 6px; }
+  .ai-suggest:empty { display: none; }
+  .ai-chip {
+    appearance: none; cursor: pointer; font: inherit; font-size: 11.5px; font-weight: 600;
+    color: var(--color-text); background: rgba(108,140,255,.12);
+    border: 1px solid rgba(108,140,255,.45); border-radius: 999px; padding: 5px 11px;
+  }
+  .ai-chip:hover { background: rgba(108,140,255,.24); }
+  .ai-chip:disabled { opacity: .5; cursor: not-allowed; }
+  .ai-plan {
+    background: var(--color-control); border: 1px solid var(--color-border);
+    border-radius: var(--radius-xs); padding: 9px 11px; font-size: 11.5px; line-height: 1.6;
+  }
+  .ai-plan[hidden] { display: none; }
+  .ai-plan-head { display: flex; justify-content: space-between; gap: 8px; font-weight: 800; color: var(--color-text); margin-bottom: 6px; }
+  .ai-plan-progress { color: var(--color-muted); font-weight: 600; }
+  .ai-plan-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 3px 12px; }
+  .ai-plan-item { display: flex; gap: 6px; min-width: 0; color: var(--color-muted); word-break: keep-all; overflow-wrap: anywhere; }
+  .ai-plan-item.done { color: var(--color-text); }
+  .ai-plan-item .mark { flex: 0 0 auto; }
+  .ai-plan-item .label { flex: 0 0 auto; font-weight: 700; }
+  .ai-plan-cuts { margin-top: 6px; display: flex; flex-direction: column; gap: 2px; color: var(--color-text); }
+  .ai-plan-cuts .cut-missing { color: var(--color-muted); }
+  .ai-plan-axes { margin-top: 6px; color: var(--color-muted); }
   .ai-chat-input-row { display: flex; gap: 8px; align-items: stretch; }
   .ai-chat-input-row textarea {
     flex: 1; min-width: 0; min-height: 44px; max-height: 160px; resize: vertical;
@@ -825,6 +849,7 @@
     .ai-config-grid { grid-template-columns: 1fr; }
     .content-input-grid { grid-template-columns: 1fr; }
     .ai-chat-input-row { flex-direction: column; }
+    .ai-plan-grid { grid-template-columns: 1fr; }
     .ai-msg { max-width: 100%; }
     .ai-key-row, .ai-actions { align-items: stretch; flex-direction: column; }
     .ai-key-row .btn, .ai-actions .btn { width: 100%; justify-content: center; }
@@ -972,6 +997,8 @@
           </div>
           <div class="ai-panel" id="aiPanelChat" role="tabpanel" aria-labelledby="aiTabChat" hidden>
             <div class="ai-chat-log" id="aiChatLog" role="log" aria-live="polite" aria-label="기획 대화"></div>
+            <div class="ai-suggest" id="aiChatSuggest" aria-label="빠른 답"></div>
+            <div class="ai-plan" id="aiChatPlan" aria-label="기획 카드" hidden></div>
             <div class="ai-attach-list" id="aiChatAttachList" aria-label="첨부할 사진"></div>
             <div class="ai-chat-input-row">
               <textarea id="aiChatInput" rows="2" aria-label="메시지" aria-describedby="aiStatus" placeholder="만들고 싶은 영상을 편하게 말해 보세요. Enter 전송 · Shift+Enter 줄바꿈"></textarea>
@@ -3057,15 +3084,93 @@ const CHAT_MAX_IMAGES_PER_MSG = 6;
 const CHAT_MAX_IMAGES_TOTAL = 12;
 const CHAT_IMAGE_MAX_SIDE = 1280;
 const CHAT_TRANSCRIPT_LIMIT = 12000;
-const CHAT_SYSTEM_PROMPT = [
-  '너는 Seedance 2.5 영상 기획 파트너다. 사용자와 한국어로 대화하며 만들고 싶은 영상을 함께 구체화한다.',
-  '한 번에 질문은 한두 개만 하고, 사용자가 막연하면 구체적인 안을 두세 개 제안해 고르게 한다. 사용자가 맡기면 네가 정해서 제안한다.',
-  '정해야 할 항목: 영상 유형과 목적, 주체(누가·무엇), 사건·동작, 장면·배경, 대사(한국어. 없으면 없음), 끝 장면, 전체 톤, 첫 3초 훅, CTA, 길이(10·15·20·30초 중 하나).',
-  '사용자가 사진을 첨부하면 첨부 순서대로 사진1, 사진2처럼 번호로 부르고, 보이는 내용을 짧게 확인한 뒤 각 사진을 무엇에 쓸지(인물·제품 참조, 시작 프레임, 끝 프레임, 배경·스타일 참조) 정한다. 실존 인물의 얼굴 사진은 참조로 쓸 수 없다고 안내한다.',
-  '비율·해상도 같은 생성 파라미터와 최종 Seedance 프롬프트 문장은 다루지 않는다. 최종 프롬프트는 메이커가 규칙대로 만든다.',
-  '항목이 충분히 정해지면 "기획 요약"을 항목별로 짧게 정리하고, 맞으면 "이 기획으로 프롬프트 만들기" 버튼을 누르라고 안내한다.',
-  '답은 간결한 일반 텍스트로 쓴다. 마크다운 표, 코드 블록, 제목 기호는 쓰지 않는다.'
+const CHAT_PLAN_TEXT_FIELDS = Object.freeze([
+  ['kind', '영상 유형'], ['subject', '주체'], ['event', '사건·동작'], ['scene', '장면·배경'], ['dialog', '대사'],
+  ['tone', '전체 톤'], ['hook', '첫 훅'], ['cta', 'CTA'], ['ending', '끝 장면']
+]);
+const CHAT_DURATION_KEYS = Object.freeze(['10s', '15s', '20s', '30s', 'auto']);
+const CHAT_STARTERS = Object.freeze(['쇼츠 광고를 만들고 싶어', '드라마 한 장면을 만들고 싶어', '제품 소개 영상을 만들고 싶어', '지금 메이커 설정에서 고치고 싶어']);
+const CHAT_SYSTEM_RULES = [
+  '너는 Seedance 2.5 프롬프트 메이커 전용 영상 기획 파트너다. 사용자와 한국어로 대화하며 영상을 함께 기획하고, 그 결과를 메이커의 축 선택과 컷 구성으로 정리한다. 기획에 필요한 모든 결정은 대화로 한다.',
+  '[대화 방식] 한 번에 질문은 한두 개만 한다. 사용자가 막연하면 구체안 2~3개를 제안해 고르게 하고, 맡기면 네가 정해서 제안한다. reply는 짧은 일반 텍스트로 쓴다(마크다운 표, 코드 블록, 제목 기호 금지).',
+  '[메이커 축] 아래 "축 메뉴"가 메이커에 실제로 있는 선택지 전부다. 사용자에게는 축 ID나 옵션 키를 말하지 말고 라벨의 뜻을 쉬운 말로 제안한다. plan.axes에는 반드시 메뉴에 있는 축 ID와 옵션 키만 쓴다. single 축은 키 1개, multi 축은 여러 개. 대화에서 정해졌거나 네가 제안해 사용자가 받아들인 것만 넣는다. "필수" 축은 기획이 끝나기 전에 모두 정한다. "작업 전용"·"조건" 표시가 있는 축은 그 조건이 맞을 때만 고른다.',
+  '[길이와 컷] 길이는 10s·15s·20s·30s·auto 중 하나다. 컷 수는 길이로 고정된다: 10s=3컷, 15s=4컷, 20s=5컷, 30s=6컷, auto=4컷(영상 편집 작업은 항상 4컷). 길이가 정해지면 정확히 그 수만큼 컷을 사용자와 함께 짜서 plan.cuts에 순서대로 넣는다. 첫 컷은 시선을 잡는 훅이다.',
+  '[컷 규칙] 한 컷에 카메라 움직임은 하나만. 컷마다 장면이 달라야 한다. 대사는 한국어로, 컷 길이에 맞게 짧게 쓴다(3초 컷은 10자 안팎, 5초 컷은 18자 안팎). 화면 글자·자막은 사용자가 원할 때만 넣는다. 비율·해상도 같은 생성 파라미터와 최종 프롬프트 문장은 다루지 않는다. 최종 프롬프트는 메이커가 규칙대로 만든다.',
+  '[사진] 사용자가 사진을 첨부하면 첨부 순서대로 사진1, 사진2로 부르고, 보이는 내용을 짧게 확인한 뒤 쓰임(인물·제품 참조, 시작 프레임, 끝 프레임, 배경·스타일 참조)을 정해 plan.photos에 넣는다. 실존 인물의 얼굴 사진은 참조로 쓸 수 없다고 안내한다. 사진을 쓰면 작업 유형도 그에 맞게 고른다.',
+  '[현재 메이커 설정] 사용자 메시지 앞의 [컨텍스트]에 현재 메이커 설정이 올 수 있다. 사용자가 "지금 설정에서 길이만 바꿔"처럼 기존 설정을 가리킬 때만 그것을 그대로 이어받아 바뀐 부분만 고친다. 새 영상을 기획하면 무시한다.',
+  '[기획 카드] plan은 누적이다. [컨텍스트]의 현재 기획 카드를 기준으로 이번에 바뀐 것만 고쳐 매번 전체를 다시 반환한다. 미정 항목은 빈 문자열이나 빈 배열로 둔다. 모든 항목과 컷이 정해지면 짧게 요약하고 "이 기획으로 프롬프트 만들기" 버튼을 누르라고 안내한다.',
+  '[출력] 반드시 아래 형태의 JSON 객체 하나만 출력한다. suggestions는 사용자가 눌러서 바로 답할 수 있는 짧은 답 2~4개(각 20자 이내)이고, 필요 없으면 빈 배열이다.',
+  '{"reply":"사용자에게 보일 한국어 답","suggestions":["답1","답2"],"plan":{"kind":"영상 유형·목적","duration":"15s","subject":"주체","event":"사건·동작","scene":"장면·배경","dialog":"핵심 대사 또는 없음","tone":"전체 톤","hook":"첫 훅","cta":"CTA 또는 없음","ending":"끝 장면","cuts":[{"scene":"컷1 장면·동작","dialog":"컷1 대사 또는 빈 문자열","camera":"카메라 움직임 하나"}],"photos":[{"n":1,"use":"제품 참조"}],"axes":{"task":["t2v"],"duration":["15s"]}}}'
 ].join('\n');
+let chatSystemPromptCache = '';
+function chatAxisMenu() {
+  return AXES.map(axis => {
+    const flags = [axis.type];
+    if (axis.tag === 'core') flags.push('필수');
+    if (axis.tag === 'r2v') flags.push('참조 영상(r2v) 작업 전용');
+    if (axis.requires && axis.requires.length) flags.push(`작업 ${axis.requires.join('/')} 전용`);
+    if (axis.dependsOn) flags.push(`조건 ${Object.entries(axis.dependsOn).map(([id, keys]) => `${id}=${keys.join('|')}`).join(', ')}`);
+    const options = axis.options.filter(option => !option.manualOnly).map(option => `${option.k}=${option.label}`).join(' ; ');
+    return `${axis.id} | ${axis.title} | ${flags.join(' | ')}\n  ${options}`;
+  }).join('\n');
+}
+function chatSystemPrompt() {
+  if (!chatSystemPromptCache) chatSystemPromptCache = `${CHAT_SYSTEM_RULES}\n\n[축 메뉴] 형식: 축ID | 제목 | 속성 / 다음 줄: 옵션키=라벨\n${chatAxisMenu()}`;
+  return chatSystemPromptCache;
+}
+
+/* 기획 카드: 모델이 돌려준 plan을 메이커에 실제 있는 값만 남기고 정리 (화면 표시·최종 변환의 기준) */
+function chatText(value, limit) {
+  return typeof value === 'string' ? value.trim().slice(0, limit || 400) : '';
+}
+function normalizeChatPlan(raw, previous) {
+  if (!isPlainObject(raw)) return previous;
+  const plan = { duration: '', cuts: [], photos: [], axes: {} };
+  CHAT_PLAN_TEXT_FIELDS.forEach(([field]) => { plan[field] = chatText(raw[field]); });
+  if (isPlainObject(raw.axes)) {
+    AXES.forEach(axis => {
+      const values = raw.axes[axis.id];
+      if (!Array.isArray(values)) return;
+      const allowed = new Set(axis.options.filter(option => !option.manualOnly).map(option => option.k));
+      const keys = Array.from(new Set(values.filter(value => typeof value === 'string' && allowed.has(value))));
+      if (keys.length) plan.axes[axis.id] = axis.type === 'single' ? keys.slice(0, 1) : keys;
+    });
+  }
+  const duration = CHAT_DURATION_KEYS.includes(raw.duration) ? raw.duration : (plan.axes.duration ? plan.axes.duration[0] : '');
+  plan.duration = duration;
+  if (duration) plan.axes.duration = [duration];
+  if (Array.isArray(raw.cuts)) {
+    plan.cuts = raw.cuts.filter(isPlainObject).slice(0, STAGE_MAX).map(cut => ({
+      scene: chatText(cut.scene), dialog: chatText(cut.dialog, 120), camera: chatText(cut.camera, 80)
+    }));
+  }
+  if (Array.isArray(raw.photos)) {
+    plan.photos = raw.photos.filter(isPlainObject).slice(0, CHAT_MAX_IMAGES_TOTAL).map(photo => ({
+      n: Math.round(Number(photo.n)) || 0, use: chatText(photo.use, 60)
+    })).filter(photo => photo.n > 0 && photo.use);
+  }
+  return plan;
+}
+function chatPlanCutTarget(plan) {
+  return plan && plan.duration ? stageCountFor(plan.duration, plan.axes.task ? plan.axes.task[0] : 't2v') : 0;
+}
+function currentMakerSnapshot() {
+  const axes = {};
+  AXES.forEach(axis => { if (state[axis.id].size) axes[axis.id] = Array.from(state[axis.id]); });
+  const content = {};
+  AI_CONTENT_FIELDS.forEach(field => { if (contentInput[field]) content[field] = contentInput[field]; });
+  const cuts = (contentInput.timeline || []).filter(entry => entry.scene || entry.dialog).map(entry => ({ scene: entry.scene, dialog: entry.dialog }));
+  if (!Object.keys(axes).length && !Object.keys(content).length && !cuts.length) return null;
+  return { axes, content, cuts };
+}
+function chatContextBlock() {
+  const lines = ['[컨텍스트]', `현재 기획 카드: ${chatPlan ? JSON.stringify(chatPlan) : '없음'}`];
+  const maker = currentMakerSnapshot();
+  if (maker) lines.push(`현재 메이커 설정: ${JSON.stringify(maker)}`);
+  lines.push('[사용자 메시지]');
+  return lines.join('\n');
+}
+let chatPlan = null;       // 정리된 기획 카드 (없으면 null)
 const chatMessages = [];   // { role: 'user'|'assistant'|'note', text, images: [dataURL] }
 let chatPendingImages = [];
 
@@ -3096,13 +3201,105 @@ function makeChatThumb(dataUrl, number, onRemove) {
   return wrap;
 }
 
+function renderChatSuggestions() {
+  const box = document.getElementById('aiChatSuggest');
+  box.textContent = '';
+  const last = chatMessages.length ? chatMessages[chatMessages.length - 1] : null;
+  const items = !chatMessages.length ? CHAT_STARTERS : (last.role === 'assistant' && last.suggestions ? last.suggestions : []);
+  items.forEach(text => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'ai-chip';
+    chip.textContent = text;
+    chip.disabled = aiComposerBusy;
+    chip.addEventListener('click', () => sendChatMessage(text));
+    box.appendChild(chip);
+  });
+}
+
+function renderChatPlan() {
+  const card = document.getElementById('aiChatPlan');
+  card.textContent = '';
+  if (!chatPlan) { card.hidden = true; return; }
+  card.hidden = false;
+  const items = [['duration', '길이', chatPlan.duration ? axisLabel('duration', chatPlan.duration) : '']]
+    .concat(CHAT_PLAN_TEXT_FIELDS.map(([field, label]) => [field, label, chatPlan[field]]));
+  const target = chatPlanCutTarget(chatPlan);
+  const filledCuts = chatPlan.cuts.filter(cut => cut.scene).length;
+  const cutsDone = target > 0 && filledCuts === target && chatPlan.cuts.length === target;
+  const done = items.filter(item => item[2]).length + (cutsDone ? 1 : 0);
+
+  const head = document.createElement('div');
+  head.className = 'ai-plan-head';
+  const title = document.createElement('span');
+  title.textContent = '📋 기획 카드';
+  const progress = document.createElement('span');
+  progress.className = 'ai-plan-progress';
+  progress.textContent = `${done}/${items.length + 1} 정해짐`;
+  head.appendChild(title);
+  head.appendChild(progress);
+  card.appendChild(head);
+
+  const grid = document.createElement('div');
+  grid.className = 'ai-plan-grid';
+  items.forEach(([, label, value]) => {
+    const row = document.createElement('div');
+    row.className = `ai-plan-item${value ? ' done' : ''}`;
+    const mark = document.createElement('span');
+    mark.className = 'mark';
+    mark.textContent = value ? '✅' : '⬜';
+    const name = document.createElement('span');
+    name.className = 'label';
+    name.textContent = label;
+    const text = document.createElement('span');
+    text.textContent = value || '미정';
+    row.appendChild(mark); row.appendChild(name); row.appendChild(text);
+    grid.appendChild(row);
+  });
+  card.appendChild(grid);
+
+  const cuts = document.createElement('div');
+  cuts.className = 'ai-plan-cuts';
+  const cutHead = document.createElement('div');
+  cutHead.textContent = `${cutsDone ? '✅' : '⬜'} 컷 구성 ${filledCuts}/${target || '?'}${target ? '' : ' (길이가 정해지면 컷 수가 정해집니다)'}`;
+  cuts.appendChild(cutHead);
+  const slots = chatPlan.duration && chatPlan.duration !== 'auto' && (chatPlan.axes.task || [])[0] !== 'edit'
+    ? timeSlotsForSeconds(durationKeySeconds(chatPlan.duration)) : null;
+  for (let i = 0; i < Math.max(target, chatPlan.cuts.length); i++) {
+    const cut = chatPlan.cuts[i];
+    const line = document.createElement('div');
+    const time = slots && slots[i] ? ` (${slots[i]}초)` : '';
+    if (cut && cut.scene) {
+      line.textContent = `컷 ${i + 1}${time}: ${cut.scene}${cut.camera ? ` · ${cut.camera}` : ''}${cut.dialog ? ` · "${cut.dialog}"` : ''}`;
+    } else {
+      line.className = 'cut-missing';
+      line.textContent = `컷 ${i + 1}${time}: 미정`;
+    }
+    cuts.appendChild(line);
+  }
+  card.appendChild(cuts);
+
+  const extras = [];
+  if (chatPlan.photos.length) extras.push(`사진: ${chatPlan.photos.map(photo => `사진${photo.n}=${photo.use}`).join(', ')}`);
+  const axisIds = Object.keys(chatPlan.axes).filter(id => id !== 'duration');
+  if (axisIds.length) extras.push(`메이커 선택 ${axisIds.length}개: ${axisIds.map(id => chatPlan.axes[id].map(key => axisLabel(id, key).replace(/\s*[—(→].*$/, '')).join('·')).join(' / ')}`);
+  extras.forEach(text => {
+    const line = document.createElement('div');
+    line.className = 'ai-plan-axes';
+    line.textContent = text;
+    card.appendChild(line);
+  });
+}
+
 function renderChatLog() {
   const log = document.getElementById('aiChatLog');
   log.textContent = '';
+  renderChatSuggestions();
+  renderChatPlan();
   if (!chatMessages.length) {
     const empty = document.createElement('div');
     empty.className = 'ai-chat-empty';
-    empty.textContent = '만들고 싶은 영상을 편하게 이야기해 보세요. 예: "신제품 립밤 쇼츠 광고를 만들고 싶어". 사진을 첨부하면 함께 보고 기획합니다. 기획이 정리되면 "이 기획으로 프롬프트 만들기"를 누르면 아래 메이커 규칙대로 프롬프트가 만들어집니다.';
+    empty.textContent = '만들고 싶은 영상을 편하게 이야기해 보세요. 도우미가 메이커에 있는 선택지로 묻고 제안하며, 길이에 맞춰 컷까지 함께 짭니다. 정해진 내용은 아래 기획 카드에 쌓이고, "이 기획으로 프롬프트 만들기"를 누르면 메이커 규칙대로 프롬프트가 만들어집니다. 사진도 첨부할 수 있습니다.';
     log.appendChild(empty);
     return;
   }
@@ -3187,27 +3384,30 @@ async function addChatImages(fileList) {
 }
 
 function chatApiMessages() {
-  const messages = [{ role: 'system', content: CHAT_SYSTEM_PROMPT }];
+  const messages = [{ role: 'system', content: chatSystemPrompt() }];
+  const turns = chatMessages.filter(message => message.role !== 'note');
   let imageNumber = 0;
-  chatMessages.forEach(message => {
-    if (message.role === 'note') return;
-    if (message.role === 'user' && message.images && message.images.length) {
+  turns.forEach((message, index) => {
+    if (message.role === 'assistant') {
+      messages.push({ role: 'assistant', content: JSON.stringify({ reply: message.text }) });
+      return;
+    }
+    const isLast = index === turns.length - 1;
+    let text = message.text || '첨부한 사진을 봐줘.';
+    if (message.images && message.images.length) {
       const first = imageNumber + 1;
       imageNumber += message.images.length;
-      const label = first === imageNumber ? `(사진${first} 첨부)` : `(사진${first}~사진${imageNumber} 첨부)`;
-      messages.push({
-        role: 'user',
-        content: [{ type: 'text', text: `${label}\n${message.text || '첨부한 사진을 봐줘.'}` }]
-          .concat(message.images.map(dataUrl => ({ type: 'image_url', image_url: { url: dataUrl } })))
-      });
-    } else {
-      messages.push({ role: message.role, content: message.text });
+      text = `${first === imageNumber ? `(사진${first} 첨부)` : `(사진${first}~사진${imageNumber} 첨부)`}\n${text}`;
     }
+    if (isLast) text = `${chatContextBlock()}\n${text}`;
+    messages.push(message.images && message.images.length
+      ? { role: 'user', content: [{ type: 'text', text }].concat(message.images.map(dataUrl => ({ type: 'image_url', image_url: { url: dataUrl } }))) }
+      : { role: 'user', content: text });
   });
   return messages;
 }
 
-function chatTranscript() {
+function chatTranscript(limit) {
   let imageNumber = 0;
   const lines = [];
   chatMessages.forEach(message => {
@@ -3221,12 +3421,25 @@ function chatTranscript() {
     lines.push(line + (message.text || ''));
   });
   let text = lines.join('\n');
-  if (text.length > CHAT_TRANSCRIPT_LIMIT) {
-    text = `${text.slice(0, 2000)}\n…(중략)…\n${text.slice(-(CHAT_TRANSCRIPT_LIMIT - 2000))}`;
+  if (text.length > limit) {
+    const headSize = Math.min(1500, Math.floor(limit / 4));
+    text = `${text.slice(0, headSize)}\n…(중략)…\n${text.slice(-(limit - headSize))}`;
   }
-  const header = '아래는 사용자와 기획 도우미가 나눈 영상 기획 대화다. 대화에서 최종 합의된 내용을 기준으로 구성하고, 뒤에 나온 결정이 앞선 내용보다 우선한다.'
-    + (imageNumber ? ` 사용자가 참조 사진 ${imageNumber}장을 첨부했으므로 대화에서 정한 사진의 쓰임에 맞는 작업 유형을 고른다.` : '');
-  return `${header}\n\n${text}`;
+  return { text, imageCount: imageNumber };
+}
+
+/* 최종 변환 요청: 기획 카드가 있으면 카드가 기준, 대화는 뉘앙스 보충용 */
+function chatFinalRequest() {
+  const transcript = chatTranscript(chatPlan ? 5000 : CHAT_TRANSCRIPT_LIMIT);
+  const photoNote = transcript.imageCount ? ` 사용자가 참조 사진 ${transcript.imageCount}장을 첨부했으므로 정해진 사진의 쓰임에 맞는 작업 유형과 참조 축을 고른다.` : '';
+  if (!chatPlan) {
+    return `아래는 사용자와 기획 도우미가 나눈 영상 기획 대화다. 대화에서 최종 합의된 내용을 기준으로 구성하고, 뒤에 나온 결정이 앞선 내용보다 우선한다.${photoNote}\n\n${transcript.text}`;
+  }
+  return [
+    `아래 기획 카드(JSON)가 사용자와 합의한 최종 기획이다. 카드의 axes에 있는 선택은 허용 계약 안에서 그대로 따르고, 카드에 없는 필수 축만 기획에 어울리게 고른다. 카드의 cuts는 순서 그대로 timeline의 각 단계가 된다(컷 수가 단계 수와 다르면 단계 수에 맞춰 나누거나 합친다). 카드의 한국어 내용은 계약대로 옮기되 대사는 한국어 그대로 둔다.${photoNote}`,
+    `[기획 카드]\n${JSON.stringify(chatPlan)}`,
+    `[대화 발췌 — 카드에 없는 뉘앙스 참고용]\n${transcript.text}`
+  ].join('\n\n');
 }
 
 function readChatCredentials() {
@@ -3249,10 +3462,11 @@ function readChatCredentials() {
   return { apiKey, model };
 }
 
-async function sendChatMessage() {
+async function sendChatMessage(presetText) {
   if (aiComposerBusy) return;
   const input = document.getElementById('aiChatInput');
-  const text = input.value.trim();
+  const fromChip = typeof presetText === 'string';
+  const text = fromChip ? presetText.trim() : input.value.trim();
   if (!text && !chatPendingImages.length) {
     setAIStatus('error', '메시지를 입력하거나 사진을 첨부하세요.');
     input.focus();
@@ -3268,23 +3482,32 @@ async function sendChatMessage() {
   const userMessage = { role: 'user', text, images: chatPendingImages.slice() };
   chatMessages.push(userMessage);
   chatPendingImages = [];
-  input.value = '';
+  if (!fromChip) input.value = '';
   renderChatAttachments();
-  renderChatLog();
 
   aiComposerBusy = true;
   setAIComposerBusy(true);
+  renderChatLog();
   setAIStatus('loading', '기획 도우미가 답하고 있습니다...');
   try {
-    const reply = (await callDeepSeek(credentials.apiKey, credentials.model, chatApiMessages(), { json: false, effort: 'none' })).trim();
-    if (!reply) throw new Error('DeepSeek가 빈 답을 돌려줬습니다. 다시 보내 보세요.');
-    chatMessages.push({ role: 'assistant', text: reply, images: [] });
-    setAIStatus('default', '기획이 정리되면 "이 기획으로 프롬프트 만들기"를 누르세요.');
+    const content = (await callDeepSeek(credentials.apiKey, credentials.model, chatApiMessages(), { effort: 'none' })).trim();
+    if (!content) throw new Error('DeepSeek가 빈 답을 돌려줬습니다. 다시 보내 보세요.');
+    const parsed = parseAIJson(content);
+    const payload = isPlainObject(parsed.value) ? parsed.value : null;
+    /* JSON이 아니면 받은 글을 그대로 답으로 보여 주고 기획 카드는 유지한다 */
+    const reply = payload ? chatText(payload.reply, 4000) : content;
+    if (!reply) throw new Error('DeepSeek 답에 reply가 없습니다. 다시 보내 보세요.');
+    const suggestions = payload && Array.isArray(payload.suggestions)
+      ? payload.suggestions.filter(item => typeof item === 'string' && item.trim()).map(item => item.trim().slice(0, 40)).slice(0, 4)
+      : [];
+    if (payload) chatPlan = normalizeChatPlan(payload.plan, chatPlan);
+    chatMessages.push({ role: 'assistant', text: reply, images: [], suggestions });
+    setAIStatus('default', '기획 카드가 채워지면 "이 기획으로 프롬프트 만들기"를 누르세요.');
   } catch (error) {
     const index = chatMessages.indexOf(userMessage);
     if (index !== -1) chatMessages.splice(index, 1);
     chatPendingImages = userMessage.images;
-    input.value = text;
+    if (!fromChip) input.value = text;
     renderChatAttachments();
     setAIStatus('error', redactSecret(error && error.message ? error.message : '알 수 없는 오류가 발생했습니다.', credentials.apiKey));
   } finally {
@@ -3309,7 +3532,7 @@ async function finalizeChatPlan() {
   setAIComposerBusy(true);
   let applied = false;
   try {
-    await runAIComposer(credentials.apiKey, credentials.model, chatTranscript());
+    await runAIComposer(credentials.apiKey, credentials.model, chatFinalRequest());
     applied = true;
     chatMessages.push({ role: 'note', text: '이 기획을 메이커에 적용했습니다. 아래 축 선택과 프롬프트를 확인한 뒤 복사하세요. 대화를 이어가서 다시 만들 수도 있습니다.', images: [] });
     showToast('🎬 기획을 메이커에 적용했습니다');
@@ -3326,7 +3549,7 @@ async function finalizeChatPlan() {
   }
 }
 
-document.getElementById('aiChatSendBtn').addEventListener('click', sendChatMessage);
+document.getElementById('aiChatSendBtn').addEventListener('click', () => sendChatMessage());
 document.getElementById('aiChatFinalizeBtn').addEventListener('click', finalizeChatPlan);
 document.getElementById('aiChatInput').addEventListener('keydown', event => {
   if (event.key !== 'Enter' || event.shiftKey || event.isComposing || event.keyCode === 229) return;
@@ -3348,6 +3571,7 @@ document.getElementById('aiChatInput').addEventListener('paste', event => {
 document.getElementById('aiChatResetBtn').addEventListener('click', () => {
   chatMessages.length = 0;
   chatPendingImages = [];
+  chatPlan = null;
   document.getElementById('aiChatInput').value = '';
   renderChatAttachments();
   renderChatLog();
