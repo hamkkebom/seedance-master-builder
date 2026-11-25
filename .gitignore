@@ -13,3 +13,13 @@ Thumbs.db
 # 로컬 세션·로그
 opencode.db
 *.log
+
+# Vite / Bun
+node_modules/
+dist/
+coverage/
+test-results/
+playwright-report/
+.env
+.env.*
+!.env.example
