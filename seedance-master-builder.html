@@ -870,6 +870,7 @@
   <main class="preview">
     <div class="preview-toolbar">
       <button class="btn primary" id="wizardOpenBtn">🎤 인터뷰로 시작</button>
+      <button class="btn primary" id="chatOpenBtn" title="DeepSeek와 대화하며 영상을 기획하고 메이커 규칙대로 프롬프트 생성">💬 자유대화로 기획</button>
       <button class="btn primary" id="copyBtn">📋 프롬프트 복사</button>
       <button class="btn ghost" id="summaryToggleBtn" title="현재 선택 요약 표시/숨김">👁️ 현재 선택</button>
       <button class="btn ghost" id="langToggleBtn" title="프롬프트를 중국어/한국어로 보기">🌐 중국어</button>
@@ -3752,6 +3753,16 @@ document.getElementById('summaryToggleBtn').addEventListener('click', () => {
   const bar = document.getElementById('summaryBar');
   bar.classList.toggle('show');
   renderSummary();
+});
+
+/* 💬 자유대화로 기획 — AI 컴포저의 대화 탭을 열고 그 위치로 이동 */
+document.getElementById('chatOpenBtn').addEventListener('click', () => {
+  const composer = document.getElementById('aiComposer');
+  composer.classList.remove('collapsed');
+  selectAITab('aiTabChat');
+  composer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const target = document.getElementById('aiApiKey').value.trim() ? 'aiChatInput' : 'aiApiKey';
+  document.getElementById(target).focus({ preventScroll: true });
 });
 
 /* 🎤 인터뷰로 시작 — 인라인 인터뷰 열기 */
