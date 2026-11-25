@@ -1838,7 +1838,7 @@ function buildAIAllowedContract(task) {
     output: {
       axes: 'object: axisId -> key array',
       content: AI_CONTENT_FIELDS,
-      timeline: 'array of {scene:string, dialog:string}'
+      timeline: 'array of {scene:string, dialog:string, cam?:string}'
     },
     stageCountByDuration: Object.fromEntries(['10s', '15s', '20s', '30s', 'auto'].map(key => [key, stageCountFor(key, task)])),
     requirements: [
@@ -1846,7 +1846,11 @@ function buildAIAllowedContract(task) {
       'Return every applicable core axis. Single axes have exactly one key. Core multi axes are non-empty.',
       'axes.task must be the one-key array containing chosenTask.',
       'Honor every dependsOn relationship. Timeline length must equal stageCountByDuration[axes.duration[0]] exactly, one entry per stage, each with a distinct scene.',
-      'Content and timeline scene/instruction text are Chinese. Only dialog values and content.cta (on-screen text) are Korean.'
+      'Content and timeline scene/instruction text are Chinese. Only dialog values and content.cta (on-screen text) are Korean.',
+      'Decide every applicable axis, not only core ones (shot size, angle, lighting, composition, transition, music, sound effects, quality, style and so on). Leave an optional axis out only when it truly does not apply to this video.',
+      'Each timeline scene states who, what action and where, in one sentence, and every scene differs from the others. The first scene is the hook.',
+      'timeline[].cam is optional: exactly one decisive camera movement for that cut, in Chinese. Give it when the request specifies a camera move for the cut.',
+      'If fixedAxes is present, return those axes with exactly those keys. If baselineAxes is present, it is a tested combination close to this plan: start from it and change only what the plan needs.'
     ],
     axes
   };
@@ -2074,8 +2078,11 @@ function validateComposition(payload, task) {
         if (!Object.prototype.hasOwnProperty.call(entry, field)) errors.push(aiError(`$.timeline[${index}].${field}`, '필수 필드가 없습니다.'));
       });
       Object.entries(entry).forEach(([field, value]) => {
-        if (!AI_TIMELINE_FIELDS.includes(field)) {
-          errors.push(aiError(`$.timeline[${index}].${field}`, 'scene과 dialog만 허용됩니다.'));
+        if (field === 'cam') {
+          if (typeof value !== 'string') errors.push(aiError(`$.timeline[${index}].cam`, '타임라인 값은 문자열이어야 합니다.'));
+          else { item.cam = value.trim(); validateVisualText(item.cam, `$.timeline[${index}].cam`, errors); }
+        } else if (!AI_TIMELINE_FIELDS.includes(field)) {
+          errors.push(aiError(`$.timeline[${index}].${field}`, 'scene, dialog, cam만 허용됩니다.'));
         } else if (typeof value !== 'string') {
           errors.push(aiError(`$.timeline[${index}].${field}`, '타임라인 값은 문자열이어야 합니다.'));
         } else {
@@ -2126,7 +2133,7 @@ function applyAIComposition(candidate) {
   AI_CONTENT_FIELDS.forEach(field => {
     nextContent[field] = candidate.content[field] || '';
   });
-  const nextTimeline = candidate.timeline.map(entry => ({ scene: entry.scene, dialog: entry.dialog, cam: '' }));
+  const nextTimeline = candidate.timeline.map(entry => ({ scene: entry.scene, dialog: entry.dialog, cam: entry.cam || '' }));
 
   AXES.forEach(axis => {
     state[axis.id].clear();
@@ -2144,21 +2151,124 @@ function applyAIComposition(candidate) {
   renderPrompt();
 }
 
-async function runAIComposer(apiKey, model, userRequest) {
-  setAIStatus('loading', '1/2 작업 유형을 판정하고 있습니다...');
-  const taskContent = await callDeepSeek(apiKey, model, [
-    { role: 'system', content: taskSystemMessage() },
-    { role: 'user', content: userRequest }
-  ], { effort: 'none' });
-  const parsedTask = parseAIJson(taskContent);
-  if (parsedTask.errors.length) throw new Error(`작업 유형 응답 검증 실패\n${formatValidationErrors(parsedTask.errors)}`);
-  const taskResult = validateTaskResponse(parsedTask.value);
-  if (!taskResult.ok) throw new Error(`작업 유형 응답 검증 실패\n${formatValidationErrors(taskResult.errors)}`);
+/* 프리셋에서 빌려 올 축: 촬영·음향·화질 같은 '만듦새' 축만. 인물·대사·감정·화면 글자처럼 기획 내용에 달린 축은 빌리지 않는다 */
+const BASELINE_AXIS_IDS = Object.freeze(['shotseq', 'shotsize', 'camera', 'angle', 'optical', 'composition', 'transition', 'audio', 'musicgenre', 'fxpreset', 'quality', 'stylepreset', 'stylelock', 'lighting']);
+function baselineAxesOf(preset) {
+  const axes = {};
+  if (preset && preset.full) BASELINE_AXIS_IDS.forEach(axisId => { if (Array.isArray(preset.full[axisId])) axes[axisId] = preset.full[axisId]; });
+  return axes;
+}
 
-  const task = taskResult.task;
+/* 기획 카드와 가장 가까운 풀 세팅 프리셋 (검증된 축 조합). 충분히 가깝지 않으면 null */
+function pickBaselinePreset(plan, task) {
+  let best = null;
+  let bestScore = 0;
+  BUILTIN_PRESETS.forEach(preset => {
+    const full = preset.full;
+    if (!full || (full.task || [])[0] !== task) return;
+    let score = 0;
+    Object.entries(plan.axes).forEach(([axisId, keys]) => {
+      if (axisId === 'task' || axisId === 'duration') return;
+      const weight = axisId === 'genre' ? 3 : axisId === 'stylepreset' ? 2 : 1;
+      if ((full[axisId] || []).some(key => keys.includes(key))) score += weight;
+    });
+    if (score > bestScore) { best = preset; bestScore = score; }
+  });
+  return bestScore >= 3 ? best : null;
+}
+
+/* 카드에 정해진 값은 코드가 그대로 넣는다. 우선순위: 카드 > AI 구성 > 프리셋. 결과는 다시 엄격 검증한다. */
+function enforcePlanOnComposition(aiValue, task, plan, baselineAxes) {
+  const applicable = AXES.filter(axis => axisAppliesToTask(axis, task));
+  const axes = {};
+  const source = {};
+  applicable.forEach(axis => {
+    const allowed = new Set(allowedOptionsForTask(axis, task).map(option => option.k));
+    const pick = values => {
+      const keys = Array.from(new Set((values || []).filter(key => allowed.has(key))));
+      return axis.type === 'single' ? keys.slice(0, 1) : keys;
+    };
+    const fromPlan = axis.id === 'task' ? [task] : pick(plan.axes[axis.id]);
+    const fromAI = pick(aiValue.axes[axis.id]);
+    const fromPreset = pick(baselineAxes && baselineAxes[axis.id]);
+    if (fromPlan.length) { axes[axis.id] = fromPlan; source[axis.id] = 'plan'; }
+    else if (fromAI.length) { axes[axis.id] = fromAI; source[axis.id] = 'ai'; }
+    else if (fromPreset.length) { axes[axis.id] = fromPreset; source[axis.id] = 'preset'; }
+  });
+  /* dependsOn 정리: 카드에서 정한 자식 축은 부모를 맞춰 주고, 그 외에는 조건이 안 맞는 자식을 뺀다 */
+  const dropped = [];
+  for (let pass = 0; pass < 3; pass++) {
+    applicable.forEach(axis => {
+      if (!axes[axis.id] || !axis.dependsOn) return;
+      Object.entries(axis.dependsOn).forEach(([parentId, parentKeys]) => {
+        if (!axes[axis.id]) return;
+        const parentValues = axes[parentId] || [];
+        if (parentKeys.some(key => parentValues.includes(key))) return;
+        const parent = AXES.find(item => item.id === parentId);
+        const parentAllowed = parent && axisAppliesToTask(parent, task) ? allowedOptionsForTask(parent, task).map(option => option.k) : [];
+        const candidate = parentKeys.find(key => parentAllowed.includes(key));
+        if (source[axis.id] === 'plan' && source[parentId] !== 'plan' && candidate) {
+          axes[parentId] = parent.type === 'single' ? [candidate] : parentValues.concat(candidate);
+          source[parentId] = source[parentId] || 'ai';
+        } else {
+          if (source[axis.id] === 'plan') dropped.push(axis.id);   // 카드에서 정한 값을 못 넣은 경우만 알린다
+          delete axes[axis.id];
+          delete source[axis.id];
+        }
+      });
+    });
+  }
+  /* 컷별 대사는 카드의 글자를 그대로 쓴다 (한국어 대사 규칙을 만족할 때만) */
+  const dialogueOff = (axes.lang || []).includes('none');
+  let dialogKept = 0;
+  const timeline = aiValue.timeline.map((entry, index) => {
+    const cut = plan.cuts.length === aiValue.timeline.length ? plan.cuts[index] : null;
+    const planned = cut ? cut.dialog.replace(/[{}]/g, '').trim() : '';
+    const usable = planned && !dialogueOff && containsKorean(planned) && !containsHan(planned) && !/^없음\.?$/.test(planned);
+    if (usable) dialogKept++;
+    return { scene: entry.scene, dialog: usable ? planned : (dialogueOff ? '' : entry.dialog), cam: entry.cam || '' };
+  });
+  const check = validateComposition({ axes, content: aiValue.content, timeline }, task);
+  if (!check.ok) return { value: aiValue, enforced: false, source: {}, dropped, dialogKept: 0, errors: check.errors };
+  return { value: check.value, enforced: true, source, dropped, dialogKept, errors: [] };
+}
+
+/* options.plan이 있으면 기획 카드 기준 모드: 작업 유형 재판정 생략 · 프리셋 기반 · 카드 값 강제 */
+async function runAIComposer(apiKey, model, userRequest, options) {
+  const opts = options || {};
+  const plan = opts.plan || null;
+  let task = plan && plan.axes.task && AI_TASKS.includes(plan.axes.task[0]) ? plan.axes.task[0] : null;
+  if (!task) {
+    setAIStatus('loading', '1/2 작업 유형을 판정하고 있습니다...');
+    const taskContent = await callDeepSeek(apiKey, model, [
+      { role: 'system', content: taskSystemMessage() },
+      { role: 'user', content: userRequest }
+    ], { effort: 'none' });
+    const parsedTask = parseAIJson(taskContent);
+    if (parsedTask.errors.length) throw new Error(`작업 유형 응답 검증 실패\n${formatValidationErrors(parsedTask.errors)}`);
+    const taskResult = validateTaskResponse(parsedTask.value);
+    if (!taskResult.ok) throw new Error(`작업 유형 응답 검증 실패\n${formatValidationErrors(taskResult.errors)}`);
+    task = taskResult.task;
+  }
+
   const allowedContract = buildAIAllowedContract(task);
+  const baseline = plan ? pickBaselinePreset(plan, task) : null;
+  if (plan) {
+    const fixedAxes = {};
+    AXES.filter(axis => axisAppliesToTask(axis, task)).forEach(axis => {
+      const allowed = new Set(allowedOptionsForTask(axis, task).map(option => option.k));
+      const keys = (plan.axes[axis.id] || []).filter(key => allowed.has(key));
+      if (keys.length) fixedAxes[axis.id] = keys;
+    });
+    allowedContract.fixedAxes = fixedAxes;
+    if (baseline) {
+      const baselineAxes = baselineAxesOf(baseline);
+      Object.keys(fixedAxes).forEach(axisId => { delete baselineAxes[axisId]; });
+      allowedContract.baselineAxes = baselineAxes;
+    }
+  }
   const systemMessage = compositionSystemMessage(allowedContract);
-  setAIStatus('loading', `2/2 ${AI_TASK_LABELS[task]} 축과 콘텐츠를 구성하고 있습니다...`);
+  setAIStatus('loading', `${plan ? '' : '2/2 '}${AI_TASK_LABELS[task]} 축과 콘텐츠를 구성하고 있습니다...`);
   const candidateContent = await callDeepSeek(apiKey, model, [
     { role: 'system', content: systemMessage },
     { role: 'user', content: userRequest }
@@ -2189,8 +2299,11 @@ async function runAIComposer(apiKey, model, userRequest) {
   if (!validation.ok) {
     throw new Error(`복구 후에도 응답 검증에 실패했습니다. 현재 수동 설정은 변경하지 않았습니다.\n${formatValidationErrors(validation.errors)}`);
   }
-  applyAIComposition(validation.value);
-  setAIStatus('success', `${AI_TASK_LABELS[task]} 결과의 축·콘텐츠·타임라인을 검증하고 적용했습니다. API\u00a0파라미터는 변경하지 않았습니다.`);
+  const enforced = plan ? enforcePlanOnComposition(validation.value, task, plan, baseline ? baselineAxesOf(baseline) : null) : null;
+  const finalValue = enforced ? enforced.value : validation.value;
+  applyAIComposition(finalValue);
+  setAIStatus('success', `${AI_TASK_LABELS[task]} 결과의 축·콘텐츠·타임라인을 검증하고 적용했습니다.${plan ? '' : ' API 파라미터는 변경하지 않았습니다.'}`);
+  return { task, value: finalValue, enforced, baseline };
 }
 
 /* ================================================================
@@ -3098,6 +3211,8 @@ const CHAT_PLAN_TEXT_FIELDS = Object.freeze([
   ['tone', '전체 톤'], ['hook', '첫 훅'], ['cta', 'CTA'], ['ending', '끝 장면']
 ]);
 const CHAT_DURATION_KEYS = Object.freeze(['10s', '15s', '20s', '30s', 'auto']);
+const CHAT_RATIOS = Object.freeze(['9:16', '16:9', '1:1', '4:3', '3:4', '21:9']);
+const CHAT_FORCE_FINALIZE = '채워서 만들어줘';
 const CHAT_STARTERS = Object.freeze(['쇼츠 광고를 만들고 싶어', '드라마 한 장면을 만들고 싶어', '제품 소개 영상을 만들고 싶어', '지금 메이커 설정에서 고치고 싶어']);
 const CHAT_SYSTEM_RULES = [
   '너는 Seedance 2.5 프롬프트 메이커 전용 영상 기획 파트너다. 사용자와 한국어로 대화하며 영상을 함께 기획하고, 그 결과를 메이커의 축 선택과 컷 구성으로 정리한다. 기획에 필요한 모든 결정은 대화로 한다.',
@@ -3108,12 +3223,14 @@ const CHAT_SYSTEM_RULES = [
   '[남은 질문] plan.open에는 아직 물어봐야 할 것을 중요한 순서로 최대 5개, 각 25자 이내로 적는다. 이번 답에서 묻는 질문이 맨 앞이다. 더 물을 것이 없으면 빈 배열.',
   '[메이커 축] 아래 "축 메뉴"가 메이커에 실제로 있는 선택지 전부다. 사용자에게는 축 ID나 옵션 키를 말하지 말고 라벨의 뜻을 쉬운 말로 제안한다. plan.axes에는 반드시 메뉴에 있는 축 ID와 옵션 키만 쓴다. single 축은 키 1개, multi 축은 여러 개. 대화에서 정해졌거나 네가 제안해 사용자가 받아들인 것만 넣는다. "필수" 축은 기획이 끝나기 전에 모두 정한다. "작업 전용"·"조건" 표시가 있는 축은 그 조건이 맞을 때만 고른다.',
   '[길이와 컷] 길이는 10s·15s·20s·30s·auto 중 하나다. 컷 수는 길이로 고정된다: 10s=3컷, 15s=4컷, 20s=5컷, 30s=6컷, auto=4컷(영상 편집 작업은 항상 4컷). 길이가 정해지면 정확히 그 수만큼 컷을 사용자와 함께 짜서 plan.cuts에 순서대로 넣는다. 첫 컷은 시선을 잡는 훅이다.',
-  '[컷 규칙] 한 컷에 카메라 움직임은 하나만. 컷마다 장면이 달라야 한다. 대사는 한국어로, 컷 길이에 맞게 짧게 쓴다(3초 컷은 10자 안팎, 5초 컷은 18자 안팎). 화면 글자·자막은 사용자가 원할 때만 넣는다. 비율·해상도 같은 생성 파라미터와 최종 프롬프트 문장은 다루지 않는다. 최종 프롬프트는 메이커가 규칙대로 만든다.',
+  '[컷 규칙] 한 컷에 카메라 움직임은 하나만. 컷마다 장면이 달라야 한다. 대사는 한국어로, 컷 길이에 맞게 짧게 쓴다(3초 컷은 10자 안팎, 5초 컷은 18자 안팎). 화면 글자·자막은 사용자가 원할 때만 넣는다. 해상도 같은 생성 파라미터와 최종 프롬프트 문장은 다루지 않는다. 최종 프롬프트는 메이커가 규칙대로 만든다.',
+  '[화면 비율] 올릴 곳이 정해지면 plan.ratio에 비율을 적는다: 쇼츠·릴스·틱톡 등 세로 영상은 9:16, 유튜브·TV 등 가로 영상은 16:9, 정사각 피드는 1:1. 그 밖에 4:3, 3:4, 21:9도 가능하다. 올릴 곳을 모르면 비워 두고, 목적을 물을 때 함께 확인한다.',
+  '[만든 뒤 수정] 프롬프트를 만든 뒤 사용자가 값을 바꾸자고 하면 plan.axes나 plan.cuts에 반영하고, 다시 "이 기획으로 프롬프트 만들기"를 누르라고 안내한다. plan.axes에 이미 있는 값은 사용자가 바꾸자고 하기 전에는 그대로 둔다.',
   '[사진] 사용자가 사진을 첨부하면 첨부 순서대로 사진1, 사진2로 부르고, 보이는 내용을 짧게 확인한 뒤 쓰임(인물·제품 참조, 시작 프레임, 끝 프레임, 배경·스타일 참조)을 정해 plan.photos에 넣는다. 실존 인물의 얼굴 사진은 참조로 쓸 수 없다고 안내한다. 사진을 쓰면 작업 유형도 그에 맞게 고른다.',
   '[현재 메이커 설정] 사용자 메시지 앞의 [컨텍스트]에 현재 메이커 설정이 올 수 있다. 사용자가 "지금 설정에서 길이만 바꿔"처럼 기존 설정을 가리킬 때만 그것을 그대로 이어받아 바뀐 부분만 고친다. 새 영상을 기획하면 무시한다.',
   '[기획 카드] plan은 누적이다. [컨텍스트]의 현재 기획 카드를 기준으로 이번에 바뀐 것만 고쳐 매번 전체를 다시 반환한다. 미정 항목은 빈 문자열이나 빈 배열로 둔다. 모든 항목과 컷이 정해지면 짧게 요약하고 "이 기획으로 프롬프트 만들기" 버튼을 누르라고 안내한다.',
   '[출력] 반드시 아래 형태의 JSON 객체 하나만 출력한다. suggestions는 사용자가 눌러서 바로 답할 수 있는 짧은 답 2~4개(각 20자 이내)이고, 필요 없으면 빈 배열이다.',
-  '{"reply":"사용자에게 보일 한국어 답","suggestions":["답1","답2"],"plan":{"kind":"영상 유형","goal":"목적·볼 사람·올릴 곳","duration":"15s","subject":"주체","event":"사건·동작","scene":"장면·배경","dialog":"핵심 대사 또는 없음","tone":"전체 톤","hook":"첫 훅","cta":"CTA 또는 없음","ending":"끝 장면","cuts":[{"scene":"컷1 장면·동작","dialog":"컷1 대사 또는 빈 문자열","camera":"카메라 움직임 하나"}],"photos":[{"n":1,"use":"제품 참조"}],"open":["전체 분위기","대사 필요 여부"],"axes":{"task":["t2v"],"duration":["15s"]}}}'
+  '{"reply":"사용자에게 보일 한국어 답","suggestions":["답1","답2"],"plan":{"kind":"영상 유형","goal":"목적·볼 사람·올릴 곳","ratio":"9:16","duration":"15s","subject":"주체","event":"사건·동작","scene":"장면·배경","dialog":"핵심 대사 또는 없음","tone":"전체 톤","hook":"첫 훅","cta":"CTA 또는 없음","ending":"끝 장면","cuts":[{"scene":"컷1 장면·동작","dialog":"컷1 대사 또는 빈 문자열","camera":"카메라 움직임 하나"}],"photos":[{"n":1,"use":"제품 참조"}],"open":["전체 분위기","대사 필요 여부"],"axes":{"task":["t2v"],"duration":["15s"]}}}'
 ].join('\n');
 let chatSystemPromptCache = '';
 function chatAxisMenu() {
@@ -3138,7 +3255,7 @@ function chatText(value, limit) {
 }
 function normalizeChatPlan(raw, previous) {
   if (!isPlainObject(raw)) return previous;
-  const plan = { duration: '', cuts: [], photos: [], open: [], axes: {} };
+  const plan = { duration: '', ratio: CHAT_RATIOS.includes(raw.ratio) ? raw.ratio : '', cuts: [], photos: [], open: [], axes: {} };
   if (Array.isArray(raw.open)) {
     plan.open = raw.open.filter(item => typeof item === 'string' && item.trim()).map(item => item.trim().slice(0, 50)).slice(0, 5);
   }
@@ -3228,7 +3345,7 @@ function renderChatSuggestions() {
     chip.className = 'ai-chip';
     chip.textContent = text;
     chip.disabled = aiComposerBusy;
-    chip.addEventListener('click', () => sendChatMessage(text));
+    chip.addEventListener('click', () => (text === CHAT_FORCE_FINALIZE ? finalizeChatPlan(true) : sendChatMessage(text)));
     box.appendChild(chip);
   });
 }
@@ -3238,7 +3355,7 @@ function renderChatPlan() {
   card.textContent = '';
   if (!chatPlan) { card.hidden = true; return; }
   card.hidden = false;
-  const items = [['duration', '길이', chatPlan.duration ? axisLabel('duration', chatPlan.duration) : '']]
+  const items = [['duration', '길이', chatPlan.duration ? axisLabel('duration', chatPlan.duration) : ''], ['ratio', '화면 비율', chatPlan.ratio]]
     .concat(CHAT_PLAN_TEXT_FIELDS.map(([field, label]) => [field, label, chatPlan[field]]));
   const target = chatPlanCutTarget(chatPlan);
   const filledCuts = chatPlan.cuts.filter(cut => cut.scene).length;
@@ -3457,7 +3574,7 @@ function chatFinalRequest() {
     return `아래는 사용자와 기획 도우미가 나눈 영상 기획 대화다. 대화에서 최종 합의된 내용을 기준으로 구성하고, 뒤에 나온 결정이 앞선 내용보다 우선한다.${photoNote}\n\n${transcript.text}`;
   }
   return [
-    `아래 기획 카드(JSON)가 사용자와 합의한 최종 기획이다. 카드의 axes에 있는 선택은 허용 계약 안에서 그대로 따르고, 카드에 없는 필수 축만 기획에 어울리게 고른다. 카드의 cuts는 순서 그대로 timeline의 각 단계가 된다(컷 수가 단계 수와 다르면 단계 수에 맞춰 나누거나 합친다). 카드의 한국어 내용은 계약대로 옮기되 대사는 한국어 그대로 둔다.${photoNote}`,
+    `아래 기획 카드(JSON)가 사용자와 합의한 최종 기획이다. 카드의 axes에 있는 선택은 허용 계약 안에서 그대로 따르고, 카드에 없는 필수 축만 기획에 어울리게 고른다. 카드의 cuts는 순서 그대로 timeline의 각 단계가 된다(컷 수가 단계 수와 다르면 단계 수에 맞춰 나누거나 합친다). 컷에 camera가 있으면 그 컷의 cam에 중국어로 옮긴다. 카드에서 정하지 않은 축도 기획에 어울리게 모두 정한다. 카드의 한국어 내용은 계약대로 옮기되 대사는 한국어 그대로 둔다.${photoNote}`,
     `[기획 카드]\n${JSON.stringify(chatPlan)}`,
     `[대화 발췌 — 카드에 없는 뉘앙스 참고용]\n${transcript.text}`
   ].join('\n\n');
@@ -3539,7 +3656,77 @@ async function sendChatMessage(presetText) {
   }
 }
 
-async function finalizeChatPlan() {
+function axisShortTitle(axisId) {
+  const axis = AXES.find(item => item.id === axisId);
+  return axis ? axis.title.replace(/^[^\s]*\s*/, '').replace(/\s*[—(].*$/, '') : axisId;
+}
+function optionShortLabel(axisId, key) {
+  return axisLabel(axisId, key).replace(/\s*[—(→⚡].*$/, '').trim() || key;
+}
+
+/* 아직 안 정해진 것 목록 (버튼을 눌렀을 때 먼저 확인) */
+function chatPlanUnresolved(plan) {
+  const items = plan.open.slice();
+  if (!plan.duration) items.push('길이');
+  const target = chatPlanCutTarget(plan);
+  const filled = plan.cuts.filter(cut => cut.scene).length;
+  if (target && filled !== target) items.push(`컷 구성 ${filled}/${target}`);
+  if (!plan.subject) items.push('주체');
+  return Array.from(new Set(items));
+}
+
+/* 적용된 결과 점검: 컷 대사 분량, 중복 장면, 남은 자리표시자, 본문 길이, 모순 */
+function chatResultChecks(value) {
+  const notes = [];
+  const durPlan = currentDurationPlan();
+  if (durPlan.slots) {
+    value.timeline.forEach((entry, index) => {
+      if (!entry.dialog || !durPlan.slots[index]) return;
+      const [start, end] = durPlan.slots[index].split('-').map(Number);
+      const syllables = (entry.dialog.match(/[가-힣]/g) || []).length;
+      if (syllables > (end - start) * 5) notes.push(`컷 ${index + 1} 대사가 ${end - start}초에 비해 깁니다(${syllables}자)`);
+    });
+  }
+  const scenes = value.timeline.map(entry => entry.scene);
+  if (new Set(scenes).size < scenes.length) notes.push('같은 장면 문장이 여러 컷에 반복됩니다');
+  if (!value.content.hook) notes.push('첫 훅 문장이 비어 있습니다');
+  const textgen = (value.axes.textgen || ['none'])[0];
+  if (value.content.cta && textgen === 'none') notes.push('CTA 문구가 있지만 화면 글자는 "글자 없음"입니다');
+  if ((textgen === 'cta') && !value.content.cta) notes.push('화면 글자가 CTA인데 CTA 문구가 비어 있습니다');
+  const body = buildPrompt().split('═══')[0];
+  const placeholders = Array.from(new Set(Object.keys(PLACEHOLDER_MAP).filter(key => body.includes(key)).map(key => PLACEHOLDER_MAP[key])));
+  if (placeholders.length) notes.push(`채울 곳 ${placeholders.length}개: ${placeholders.join(', ')}`);
+  const length = body.replace(/\s/g, '').length;
+  if (length > 500) notes.push(`프롬프트 본문 ${length}자 (공식 권장 500자보다 깁니다)`);
+  return notes;
+}
+
+function chatAppliedSummary(result) {
+  const lines = ['메이커에 적용했습니다.'];
+  const enforced = result.enforced;
+  if (enforced && enforced.enforced) {
+    const ids = Object.keys(enforced.source);
+    const fixed = ids.filter(id => enforced.source[id] === 'plan');
+    const filled = ids.filter(id => enforced.source[id] !== 'plan');
+    lines.push(`· 정하신 대로 넣은 것 ${fixed.length}개${enforced.dialogKept ? ` (컷 대사 ${enforced.dialogKept}개는 글자 그대로)` : ''}`);
+    if (filled.length) {
+      lines.push(`· 제가 채운 것 ${filled.length}개${result.baseline ? ` — "${result.baseline.name}" 조합을 바탕으로` : ''}: ${filled.map(id => `${axisShortTitle(id)}=${result.value.axes[id].map(key => optionShortLabel(id, key)).join('·')}`).join(', ')}`);
+    }
+    const dependsMet = axis => !axis.dependsOn || Object.entries(axis.dependsOn).every(([parentId, keys]) => keys.some(key => (result.value.axes[parentId] || []).includes(key)));
+    const empty = AXES.filter(axis => axisAppliesToTask(axis, result.task) && !result.value.axes[axis.id] && dependsMet(axis)).map(axis => axisShortTitle(axis.id));
+    if (empty.length) lines.push(`· 비워 둔 축 ${empty.length}개: ${empty.join(', ')}`);
+    if (enforced.dropped.length) lines.push(`· 조건이 맞지 않아 뺀 것: ${Array.from(new Set(enforced.dropped)).map(axisShortTitle).join(', ')}`);
+  } else if (enforced) {
+    lines.push('· 카드 값을 그대로 넣으면 메이커 규칙에 걸려서, 검증을 통과한 구성으로 적용했습니다. 아래 선택을 확인해 주세요.');
+  }
+  if (result.ratioNote) lines.push(`· ${result.ratioNote}`);
+  const checks = chatResultChecks(result.value);
+  if (checks.length) lines.push(`· 점검: ${checks.join(' / ')}`);
+  lines.push('바꾸고 싶은 것이 있으면 말씀해 주세요. 말씀하신 값은 고정해 두고 다시 만듭니다.');
+  return lines.join('\n');
+}
+
+async function finalizeChatPlan(force) {
   if (aiComposerBusy) return;
   if (!chatMessages.some(message => message.role === 'user')) {
     setAIStatus('error', '먼저 대화로 기획을 진행하세요.');
@@ -3549,13 +3736,42 @@ async function finalizeChatPlan() {
   const credentials = readChatCredentials();
   if (!credentials) return;
 
+  /* 덜 정해졌으면 먼저 묻는다 */
+  if (chatPlan && force !== true) {
+    const unresolved = chatPlanUnresolved(chatPlan);
+    if (unresolved.length) {
+      chatMessages.push({
+        role: 'assistant', images: [],
+        text: `아직 ${unresolved.length}가지가 정해지지 않았습니다: ${unresolved.join(', ')}.\n제가 어울리게 채워서 만들까요, 아니면 더 이야기할까요?`,
+        suggestions: [CHAT_FORCE_FINALIZE, '더 이야기할래']
+      });
+      renderChatLog();
+      setAIStatus('default', '남은 항목을 확인해 주세요.');
+      return;
+    }
+  }
+
   aiComposerBusy = true;
   setAIComposerBusy(true);
+  renderChatLog();
   let applied = false;
   try {
-    await runAIComposer(credentials.apiKey, credentials.model, chatFinalRequest());
+    const result = await runAIComposer(credentials.apiKey, credentials.model, chatFinalRequest(), chatPlan ? { plan: chatPlan } : null);
     applied = true;
-    chatMessages.push({ role: 'note', text: '이 기획을 메이커에 적용했습니다. 아래 축 선택과 프롬프트를 확인한 뒤 복사하세요. 대화를 이어가서 다시 만들 수도 있습니다.', images: [] });
+    if (chatPlan) {
+      /* 화면 비율: 길이처럼 기획을 따라간다 (비율이 고정인 작업은 건드리지 않음) */
+      const ratioInput = document.getElementById('p_ratio');
+      if (chatPlan.ratio && ratioInput && (result.task === 't2v' || result.task === 'r2v')) {
+        ratioInput.value = chatPlan.ratio;
+        result.ratioNote = `화면 비율을 ${chatPlan.ratio}로 맞췄습니다`;
+        renderPrompt();
+      }
+      /* 적용된 축을 카드에 고정해 다음에 다시 만들어도 흔들리지 않게 한다 */
+      Object.entries(result.value.axes).forEach(([axisId, keys]) => { chatPlan.axes[axisId] = keys.slice(); });
+      chatMessages.push({ role: 'assistant', images: [], text: chatAppliedSummary(result), suggestions: ['이대로 좋아', '바꾸고 싶은 게 있어'] });
+    } else {
+      chatMessages.push({ role: 'note', text: '이 기획을 메이커에 적용했습니다. 아래 축 선택과 프롬프트를 확인한 뒤 복사하세요.', images: [] });
+    }
     showToast('🎬 기획을 메이커에 적용했습니다');
   } catch (error) {
     setAIStatus('error', redactSecret(error && error.message ? error.message : '알 수 없는 오류가 발생했습니다.', credentials.apiKey));
@@ -3571,7 +3787,7 @@ async function finalizeChatPlan() {
 }
 
 document.getElementById('aiChatSendBtn').addEventListener('click', () => sendChatMessage());
-document.getElementById('aiChatFinalizeBtn').addEventListener('click', finalizeChatPlan);
+document.getElementById('aiChatFinalizeBtn').addEventListener('click', () => finalizeChatPlan());
 document.getElementById('aiChatInput').addEventListener('keydown', event => {
   if (event.key !== 'Enter' || event.shiftKey || event.isComposing || event.keyCode === 229) return;
   event.preventDefault();
