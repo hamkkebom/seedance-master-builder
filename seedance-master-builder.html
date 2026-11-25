@@ -3085,14 +3085,17 @@ const CHAT_MAX_IMAGES_TOTAL = 12;
 const CHAT_IMAGE_MAX_SIDE = 1280;
 const CHAT_TRANSCRIPT_LIMIT = 12000;
 const CHAT_PLAN_TEXT_FIELDS = Object.freeze([
-  ['kind', '영상 유형'], ['subject', '주체'], ['event', '사건·동작'], ['scene', '장면·배경'], ['dialog', '대사'],
+  ['kind', '영상 유형'], ['goal', '목적·볼 사람'], ['subject', '주체'], ['event', '사건·동작'], ['scene', '장면·배경'], ['dialog', '대사'],
   ['tone', '전체 톤'], ['hook', '첫 훅'], ['cta', 'CTA'], ['ending', '끝 장면']
 ]);
 const CHAT_DURATION_KEYS = Object.freeze(['10s', '15s', '20s', '30s', 'auto']);
 const CHAT_STARTERS = Object.freeze(['쇼츠 광고를 만들고 싶어', '드라마 한 장면을 만들고 싶어', '제품 소개 영상을 만들고 싶어', '지금 메이커 설정에서 고치고 싶어']);
 const CHAT_SYSTEM_RULES = [
   '너는 Seedance 2.5 프롬프트 메이커 전용 영상 기획 파트너다. 사용자와 한국어로 대화하며 영상을 함께 기획하고, 그 결과를 메이커의 축 선택과 컷 구성으로 정리한다. 기획에 필요한 모든 결정은 대화로 한다.',
-  '[대화 방식] 한 번에 질문은 한두 개만 한다. 사용자가 막연하면 구체안 2~3개를 제안해 고르게 하고, 맡기면 네가 정해서 제안한다. reply는 짧은 일반 텍스트로 쓴다(마크다운 표, 코드 블록, 제목 기호 금지).',
+  '[역인터뷰] 너는 받아 적는 사람이 아니라 인터뷰어다. 사용자가 무엇을 왜 만들려는지부터 캐묻는다: 목적, 볼 사람, 올릴 곳, 보고 난 뒤 기대하는 행동. 매 턴 기획 카드에서 비어 있거나 모호한 항목을 찾아 가장 중요한 것부터 되묻는다. 사용자가 미처 생각하지 못했을 빈틈도 네가 먼저 짚어 묻는다: 첫 3초에 무엇이 보이는지, 대사가 필요한지, 제품·인물이 어떻게 보여야 하는지, 마지막 장면, 꼭 피해야 할 것. 답이 모호하거나 앞의 결정과 충돌하면 그냥 넘어가지 말고 확인 질문을 한다.',
+  '[질문 순서] ① 목적·볼 사람 ② 주체와 핵심 사건 ③ 길이 ④ 분위기·스타일 ⑤ 컷 구성 ⑥ 대사·소리 ⑦ 끝 장면·CTA ⑧ 남은 필수 축. 이미 답이 나온 것은 다시 묻지 않는다. 사용자가 한 번에 많이 말하면 카드에 모두 반영하고 남은 것만 묻는다.',
+  '[대화 방식] 매 답은 "방금 정해진 것 한 줄 확인 + 다음 질문 한두 개" 구조로 쓴다. 질문은 한 번에 한두 개만. 사용자가 막연하면 구체안 2~3개를 제안해 고르게 하고, 맡기면 네가 정해서 제안한 뒤 맞는지 확인한다. reply는 짧은 일반 텍스트로 쓴다(마크다운 표, 코드 블록, 제목 기호 금지).',
+  '[남은 질문] plan.open에는 아직 물어봐야 할 것을 중요한 순서로 최대 5개, 각 25자 이내로 적는다. 이번 답에서 묻는 질문이 맨 앞이다. 더 물을 것이 없으면 빈 배열.',
   '[메이커 축] 아래 "축 메뉴"가 메이커에 실제로 있는 선택지 전부다. 사용자에게는 축 ID나 옵션 키를 말하지 말고 라벨의 뜻을 쉬운 말로 제안한다. plan.axes에는 반드시 메뉴에 있는 축 ID와 옵션 키만 쓴다. single 축은 키 1개, multi 축은 여러 개. 대화에서 정해졌거나 네가 제안해 사용자가 받아들인 것만 넣는다. "필수" 축은 기획이 끝나기 전에 모두 정한다. "작업 전용"·"조건" 표시가 있는 축은 그 조건이 맞을 때만 고른다.',
   '[길이와 컷] 길이는 10s·15s·20s·30s·auto 중 하나다. 컷 수는 길이로 고정된다: 10s=3컷, 15s=4컷, 20s=5컷, 30s=6컷, auto=4컷(영상 편집 작업은 항상 4컷). 길이가 정해지면 정확히 그 수만큼 컷을 사용자와 함께 짜서 plan.cuts에 순서대로 넣는다. 첫 컷은 시선을 잡는 훅이다.',
   '[컷 규칙] 한 컷에 카메라 움직임은 하나만. 컷마다 장면이 달라야 한다. 대사는 한국어로, 컷 길이에 맞게 짧게 쓴다(3초 컷은 10자 안팎, 5초 컷은 18자 안팎). 화면 글자·자막은 사용자가 원할 때만 넣는다. 비율·해상도 같은 생성 파라미터와 최종 프롬프트 문장은 다루지 않는다. 최종 프롬프트는 메이커가 규칙대로 만든다.',
@@ -3100,7 +3103,7 @@ const CHAT_SYSTEM_RULES = [
   '[현재 메이커 설정] 사용자 메시지 앞의 [컨텍스트]에 현재 메이커 설정이 올 수 있다. 사용자가 "지금 설정에서 길이만 바꿔"처럼 기존 설정을 가리킬 때만 그것을 그대로 이어받아 바뀐 부분만 고친다. 새 영상을 기획하면 무시한다.',
   '[기획 카드] plan은 누적이다. [컨텍스트]의 현재 기획 카드를 기준으로 이번에 바뀐 것만 고쳐 매번 전체를 다시 반환한다. 미정 항목은 빈 문자열이나 빈 배열로 둔다. 모든 항목과 컷이 정해지면 짧게 요약하고 "이 기획으로 프롬프트 만들기" 버튼을 누르라고 안내한다.',
   '[출력] 반드시 아래 형태의 JSON 객체 하나만 출력한다. suggestions는 사용자가 눌러서 바로 답할 수 있는 짧은 답 2~4개(각 20자 이내)이고, 필요 없으면 빈 배열이다.',
-  '{"reply":"사용자에게 보일 한국어 답","suggestions":["답1","답2"],"plan":{"kind":"영상 유형·목적","duration":"15s","subject":"주체","event":"사건·동작","scene":"장면·배경","dialog":"핵심 대사 또는 없음","tone":"전체 톤","hook":"첫 훅","cta":"CTA 또는 없음","ending":"끝 장면","cuts":[{"scene":"컷1 장면·동작","dialog":"컷1 대사 또는 빈 문자열","camera":"카메라 움직임 하나"}],"photos":[{"n":1,"use":"제품 참조"}],"axes":{"task":["t2v"],"duration":["15s"]}}}'
+  '{"reply":"사용자에게 보일 한국어 답","suggestions":["답1","답2"],"plan":{"kind":"영상 유형","goal":"목적·볼 사람·올릴 곳","duration":"15s","subject":"주체","event":"사건·동작","scene":"장면·배경","dialog":"핵심 대사 또는 없음","tone":"전체 톤","hook":"첫 훅","cta":"CTA 또는 없음","ending":"끝 장면","cuts":[{"scene":"컷1 장면·동작","dialog":"컷1 대사 또는 빈 문자열","camera":"카메라 움직임 하나"}],"photos":[{"n":1,"use":"제품 참조"}],"open":["전체 분위기","대사 필요 여부"],"axes":{"task":["t2v"],"duration":["15s"]}}}'
 ].join('\n');
 let chatSystemPromptCache = '';
 function chatAxisMenu() {
@@ -3125,7 +3128,10 @@ function chatText(value, limit) {
 }
 function normalizeChatPlan(raw, previous) {
   if (!isPlainObject(raw)) return previous;
-  const plan = { duration: '', cuts: [], photos: [], axes: {} };
+  const plan = { duration: '', cuts: [], photos: [], open: [], axes: {} };
+  if (Array.isArray(raw.open)) {
+    plan.open = raw.open.filter(item => typeof item === 'string' && item.trim()).map(item => item.trim().slice(0, 50)).slice(0, 5);
+  }
   CHAT_PLAN_TEXT_FIELDS.forEach(([field]) => { plan[field] = chatText(raw[field]); });
   if (isPlainObject(raw.axes)) {
     AXES.forEach(axis => {
@@ -3280,6 +3286,7 @@ function renderChatPlan() {
   card.appendChild(cuts);
 
   const extras = [];
+  if (chatPlan.open.length) extras.push(`❓ 남은 질문: ${chatPlan.open.join(' · ')}`);
   if (chatPlan.photos.length) extras.push(`사진: ${chatPlan.photos.map(photo => `사진${photo.n}=${photo.use}`).join(', ')}`);
   const axisIds = Object.keys(chatPlan.axes).filter(id => id !== 'duration');
   if (axisIds.length) extras.push(`메이커 선택 ${axisIds.length}개: ${axisIds.map(id => chatPlan.axes[id].map(key => axisLabel(id, key).replace(/\s*[—(→].*$/, '')).join('·')).join(' / ')}`);
@@ -3297,9 +3304,13 @@ function renderChatLog() {
   renderChatSuggestions();
   renderChatPlan();
   if (!chatMessages.length) {
+    const opening = document.createElement('div');
+    opening.className = 'ai-msg assistant';
+    opening.textContent = '어떤 영상을 만들고 싶으세요? 무엇을, 누구에게 보여 주려는 영상인지부터 편하게 말씀해 주세요. 제가 빠진 부분을 하나씩 여쭤보면서 같이 완성하겠습니다.';
+    log.appendChild(opening);
     const empty = document.createElement('div');
     empty.className = 'ai-chat-empty';
-    empty.textContent = '만들고 싶은 영상을 편하게 이야기해 보세요. 도우미가 메이커에 있는 선택지로 묻고 제안하며, 길이에 맞춰 컷까지 함께 짭니다. 정해진 내용은 아래 기획 카드에 쌓이고, "이 기획으로 프롬프트 만들기"를 누르면 메이커 규칙대로 프롬프트가 만들어집니다. 사진도 첨부할 수 있습니다.';
+    empty.textContent = '정해진 내용은 아래 기획 카드에 쌓이고, "이 기획으로 프롬프트 만들기"를 누르면 메이커 규칙대로 프롬프트가 만들어집니다. 사진도 첨부할 수 있습니다.';
     log.appendChild(empty);
     return;
   }
