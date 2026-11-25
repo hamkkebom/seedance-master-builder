@@ -2726,7 +2726,7 @@ function buildPrompt() {
     const sceneText = tl.scene || contentInput.scene || contentInput.event || `<镜头${i + 1}画面>`;
     const camHere = tl.cam ? tl.cam : (camSeq[i] || camSeq[0]);
     const dialogHere = lang !== 'none' && tl.dialog
-      ? `，${sayVerb}：{${tl.dialog}}`
+      ? `，${optVal('lang', lang)}，${voiceText}，${sayVerb}：{${tl.dialog}}`   /* 고정 한국 음성 문형: 언어·억양 + 말투 + 她说/他说 + {} — 구간 대사에도 그대로 */
       : (i === 1 && globalDialogLine && !timelineHasGlobalDialog ? `，${globalDialogLine}` : '');
     const endingHere = i === stageCount - 1 && contentInput.ending ? `，${contentInput.ending}` : '';
     const arcHere = i === stageCount - 1 ? shotArc[shotArc.length - 1] : (shotArc[i] && i < shotArc.length - 1 ? shotArc[i] : shotArc[Math.max(0, shotArc.length - 2)]);
