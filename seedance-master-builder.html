@@ -356,6 +356,7 @@
     padding: 5px 8px; font-size: 11.5px; width: 100%;
   }
   .tl-field input:focus { border-color: rgba(108,140,255,.5); outline: none; }
+  .tl-field select.tl-mode, #ci_dialogmode { margin-top: 4px; font-size: 10.5px; padding: 3px 6px; }
 
   /* ===== 주체 바인딩 매트릭스 ===== */
   .sm-head { font-size: 11px; font-weight: 800; color: var(--accent2); margin-bottom: 7px; }
@@ -1039,6 +1040,10 @@
           </div>
           <div class="opt-row"><div class="opt-label">대사 ({ } 안 내용)</div>
             <input id="ci_dialog" type="text" placeholder="예: 야, 우리 연애운 볼까?" oninput="renderPrompt()">
+            <select id="ci_dialogmode" onchange="renderPrompt()" title="화면 속 인물이 직접 말하는 대사인지, 화면 밖 목소리(내레이션)인지">
+              <option value="say" selected>인물이 말함 (입모양 맞춤)</option>
+              <option value="vo">내레이션 (화면 밖 목소리)</option>
+            </select>
           </div>
           <div class="opt-row"><div class="opt-label">끝 상태 (컷 마무리)</div>
             <input id="ci_ending" type="text" placeholder="예: 두 사람이 마주 보며 웃는다" oninput="renderPrompt()">
@@ -1838,7 +1843,7 @@ function buildAIAllowedContract(task) {
     output: {
       axes: 'object: axisId -> key array',
       content: AI_CONTENT_FIELDS,
-      timeline: 'array of {scene:string, dialog:string, cam?:string}'
+      timeline: 'array of {scene:string, dialog:string, cam?:string, narration?:boolean}'
     },
     stageCountByDuration: Object.fromEntries(['10s', '15s', '20s', '30s', 'auto'].map(key => [key, stageCountFor(key, task)])),
     requirements: [
@@ -1850,6 +1855,7 @@ function buildAIAllowedContract(task) {
       'Decide every applicable axis, not only core ones (shot size, angle, lighting, composition, transition, music, sound effects, quality, style and so on). Leave an optional axis out only when it truly does not apply to this video.',
       'Each timeline scene states who, what action and where, in one sentence, and every scene differs from the others. The first scene is the hook.',
       'timeline[].cam is optional: exactly one decisive camera movement for that cut, in Chinese. Give it when the request specifies a camera move for the cut.',
+      'timeline[].narration: true when the line is off-screen narration (voice-over while nobody on screen speaks); false or omitted when a person on screen says it. Follow the request when it marks a line as narration.',
       'Voice consistency: when any dialog exists, axes.lang (accent), axes.voice (tone) and axes.speaker (voice traits) must all be set. One voice setting applies to the whole video, so never vary accent or tone between cuts.',
       'If fixedAxes is present, return those axes with exactly those keys. If baselineAxes is present, it is a tested combination close to this plan: start from it and change only what the plan needs.'
     ],
@@ -2074,16 +2080,19 @@ function validateComposition(payload, task) {
         errors.push(aiError(`$.timeline[${index}]`, '타임라인 항목은 객체여야 합니다.'));
         return;
       }
-      const item = { scene: '', dialog: '', cam: '' };
+      const item = { scene: '', dialog: '', cam: '', narration: false };
       AI_TIMELINE_FIELDS.forEach(field => {
         if (!Object.prototype.hasOwnProperty.call(entry, field)) errors.push(aiError(`$.timeline[${index}].${field}`, '필수 필드가 없습니다.'));
       });
       Object.entries(entry).forEach(([field, value]) => {
-        if (field === 'cam') {
+        if (field === 'narration') {
+          if (typeof value !== 'boolean') errors.push(aiError(`$.timeline[${index}].narration`, 'narration은 true 또는 false여야 합니다.'));
+          else item.narration = value;
+        } else if (field === 'cam') {
           if (typeof value !== 'string') errors.push(aiError(`$.timeline[${index}].cam`, '타임라인 값은 문자열이어야 합니다.'));
           else { item.cam = value.trim(); validateVisualText(item.cam, `$.timeline[${index}].cam`, errors); }
         } else if (!AI_TIMELINE_FIELDS.includes(field)) {
-          errors.push(aiError(`$.timeline[${index}].${field}`, 'scene, dialog, cam만 허용됩니다.'));
+          errors.push(aiError(`$.timeline[${index}].${field}`, 'scene, dialog, cam, narration만 허용됩니다.'));
         } else if (typeof value !== 'string') {
           errors.push(aiError(`$.timeline[${index}].${field}`, '타임라인 값은 문자열이어야 합니다.'));
         } else {
@@ -2147,7 +2156,9 @@ function applyAIComposition(candidate) {
   AI_CONTENT_FIELDS.forEach(field => {
     nextContent[field] = candidate.content[field] || '';
   });
-  const nextTimeline = candidate.timeline.map(entry => ({ scene: entry.scene, dialog: entry.dialog, cam: entry.cam || '' }));
+  const nextTimeline = candidate.timeline.map(entry => ({ scene: entry.scene, dialog: entry.dialog, cam: entry.cam || '', mode: entry.narration ? 'vo' : 'say' }));
+  const spokenEntries = candidate.timeline.filter(entry => entry.dialog);
+  const nextDialogMode = spokenEntries.length && spokenEntries.every(entry => entry.narration) ? 'vo' : 'say';
 
   AXES.forEach(axis => {
     state[axis.id].clear();
@@ -2159,6 +2170,9 @@ function applyAIComposition(candidate) {
     if (input) input.value = nextContent[field];
   });
   contentInput.timeline = nextTimeline;
+  contentInput.dialogmode = nextDialogMode;
+  const dialogModeInput = document.getElementById('ci_dialogmode');
+  if (dialogModeInput) dialogModeInput.value = nextDialogMode;
   renderTimeline();
   cleanupDependsOn();
   renderSlots();
@@ -2240,12 +2254,12 @@ function enforcePlanOnComposition(aiValue, task, plan, baselineAxes) {
     const planned = cut ? cut.dialog.replace(/[{}]/g, '').trim() : '';
     const usable = planned && !dialogueOff && containsKorean(planned) && !containsHan(planned) && !/^없음\.?$/.test(planned);
     if (usable) dialogKept++;
-    return { scene: entry.scene, dialog: usable ? planned : (dialogueOff ? '' : entry.dialog), cam: entry.cam || '' };
+    return { scene: entry.scene, dialog: usable ? planned : (dialogueOff ? '' : entry.dialog), cam: entry.cam || '', narration: usable ? cut.narration === true : entry.narration === true };
   });
   const check = validateComposition({ axes, content: aiValue.content, timeline }, task);
   if (check.ok) return { value: check.value, enforced: true, source, dropped, dialogKept, errors: [] };
   /* 카드 대사를 넣어서 규칙에 걸리면(예: 목소리 미정) 축 강제는 유지하고 대사만 AI 구성본으로 되돌려 다시 본다 */
-  const aiTimeline = aiValue.timeline.map(entry => ({ scene: entry.scene, dialog: entry.dialog, cam: entry.cam || '' }));
+  const aiTimeline = aiValue.timeline.map(entry => ({ scene: entry.scene, dialog: entry.dialog, cam: entry.cam || '', narration: entry.narration === true }));
   const retry = validateComposition({ axes, content: aiValue.content, timeline: aiTimeline }, task);
   if (retry.ok) return { value: retry.value, enforced: true, source, dropped, dialogKept: 0, errors: check.errors };
   return { value: aiValue, enforced: false, source: {}, dropped, dialogKept: 0, errors: retry.errors };
@@ -2658,9 +2672,16 @@ function buildPrompt() {
   const femaleKeys = ['fem20', 'fem40'];
   const sp1Chars = spCount > 0 ? sel('sp1_char') : speaker;
   const sayVerb = sp1Chars.some(k => femaleKeys.includes(k)) ? '她说' : '他说';
+  /* 고정 한국 음성 문형: 언어·억양 + 말투 + (她说/他说 | 画外音旁白) + {}.
+     내레이션은 같은 문형에서 화자 동사만 바꿔 화면 속 인물이 입을 열지 않게 한다. */
+  const NARRATION_VERB = '画外音旁白（画面内人物不开口）';
+  const spokenLine = (text, narration) => `${optVal('lang', lang)}，${voiceText}，${narration ? NARRATION_VERB : sayVerb}：{${text}}`;
+  const globalNarration = contentInput.dialogmode === 'vo';
   const globalDialogLine = lang !== 'none' && contentInput.dialog
-    ? `${optVal('lang', lang)}，${voiceText}，${sayVerb}：{${contentInput.dialog}}`
+    ? spokenLine(contentInput.dialog, globalNarration)
     : '';
+  let usedNarration = false;
+  let usedSpeech = false;
 
   /* ⑧ 감정 전환 4단계 — 중국어 자연어 문형 (한국어 자리표시자 제거) */
   const flowLine = emotionflow === 'flow'
@@ -2743,9 +2764,13 @@ function buildPrompt() {
     /* 구간 장면이 비면 공통 장면·사건으로, 그것도 없으면 구간별 자리표시자를 남겨 경고에 잡히게 한다 (빈 문장 방지) */
     const sceneText = tl.scene || contentInput.scene || contentInput.event || `<镜头${i + 1}画面>`;
     const camHere = tl.cam ? tl.cam : (camSeq[i] || camSeq[0]);
-    const dialogHere = lang !== 'none' && tl.dialog
-      ? `，${optVal('lang', lang)}，${voiceText}，${sayVerb}：{${tl.dialog}}`   /* 고정 한국 음성 문형: 언어·억양 + 말투 + 她说/他说 + {} — 구간 대사에도 그대로 */
-      : (i === 1 && globalDialogLine && !timelineHasGlobalDialog ? `，${globalDialogLine}` : '');
+    const ownDialog = lang !== 'none' && tl.dialog;
+    const globalHere = !ownDialog && i === 1 && globalDialogLine && !timelineHasGlobalDialog;
+    const dialogHere = ownDialog
+      ? `，${spokenLine(tl.dialog, tl.mode === 'vo')}`   /* 구간 대사에도 고정 문형 그대로 */
+      : (globalHere ? `，${globalDialogLine}` : '');
+    if (ownDialog) { if (tl.mode === 'vo') usedNarration = true; else usedSpeech = true; }
+    else if (globalHere) { if (globalNarration) usedNarration = true; else usedSpeech = true; }
     const endingHere = i === stageCount - 1 && contentInput.ending ? `，${contentInput.ending}` : '';
     const arcHere = i === stageCount - 1 ? shotArc[shotArc.length - 1] : (shotArc[i] && i < shotArc.length - 1 ? shotArc[i] : shotArc[Math.max(0, shotArc.length - 2)]);
     stages += `${hookHere}镜头 ${seqNames(i)}${timeTag}：${arcHere}${twHere}${compHere}，${sceneText}，${camHere}${emoHere}${dialogHere}${endingHere}。\n`;
@@ -2818,13 +2843,13 @@ ${triggerNote ? triggerNote + '\n' : ''}${lockNote ? lockNote + '\n' : ''}${r2vB
 
 ${cutLine ? cutLine + '\n' : ''}${speakerLine ? speakerLine + '\n' : ''}${flowLine ? flowLine + '\n' : ''}${textLine ? textLine + '\n' : ''}
 ${stages}
-【声音】对话${lang==='none'?'无，人物不开口说话':'有 — 口型与台词精准对位'}。${lang !== 'none' && spCount === 0 ? '全片所有台词的语言、口音、语气与声线保持一致，不随镜头变化。' : ''}${fx ? '音效：' + fx + '。' : ''}${amb ? amb + '。' : ''}${mus ? mus + '。' : ''}结尾最后1秒环境音渐弱，随后0.5秒静音。
+【声音】${lang === 'none' ? '对话无，人物不开口说话' : (usedNarration && !usedSpeech) ? '旁白有 — 全部为画外音旁白，画面内人物不开口说话，无需口型对位' : (usedNarration && usedSpeech) ? '对话与旁白并存 — 人物开口的台词口型精准对位；旁白为画外音，此时画面内人物不开口' : '对话有 — 口型与台词精准对位'}。${lang !== 'none' && spCount === 0 ? '全片所有台词的语言、口音、语气与声线保持一致，不随镜头变化。' : ''}${fx ? '音效：' + fx + '。' : ''}${amb ? amb + '。' : ''}${mus ? mus + '。' : ''}结尾最后1秒环境音渐弱，随后0.5秒静音。
 
 【画质·风格·约束】画质：${qText || '高清，细节丰富，电影质感，色彩自然，光影柔和'}。风格：${styleText}${lightText ? '，' + lightText : ''}。${styleLockNote ? styleLockNote + '。' : ''}约束：<整体基调一句话>。面向韩国观众：未另行说明时，人物为韩国人，场景为韩国。
 
 【保持一致】保持人物外貌与服装、道具、场景、光线方向全程稳定，颜色不漂移，人物与道具数量固定。
 
-【负向控制】${textgen === 'none' ? '保持无字幕，避免生成任何文字或字幕。' : '除上述指定的韩文文字外，不生成其他任何文字或字幕；画面中的文字一律使用韩文（한글），不出现中文或日文。'}不要生成水印，不要生成Logo。无多余人物，无变形的手，无模糊面部。禁止出现现实品牌、现实人脸、现实应用UI。${phoneMentioned ? '手机屏幕保持空白（不生成任何文字、图标或UI，后编辑合成）。' : ''}${lang !== 'none' ? '禁止口型与台词错位、机器感声音、不自然的口音。' : ''}${negAudioLine ? negAudioLine + '。' : ''}
+【负向控制】${textgen === 'none' ? '保持无字幕，避免生成任何文字或字幕。' : '除上述指定的韩文文字外，不生成其他任何文字或字幕；画面中的文字一律使用韩文（한글），不出现中文或日文。'}不要生成水印，不要生成Logo。无多余人物，无变形的手，无模糊面部。禁止出现现实品牌、现实人脸、现实应用UI。${phoneMentioned ? '手机屏幕保持空白（不生成任何文字、图标或UI，后编辑合成）。' : ''}${lang === 'none' ? '' : (usedNarration && !usedSpeech) ? '禁止机器感声音、不自然的口音；旁白期间画面内人物不要张口说话。' : '禁止口型与台词错位、机器感声音、不自然的口音。'}${negAudioLine ? negAudioLine + '。' : ''}
 
 ${paramBlock}
 `;
@@ -2879,9 +2904,10 @@ ${paramBlock}
    프롬프트 언어 토글 (중국어 원문 ↔ 한국어 해석)
    ================================================================ */
 let promptLang = 'cn';   // 'cn' = 중국어 원문 (복사용) / 'ko' = 한국어 해석 표시
-const contentInput = { subject:'', event:'', scene:'', dialog:'', ending:'', constraint:'', cta:'', refcount:'', hook:'', timeline:[], subjects:[] };   // ✍️ 콘텐츠 입력 (자리표시자 채움)
+const contentInput = { dialogmode:'say', subject:'', event:'', scene:'', dialog:'', ending:'', constraint:'', cta:'', refcount:'', hook:'', timeline:[], subjects:[] };   // ✍️ 콘텐츠 입력 (자리표시자 채움)
 
 const CN_KO_MAP = [
+  ['画外音旁白（画面内人物不开口）', '화면 밖 내레이션(화면 속 인물은 말하지 않음)'],
   /* ---- 문구 단위 (개별 단어보다 먼저 치환 — 결합 오류 방지) ---- */
   ['全程保持该声线', '전체 과정에서 그 음색 유지'],
   ['全程稳定', '전체 과정에서 안정 유지'],
@@ -3020,7 +3046,7 @@ function renderTimeline() {
         <div class="tl-sec">구간 ${i+1}<span class="tl-time">(${s})</span></div>
         <div class="tl-fields">
           <div class="tl-field"><div class="tl-label">장면·동작</div><input class="tl-scene" type="text" value="${(p.scene||'').replace(/"/g,'&quot;')}" placeholder="예: 제품 클로즈업, 포장 뜯는 손" oninput="renderPrompt()"></div>
-          <div class="tl-field"><div class="tl-label">대사 (공식 ${'{'}${'}'})</div><input class="tl-dialog" type="text" value="${(p.dialog||'').replace(/"/g,'&quot;')}" placeholder="예: 이거 진짜 좋아요" oninput="renderPrompt()"></div>
+          <div class="tl-field"><div class="tl-label">대사 (공식 ${'{'}${'}'})</div><input class="tl-dialog" type="text" value="${(p.dialog||'').replace(/"/g,'&quot;')}" placeholder="예: 이거 진짜 좋아요" oninput="renderPrompt()"><select class="tl-mode" onchange="renderPrompt()" title="인물이 직접 말하는 대사인지, 화면 밖 내레이션인지"><option value="say"${p.mode === 'vo' ? '' : ' selected'}>인물 대사</option><option value="vo"${p.mode === 'vo' ? ' selected' : ''}>내레이션</option></select></div>
           <div class="tl-field"><div class="tl-label">카메라·운경</div><input class="tl-cam" type="text" value="${(p.cam||'').replace(/"/g,'&quot;')}" placeholder="예: 느린 푸시인" oninput="renderPrompt()"></div>
         </div>
       </div>`;
@@ -3070,7 +3096,7 @@ function renderPlaceholderWarn(cn) {
 function renderPrompt() {
   const out = document.getElementById('promptOut');
   /* ✍️ 콘텐츠 입력 읽기 (DOM 입력 먼저 읽고 → 아래에서 렌더 재생성) */
-  ['subject','event','scene','dialog','ending','constraint','cta','refcount','hook'].forEach(k => {
+  ['subject','event','scene','dialog','dialogmode','ending','constraint','cta','refcount','hook'].forEach(k => {
     const el = document.getElementById('ci_' + k);
     if (el) contentInput[k] = el.value.trim();
   });
@@ -3080,9 +3106,9 @@ function renderPrompt() {
   if (tlWrap) {
     const rows = tlWrap.querySelectorAll('.tl-row');
     rows.forEach(r => {
-      const sc = r.querySelector('.tl-scene'); const dl = r.querySelector('.tl-dialog'); const cm = r.querySelector('.tl-cam');
+      const sc = r.querySelector('.tl-scene'); const dl = r.querySelector('.tl-dialog'); const cm = r.querySelector('.tl-cam'); const md = r.querySelector('.tl-mode');
       contentInput.timeline.push({
-        scene: sc ? sc.value.trim() : '', dialog: dl ? dl.value.trim() : '', cam: cm ? cm.value.trim() : ''
+        scene: sc ? sc.value.trim() : '', dialog: dl ? dl.value.trim() : '', cam: cm ? cm.value.trim() : '', mode: md && md.value === 'vo' ? 'vo' : 'say'
       });
     });
   }
@@ -3236,6 +3262,7 @@ const CHAT_SYSTEM_RULES = [
   '너는 Seedance 2.5 프롬프트 메이커 전용 영상 기획 파트너다. 사용자와 한국어로 대화하며 영상을 함께 기획하고, 그 결과를 메이커의 축 선택과 컷 구성으로 정리한다. 기획에 필요한 모든 결정은 대화로 한다.',
   '[고정: 한국 시청자] 결과물은 항상 한국 사람이 보는 영상이다. 대사·내레이션·화면 글자·자막·CTA는 반드시 한국어다. 사용자가 달리 말하지 않으면 인물은 한국인, 배경은 한국으로 기획한다. 대사 언어를 다른 나라 말로 바꾸자는 제안은 하지 않는다(사투리 선택은 가능). 최종 프롬프트가 중국어로 만들어지는 것은 구현 방식일 뿐이므로 사용자에게 중국어로 묻거나 답하지 않는다.',
   '[목소리 통일] 대사나 내레이션이 있으면 목소리 세 가지를 반드시 사용자와 정한다: 억양(서울말 또는 사투리 → lang 축), 말투(→ voice 축), 화자 특성(성별·나이대·음색 등 → speaker 축). 정한 값은 plan.axes의 lang·voice·speaker에 넣는다. 목소리 설정은 영상 전체에 하나만 쓰인다. 컷마다 억양이나 말투를 바꾸자고 제안하지 않는다. 서로 다른 인물이 말해야 하면 복수 화자(speakerflow)로 정한다. 대사가 전혀 없으면 lang은 none이고 이 질문은 생략한다.',
+  '[대사와 내레이션] 말소리가 있는 컷마다 그것이 화면 속 인물이 직접 말하는 대사인지, 화면 밖 목소리(내레이션)인지 반드시 구분해서 정하고 cuts[].narration에 적는다(내레이션이면 true, 인물이 말하면 false). 인물이 말하면 입모양이 맞춰지고, 내레이션이면 화면 속 인물은 입을 열지 않는다. 제품 소개·설명 영상은 내레이션이, 드라마·인터뷰는 인물 대사가 보통 어울린다고 제안할 수 있다. 내레이션도 억양·말투·화자 특성을 똑같이 정한다.',
   '[역인터뷰] 너는 받아 적는 사람이 아니라 인터뷰어다. 사용자가 무엇을 왜 만들려는지부터 캐묻는다: 목적, 볼 사람, 올릴 곳, 보고 난 뒤 기대하는 행동. 매 턴 기획 카드에서 비어 있거나 모호한 항목을 찾아 가장 중요한 것부터 되묻는다. 사용자가 미처 생각하지 못했을 빈틈도 네가 먼저 짚어 묻는다: 첫 3초에 무엇이 보이는지, 대사가 필요한지, 제품·인물이 어떻게 보여야 하는지, 마지막 장면, 꼭 피해야 할 것. 답이 모호하거나 앞의 결정과 충돌하면 그냥 넘어가지 말고 확인 질문을 한다.',
   '[질문 순서] ① 목적·볼 사람 ② 주체와 핵심 사건 ③ 길이 ④ 분위기·스타일 ⑤ 컷 구성 ⑥ 대사와 목소리(억양·말투·화자 특성) ⑦ 음악·효과음 ⑧ 끝 장면·CTA ⑨ 남은 필수 축. 이미 답이 나온 것은 다시 묻지 않는다. 사용자가 한 번에 많이 말하면 카드에 모두 반영하고 남은 것만 묻는다.',
   '[대화 방식] 매 답은 "방금 정해진 것 한 줄 확인 + 다음 질문 한두 개" 구조로 쓴다. 질문은 한 번에 한두 개만. 사용자가 막연하면 구체안 2~3개를 제안해 고르게 하고, 맡기면 네가 정해서 제안한 뒤 맞는지 확인한다. reply는 짧은 일반 텍스트로 쓴다(마크다운 표, 코드 블록, 제목 기호 금지).',
@@ -3249,7 +3276,7 @@ const CHAT_SYSTEM_RULES = [
   '[현재 메이커 설정] 사용자 메시지 앞의 [컨텍스트]에 현재 메이커 설정이 올 수 있다. 사용자가 "지금 설정에서 길이만 바꿔"처럼 기존 설정을 가리킬 때만 그것을 그대로 이어받아 바뀐 부분만 고친다. 새 영상을 기획하면 무시한다.',
   '[기획 카드] plan은 누적이다. [컨텍스트]의 현재 기획 카드를 기준으로 이번에 바뀐 것만 고쳐 매번 전체를 다시 반환한다. 미정 항목은 빈 문자열이나 빈 배열로 둔다. 모든 항목과 컷이 정해지면 짧게 요약하고 "이 기획으로 프롬프트 만들기" 버튼을 누르라고 안내한다.',
   '[출력] 반드시 아래 형태의 JSON 객체 하나만 출력한다. suggestions는 사용자가 눌러서 바로 답할 수 있는 짧은 답 2~4개(각 20자 이내)이고, 필요 없으면 빈 배열이다.',
-  '{"reply":"사용자에게 보일 한국어 답","suggestions":["답1","답2"],"plan":{"kind":"영상 유형","goal":"목적·볼 사람·올릴 곳","ratio":"9:16","duration":"15s","subject":"주체","event":"사건·동작","scene":"장면·배경","dialog":"핵심 대사 또는 없음","tone":"전체 톤","hook":"첫 훅","cta":"CTA 또는 없음","ending":"끝 장면","cuts":[{"scene":"컷1 장면·동작","dialog":"컷1 대사 또는 빈 문자열","camera":"카메라 움직임 하나"}],"photos":[{"n":1,"use":"제품 참조"}],"open":["전체 분위기","대사 필요 여부"],"axes":{"task":["t2v"],"duration":["15s"]}}}'
+  '{"reply":"사용자에게 보일 한국어 답","suggestions":["답1","답2"],"plan":{"kind":"영상 유형","goal":"목적·볼 사람·올릴 곳","ratio":"9:16","duration":"15s","subject":"주체","event":"사건·동작","scene":"장면·배경","dialog":"핵심 대사 또는 없음","tone":"전체 톤","hook":"첫 훅","cta":"CTA 또는 없음","ending":"끝 장면","cuts":[{"scene":"컷1 장면·동작","dialog":"컷1 대사·내레이션 문장 또는 빈 문자열","narration":false,"camera":"카메라 움직임 하나"}],"photos":[{"n":1,"use":"제품 참조"}],"open":["전체 분위기","대사 필요 여부"],"axes":{"task":["t2v"],"duration":["15s"]}}}'
 ].join('\n');
 let chatSystemPromptCache = '';
 function chatAxisMenu() {
@@ -3293,7 +3320,7 @@ function normalizeChatPlan(raw, previous) {
   if (duration) plan.axes.duration = [duration];
   if (Array.isArray(raw.cuts)) {
     plan.cuts = raw.cuts.filter(isPlainObject).slice(0, STAGE_MAX).map(cut => ({
-      scene: chatText(cut.scene), dialog: chatText(cut.dialog, 120), camera: chatText(cut.camera, 80)
+      scene: chatText(cut.scene), dialog: chatText(cut.dialog, 120), narration: cut.narration === true, camera: chatText(cut.camera, 80)
     }));
   }
   if (Array.isArray(raw.photos)) {
@@ -3324,7 +3351,7 @@ function currentMakerSnapshot() {
   AXES.forEach(axis => { if (state[axis.id].size) axes[axis.id] = Array.from(state[axis.id]); });
   const content = {};
   AI_CONTENT_FIELDS.forEach(field => { if (contentInput[field]) content[field] = contentInput[field]; });
-  const cuts = (contentInput.timeline || []).filter(entry => entry.scene || entry.dialog).map(entry => ({ scene: entry.scene, dialog: entry.dialog }));
+  const cuts = (contentInput.timeline || []).filter(entry => entry.scene || entry.dialog).map(entry => ({ scene: entry.scene, dialog: entry.dialog, narration: entry.mode === 'vo' }));
   if (!Object.keys(axes).length && !Object.keys(content).length && !cuts.length) return null;
   return { axes, content, cuts };
 }
@@ -3435,7 +3462,7 @@ function renderChatPlan() {
     const line = document.createElement('div');
     const time = slots && slots[i] ? ` (${slots[i]}초)` : '';
     if (cut && cut.scene) {
-      line.textContent = `컷 ${i + 1}${time}: ${cut.scene}${cut.camera ? ` · ${cut.camera}` : ''}${cut.dialog ? ` · "${cut.dialog}"` : ''}`;
+      line.textContent = `컷 ${i + 1}${time}: ${cut.scene}${cut.camera ? ` · ${cut.camera}` : ''}${cut.dialog ? ` · ${cut.narration ? '내레이션' : '대사'} "${cut.dialog}"` : ''}`;
     } else {
       line.className = 'cut-missing';
       line.textContent = `컷 ${i + 1}${time}: 미정`;
@@ -3609,7 +3636,7 @@ function chatFinalRequest() {
     return `아래는 사용자와 기획 도우미가 나눈 영상 기획 대화다. 대화에서 최종 합의된 내용을 기준으로 구성하고, 뒤에 나온 결정이 앞선 내용보다 우선한다.${photoNote}\n\n${transcript.text}`;
   }
   return [
-    `아래 기획 카드(JSON)가 사용자와 합의한 최종 기획이다. 카드의 axes에 있는 선택은 허용 계약 안에서 그대로 따르고, 카드에 없는 필수 축만 기획에 어울리게 고른다. 카드의 cuts는 순서 그대로 timeline의 각 단계가 된다(컷 수가 단계 수와 다르면 단계 수에 맞춰 나누거나 합친다). 컷에 camera가 있으면 그 컷의 cam에 중국어로 옮긴다. 카드에서 정하지 않은 축도 기획에 어울리게 모두 정한다. 카드의 한국어 내용은 계약대로 옮기되 대사는 한국어 그대로 둔다.${photoNote}`,
+    `아래 기획 카드(JSON)가 사용자와 합의한 최종 기획이다. 카드의 axes에 있는 선택은 허용 계약 안에서 그대로 따르고, 카드에 없는 필수 축만 기획에 어울리게 고른다. 카드의 cuts는 순서 그대로 timeline의 각 단계가 된다(컷 수가 단계 수와 다르면 단계 수에 맞춰 나누거나 합친다). 컷에 camera가 있으면 그 컷의 cam에 중국어로 옮기고, 컷의 narration 값은 timeline의 narration에 그대로 옮긴다. 카드에서 정하지 않은 축도 기획에 어울리게 모두 정한다. 카드의 한국어 내용은 계약대로 옮기되 대사는 한국어 그대로 둔다.${photoNote}`,
     `[기획 카드]\n${JSON.stringify(chatPlan)}`,
     `[대화 발췌 — 카드에 없는 뉘앙스 참고용]\n${transcript.text}`
   ].join('\n\n');
