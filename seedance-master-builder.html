@@ -344,6 +344,9 @@
   }
   .tl-sec { font-size: 11.5px; font-weight: 800; color: var(--text); margin-bottom: 6px; }
   .tl-time { color: var(--accent); font-size: 10.5px; margin-left: 6px; font-weight: 700; }
+  .dur-extra { margin-top: 8px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 11.5px; color: var(--muted); }
+  .dur-extra input { width: 72px; background: var(--panel2); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 5px 8px; font: inherit; font-size: 12px; }
+  .dur-extra b { color: var(--accent2); }
   .tl-fields { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
   .tl-field { display: flex; flex-direction: column; gap: 3px; }
   .tl-label { font-size: 9.5px; color: var(--muted); font-weight: 700; }
@@ -609,6 +612,57 @@
   .ai-status[data-state="loading"] { color: var(--color-blue); }
   .ai-status[data-state="success"] { color: var(--color-success); }
   .ai-status[data-state="error"] { color: var(--color-danger); }
+  /* ---- AI 컴포저 탭 · 자유대화 기획 ---- */
+  .ai-tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--color-border); }
+  .ai-tab {
+    appearance: none; background: transparent; color: var(--color-muted);
+    border: 1px solid transparent; border-bottom: none;
+    border-radius: var(--radius-xs) var(--radius-xs) 0 0;
+    padding: 8px 14px; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer;
+    margin-bottom: -1px;
+  }
+  .ai-tab:hover { color: var(--color-text); }
+  .ai-tab[aria-selected="true"] {
+    color: var(--color-text); background: var(--color-control);
+    border-color: var(--color-border); border-bottom-color: var(--color-control);
+  }
+  .ai-panel { display: flex; flex-direction: column; gap: 12px; }
+  .ai-panel[hidden] { display: none; }
+  .ai-chat-log {
+    display: flex; flex-direction: column; gap: 8px;
+    min-height: 160px; max-height: 420px; overflow-y: auto;
+    background: var(--color-control); border: 1px solid var(--color-border);
+    border-radius: var(--radius-xs); padding: 10px;
+  }
+  .ai-chat-empty { color: var(--color-muted); font-size: 11.5px; line-height: 1.6; word-break: keep-all; }
+  .ai-msg {
+    max-width: 88%; padding: 8px 11px; border-radius: 10px;
+    font-size: 12.5px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; word-break: keep-all;
+    border: 1px solid var(--color-border);
+  }
+  .ai-msg.user { align-self: flex-end; background: rgba(108,140,255,.16); border-color: rgba(108,140,255,.4); }
+  .ai-msg.assistant { align-self: flex-start; background: var(--color-surface); }
+  .ai-msg.note { align-self: center; max-width: 100%; font-size: 11px; color: var(--color-muted); border-style: dashed; }
+  .ai-msg-imgs, .ai-attach-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  .ai-msg-imgs { margin-bottom: 6px; }
+  .ai-thumb { position: relative; width: 56px; height: 56px; border-radius: 6px; overflow: hidden; border: 1px solid var(--color-border); flex: 0 0 auto; }
+  .ai-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .ai-thumb-num {
+    position: absolute; left: 2px; bottom: 2px; padding: 0 4px; border-radius: 4px;
+    background: rgba(0,0,0,.7); color: #fff; font-size: 9.5px; font-weight: 700;
+  }
+  .ai-thumb-del {
+    position: absolute; right: 2px; top: 2px; width: 18px; height: 18px; border-radius: 50%;
+    border: none; background: rgba(0,0,0,.7); color: #fff; font-size: 11px; line-height: 1; cursor: pointer; padding: 0;
+  }
+  .ai-chat-input-row { display: flex; gap: 8px; align-items: stretch; }
+  .ai-chat-input-row textarea {
+    flex: 1; min-width: 0; min-height: 44px; max-height: 160px; resize: vertical;
+    background: var(--color-control); color: var(--color-text);
+    border: 1px solid var(--color-border); border-radius: var(--radius-xs);
+    padding: 8px 10px; font: inherit; font-size: 12.5px; line-height: 1.5; outline: none;
+  }
+  .ai-chat-input-row textarea:disabled { opacity: .55; cursor: not-allowed; }
   .ai-composer[aria-busy="true"] .ai-title-icon { animation: aiPulse 1.1s ease-in-out infinite; }
   @keyframes aiPulse { 50% { opacity: .45; transform: scale(.92); } }
 
@@ -770,6 +824,8 @@
     .preview { padding: 12px; }
     .ai-config-grid { grid-template-columns: 1fr; }
     .content-input-grid { grid-template-columns: 1fr; }
+    .ai-chat-input-row { flex-direction: column; }
+    .ai-msg { max-width: 100%; }
     .ai-key-row, .ai-actions { align-items: stretch; flex-direction: column; }
     .ai-key-row .btn, .ai-actions .btn { width: 100%; justify-content: center; }
     .tl-fields, .sm-fields { grid-template-columns: 1fr; }
@@ -896,16 +952,36 @@
               </select>
             </div>
           </div>
-          <div class="ai-field">
-            <label for="aiRequest">만들고 싶은 영상</label>
-            <textarea id="aiRequest" name="ai-request" rows="4" aria-describedby="aiStatus" placeholder="예: 비 오는 서울 골목에서 우산을 건네는 두 사람의 20초&nbsp;K‑드라마. 대사는 ‘같이 갈래?’로 해줘."></textarea>
+          <div class="ai-tabs" role="tablist" aria-label="AI 구성 방식">
+            <button class="ai-tab" id="aiTabOnce" type="button" role="tab" aria-selected="true" aria-controls="aiPanelOnce">한 번에 구성</button>
+            <button class="ai-tab" id="aiTabChat" type="button" role="tab" aria-selected="false" aria-controls="aiPanelChat" tabindex="-1">💬 자유대화로 기획하기</button>
           </div>
-          <div class="ai-actions">
-            <button class="btn primary" id="aiGenerateBtn" type="submit">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.7 4.3L18 9l-4.3 1.7L12 15l-1.7-4.3L6 9l4.3-1.7L12 3Z"/><path d="M5 16v5h5"/><path d="M5.5 20.5 10 16"/></svg>
-              <span id="aiGenerateLabel">AI로 구성하기</span>
-            </button>
-            <button class="btn ghost" id="aiClearKeyBtn" type="button">키 지우기</button>
+          <div class="ai-panel" id="aiPanelOnce" role="tabpanel" aria-labelledby="aiTabOnce">
+            <div class="ai-field">
+              <label for="aiRequest">만들고 싶은 영상</label>
+              <textarea id="aiRequest" name="ai-request" rows="4" aria-describedby="aiStatus" placeholder="예: 비 오는 서울 골목에서 우산을 건네는 두 사람의 20초&nbsp;K‑드라마. 대사는 ‘같이 갈래?’로 해줘."></textarea>
+            </div>
+            <div class="ai-actions">
+              <button class="btn primary" id="aiGenerateBtn" type="submit">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.7 4.3L18 9l-4.3 1.7L12 15l-1.7-4.3L6 9l4.3-1.7L12 3Z"/><path d="M5 16v5h5"/><path d="M5.5 20.5 10 16"/></svg>
+                <span id="aiGenerateLabel">AI로 구성하기</span>
+              </button>
+              <button class="btn ghost" id="aiClearKeyBtn" type="button">키 지우기</button>
+            </div>
+          </div>
+          <div class="ai-panel" id="aiPanelChat" role="tabpanel" aria-labelledby="aiTabChat" hidden>
+            <div class="ai-chat-log" id="aiChatLog" role="log" aria-live="polite" aria-label="기획 대화"></div>
+            <div class="ai-attach-list" id="aiChatAttachList" aria-label="첨부할 사진"></div>
+            <div class="ai-chat-input-row">
+              <textarea id="aiChatInput" rows="2" aria-label="메시지" aria-describedby="aiStatus" placeholder="만들고 싶은 영상을 편하게 말해 보세요. Enter 전송 · Shift+Enter 줄바꿈"></textarea>
+              <button class="btn primary" id="aiChatSendBtn" type="button">보내기</button>
+            </div>
+            <div class="ai-actions">
+              <input id="aiChatFile" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple hidden>
+              <button class="btn ghost" id="aiChatAttachBtn" type="button">📎 사진 첨부</button>
+              <button class="btn primary" id="aiChatFinalizeBtn" type="button">🎬 이 기획으로 프롬프트 만들기</button>
+              <button class="btn ghost" id="aiChatResetBtn" type="button">새 대화</button>
+            </div>
           </div>
           <div class="ai-security-note" id="aiSecurityNote"><b>보안·연결 안내:</b> 키는 이 탭의 입력 메모리에만 둡니다. <span class="nowrap ai-copy-token">브라우저 개발자 도구나 확장 프로그램</span>에서는 키를 볼 수 있습니다. DeepSeek는 <span class="nowrap ai-copy-token">브라우저 직접 호출과 <code>file://</code> 지원을 공식 보장하지 않습니다.</span> CORS 오류가 나면 문서의 로컬 HTTP 서버를 시도해 보세요. <span class="nowrap ai-copy-token">항상 해결되는 것은 아닙니다.</span> 계속 차단되면 <span class="nowrap ai-copy-token">프록시/백엔드가 필요합니다.</span></div>
           <div class="ai-status" id="aiStatus" role="status" aria-live="polite" aria-atomic="true" data-state="default">API 키와 요청을 입력하면 현재 수동 설정을 검증된 결과로 <span class="nowrap ai-status-predicate">한 번에 교체합니다.</span></div>
@@ -993,11 +1069,8 @@
               <option value="adaptive" selected>adaptive (자동)</option>
             </select>
           </div>
-          <div class="opt-row"><div class="opt-label">duration (초)</div>
-            <select id="p_dur" onchange="renderPrompt()">
-              <option value="20">20</option><option value="30">30</option><option value="15">15</option>
-              <option value="-1" selected>-1 (모델 자동)</option>
-            </select>
+          <div class="opt-row"><div class="opt-label">duration (초) — ③ 길이 축 자동 연동</div>
+            <input id="p_dur" type="text" value="20" readonly aria-readonly="true" title="③ 길이·단계 축에서 정한 값을 그대로 따릅니다 (-1 = 모델 자동)">
           </div>
           <div class="opt-row"><div class="opt-label">generate_audio</div>
             <select id="p_audio" onchange="renderPrompt()">
@@ -1145,13 +1218,14 @@ const AXES = [
   },
   {
     id: 'duration', title: '③ 길이·단계', tag: 'core', type: 'single', group: 'A. 장르·구조 — 뭘 만들지',
-    desc: '영상 길이와 장면 단계 수 — 20초가 기본, -1은 모델이 알아서',
+    desc: '영상 길이와 장면 단계 수 — 약 4초당 1단계(최대 6단계), 20초가 기본. 생성 파라미터 duration이 이 값을 따름',
     options: [
       { k: '10s',  label: '10초 / 3단계', value: '' },
-      { k: '15s',  label: '15초 / 3단계', value: '' },
-      { k: '20s',  label: '20초 / 4단계 (기본)', value: '' },
-      { k: '30s',  label: '30초 / 5단계 (최대)', value: '' },
-      { k: 'auto', label: '-1 자동 (모델이 적절한 길이 선택)', value: '' },
+      { k: '15s',  label: '15초 / 4단계', value: '' },
+      { k: '20s',  label: '20초 / 5단계 (기본)', value: '' },
+      { k: '30s',  label: '30초 / 6단계 (최대)', value: '' },
+      { k: 'custom', label: '직접 입력 (4~30초)', value: '', manualOnly: true },
+      { k: 'auto', label: '-1 자동 (모델이 길이 선택 — 초 구간 없이 단계 순서만)', value: '' },
     ]
   },
   {
@@ -1595,12 +1669,71 @@ const AXES = [
    AI 컴포저 — DeepSeek task-first JSON 생성 · 엄격 검증 · 원자적 적용
    ================================================================ */
 const DEEPSEEK_ENDPOINT = 'https://api.deepseek.com/chat/completions';
-const DEEPSEEK_TIMEOUT_MS = 45000;
+const DEEPSEEK_TIMEOUT_MS = 120000;
 const AI_TASKS = Object.freeze(['t2v', 'r2v', 'edit', 'ext', 'fl']);
 const AI_MODELS = Object.freeze(['deepseek-flash', 'deepseek-v4-pro']);
 const AI_CONTENT_FIELDS = Object.freeze(['subject', 'event', 'scene', 'dialog', 'ending', 'constraint', 'cta', 'hook']);
 const AI_TIMELINE_FIELDS = Object.freeze(['scene', 'dialog']);
-const AI_STAGE_COUNT = Object.freeze({ '10s': 3, '15s': 3, '20s': 4, '30s': 5, 'auto': 4 });
+/* ---- 길이 → 단계 수·시간 구간 (단일 출처: ③ 길이 축) ----
+   약 4초당 1단계, 최대 6단계. 길이를 모델에 맡기는 경우(auto, 영상 편집)는 초 구간 없이 4단계 순서만 쓴다. */
+const DURATION_MIN = 4;
+const DURATION_MAX = 30;
+const STAGE_MAX = 6;
+const AUTO_STAGE_COUNT = 4;
+let customDurationSeconds = 12;
+function clampDuration(value) {
+  const n = Math.round(Number(value));
+  if (!Number.isFinite(n)) return customDurationSeconds;
+  return Math.min(DURATION_MAX, Math.max(DURATION_MIN, n));
+}
+function stageCountForSeconds(seconds) {
+  return Math.min(STAGE_MAX, Math.max(1, Math.round(seconds / 4)));
+}
+function durationKeySeconds(key) {
+  if (key === 'auto') return null;
+  if (key === 'custom') return customDurationSeconds;
+  const n = parseInt(key, 10);
+  return Number.isFinite(n) ? clampDuration(n) : 20;
+}
+function stageCountFor(key, task) {
+  const seconds = task === 'edit' ? null : durationKeySeconds(key);
+  return seconds ? stageCountForSeconds(seconds) : AUTO_STAGE_COUNT;
+}
+function timeSlotsForSeconds(seconds) {
+  const count = stageCountForSeconds(seconds);
+  const base = Math.floor(seconds / count);
+  const extra = seconds - base * count;
+  const slots = [];
+  let start = 0;
+  for (let i = 0; i < count; i++) {
+    const length = base + (i >= count - extra ? 1 : 0);
+    slots.push(`${start}-${start + length}`);
+    start += length;
+  }
+  return slots;
+}
+function currentDurationPlan() {
+  const task = sel('task')[0] || 't2v';
+  const key = sel('duration')[0] || '20s';
+  const forcedAuto = task === 'edit';           // 영상 편집은 duration=-1 강제 (공식)
+  const seconds = forcedAuto ? null : durationKeySeconds(key);
+  return {
+    key, forcedAuto, seconds,
+    count: seconds ? stageCountForSeconds(seconds) : AUTO_STAGE_COUNT,
+    slots: seconds ? timeSlotsForSeconds(seconds) : null,
+    param: seconds ? String(seconds) : '-1'
+  };
+}
+function onCustomDurationInput(input, commit) {
+  const n = Math.round(Number(input.value));
+  const valid = input.value !== '' && Number.isFinite(n) && n >= DURATION_MIN && n <= DURATION_MAX;
+  if (!valid && !commit) return;                // 입력 도중(예: "1")에는 건드리지 않음
+  customDurationSeconds = clampDuration(input.value);
+  if (commit) input.value = String(customDurationSeconds);
+  const info = document.getElementById('durCustomInfo');
+  if (info) info.textContent = `${stageCountForSeconds(customDurationSeconds)}단계`;
+  renderPrompt();
+}
 const AI_TASK_LABELS = Object.freeze({ t2v: '텍스트 영상', r2v: '참조 영상', edit: '영상 편집', ext: '영상 연장', fl: '시작·끝 프레임' });
 const AI_SYSTEM_CONTRACT = Object.freeze([
   '너는 Seedance 축 선택 에이전트이며 자유 형식 프롬프트 작성자가 아니다.',
@@ -1651,7 +1784,7 @@ function axisAppliesToTask(axis, task) {
 }
 
 function allowedOptionsForTask(axis, task) {
-  const options = axis.options.filter(option => !option.requires || !option.requires.length || option.requires.includes(task));
+  const options = axis.options.filter(option => !option.manualOnly && (!option.requires || !option.requires.length || option.requires.includes(task)));
   return axis.id === 'task' ? options.filter(option => option.k === task) : options;
 }
 
@@ -1671,11 +1804,12 @@ function buildAIAllowedContract(task) {
       content: AI_CONTENT_FIELDS,
       timeline: 'array of {scene:string, dialog:string}'
     },
+    stageCountByDuration: Object.fromEntries(['10s', '15s', '20s', '30s', 'auto'].map(key => [key, stageCountFor(key, task)])),
     requirements: [
       'Return exactly the root fields axes, content, timeline.',
       'Return every applicable core axis. Single axes have exactly one key. Core multi axes are non-empty.',
       'axes.task must be the one-key array containing chosenTask.',
-      'Honor every dependsOn relationship. Timeline length must not exceed the stage count selected by axes.duration.',
+      'Honor every dependsOn relationship. Timeline length must equal stageCountByDuration[axes.duration[0]] exactly, one entry per stage, each with a distinct scene.',
       'Content and timeline scene/instruction text are Chinese; only dialog values are Korean.'
     ],
     axes
@@ -1737,9 +1871,16 @@ function httpErrorMessage(status, detail) {
   return detail ? `${base}\n세부 정보: ${detail}` : base;
 }
 
-async function callDeepSeek(apiKey, model, messages) {
+/* options.json   : false면 일반 텍스트 응답(자유대화), 기본은 JSON 모드
+   options.effort : 'none' | 'low' | 'high' | 'max' — V4 계열은 지정하지 않으면 생각 모드 high로 동작해 느리다 */
+async function callDeepSeek(apiKey, model, messages, options) {
+  const opts = options || {};
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), DEEPSEEK_TIMEOUT_MS);
+  const body = { model, messages, stream: false };
+  if (opts.json !== false) body.response_format = { type: 'json_object' };
+  if (opts.effort === 'none') body.thinking = { type: 'disabled' };
+  else if (opts.effort) body.reasoning_effort = opts.effort;
   try {
     const response = await fetch(DEEPSEEK_ENDPOINT, {
       method: 'POST',
@@ -1747,12 +1888,7 @@ async function callDeepSeek(apiKey, model, messages) {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        model,
-        messages,
-        stream: false,
-        response_format: { type: 'json_object' }
-      }),
+      body: JSON.stringify(body),
       signal: controller.signal
     });
     const responseText = await response.text();
@@ -1774,7 +1910,7 @@ async function callDeepSeek(apiKey, model, messages) {
     return envelope.choices[0].message.content;
   } catch (error) {
     if (error && error.name === 'AbortError') {
-      throw new Error('DeepSeek 응답 시간이 45초를 초과해 요청을 중단했습니다.');
+      throw new Error('DeepSeek 응답 시간이 120초를 초과해 요청을 중단했습니다.');
     }
     if (error instanceof TypeError) {
       throw new Error('CORS 또는 네트워크 오류로 DeepSeek에 연결하지 못했습니다. DeepSeek는 브라우저 직접 호출이나 file:// 지원을 공식 보장하지 않습니다. 문서의 로컬 HTTP 서버를 시도할 수 있지만 항상 해결되지는 않으며, 계속 차단되면 프록시/백엔드가 필요합니다.');
@@ -1886,11 +2022,11 @@ function validateComposition(payload, task) {
   }
 
   const duration = normalized.axes.duration && normalized.axes.duration[0];
-  const maxStages = AI_STAGE_COUNT[duration] || 4;
+  const maxStages = stageCountFor(duration || 'auto', task);
   if (!Array.isArray(payload.timeline)) {
     errors.push(aiError('$.timeline', 'timeline은 배열이어야 합니다.'));
   } else {
-    if (payload.timeline.length > maxStages) errors.push(aiError('$.timeline', `duration=${duration || '(invalid)'}의 최대 ${maxStages}단계를 초과했습니다.`));
+    if (payload.timeline.length !== maxStages) errors.push(aiError('$.timeline', `duration=${duration || '(invalid)'}은 정확히 ${maxStages}단계가 필요합니다. (받은 단계: ${payload.timeline.length})`));
     payload.timeline.forEach((entry, index) => {
       if (!isPlainObject(entry)) {
         errors.push(aiError(`$.timeline[${index}]`, '타임라인 항목은 객체여야 합니다.'));
@@ -1936,7 +2072,7 @@ function setAIStatus(stateName, message) {
 function setAIComposerBusy(busy) {
   const composer = document.getElementById('aiComposer');
   const label = document.getElementById('aiGenerateLabel');
-  ['aiApiKey', 'aiModel', 'aiRequest', 'aiGenerateBtn', 'aiClearKeyBtn'].forEach(id => {
+  ['aiApiKey', 'aiModel', 'aiRequest', 'aiGenerateBtn', 'aiClearKeyBtn', 'aiChatInput', 'aiChatSendBtn', 'aiChatAttachBtn', 'aiChatFinalizeBtn', 'aiChatResetBtn'].forEach(id => {
     const control = document.getElementById(id);
     if (control) control.disabled = busy;
   });
@@ -1976,7 +2112,7 @@ async function runAIComposer(apiKey, model, userRequest) {
   const taskContent = await callDeepSeek(apiKey, model, [
     { role: 'system', content: taskSystemMessage() },
     { role: 'user', content: userRequest }
-  ]);
+  ], { effort: 'none' });
   const parsedTask = parseAIJson(taskContent);
   if (parsedTask.errors.length) throw new Error(`작업 유형 응답 검증 실패\n${formatValidationErrors(parsedTask.errors)}`);
   const taskResult = validateTaskResponse(parsedTask.value);
@@ -1989,7 +2125,7 @@ async function runAIComposer(apiKey, model, userRequest) {
   const candidateContent = await callDeepSeek(apiKey, model, [
     { role: 'system', content: systemMessage },
     { role: 'user', content: userRequest }
-  ]);
+  ], { effort: 'low' });
   const parsedCandidate = parseAIJson(candidateContent);
   let validation = parsedCandidate.errors.length
     ? { ok: false, value: null, errors: parsedCandidate.errors }
@@ -2006,7 +2142,7 @@ async function runAIComposer(apiKey, model, userRequest) {
     const repairedContent = await callDeepSeek(apiKey, model, [
       { role: 'system', content: systemMessage },
       { role: 'user', content: JSON.stringify(repairRequest) }
-    ]);
+    ], { effort: 'low' });
     const parsedRepair = parseAIJson(repairedContent);
     validation = parsedRepair.errors.length
       ? { ok: false, value: null, errors: parsedRepair.errors }
@@ -2037,6 +2173,19 @@ function axisLabel(axisId, key) {
   const a = AXES.find(x => x.id === axisId);
   const o = a && a.options.find(x => x.k === key);
   return o ? o.label : key;
+}
+
+function renderDurationExtra(curTask) {
+  if (curTask === 'edit') {
+    return '<div class="dur-extra">🔒 영상 편집은 길이가 자동(-1)으로 고정됩니다 — 프롬프트에 초 구간을 쓰지 않고 단계 순서만 씁니다.</div>';
+  }
+  if (!state.duration.has('custom')) return '';
+  return `<div class="dur-extra">
+    <label for="durCustomInput">길이(초)</label>
+    <input id="durCustomInput" type="number" inputmode="numeric" min="${DURATION_MIN}" max="${DURATION_MAX}" step="1" value="${customDurationSeconds}"
+           oninput="onCustomDurationInput(this)" onchange="onCustomDurationInput(this, true)" onclick="event.stopPropagation()">
+    <span>→ <b id="durCustomInfo">${stageCountForSeconds(customDurationSeconds)}단계</b> · ${DURATION_MIN}~${DURATION_MAX}초 정수 (공식 범위)</span>
+  </div>`;
 }
 
 function renderSlots() {
@@ -2153,6 +2302,7 @@ function renderSlots() {
             </div>
           `}).join('')}
         </div>`}
+        ${a.id === 'duration' ? renderDurationExtra(curTask) : ''}
       </div>
     </div>
   `}).join('') || '<div class="no-result">🔍 조건에 맞는 축이 없습니다 — 검색어를 바꾸거나 필터를 해제하세요.</div>';
@@ -2219,7 +2369,6 @@ function sel(axisId) { return Array.from(state[axisId]); }
 function buildPrompt() {
   const task = sel('task')[0] || 't2v';
   const extra = sel('extra')[0] || 'none';
-  const dur  = sel('duration')[0] || '20s';
   const lang = sel('lang')[0] || 'ko';
   const emotions = sel('emotion');
   const cameras  = sel('camera');
@@ -2400,21 +2549,10 @@ function buildPrompt() {
   /* ⑩ 시간대·날씨 */
   const twText = timeweather !== 'none' ? optVal('timeweather', timeweather) : '';
 
-  const stageMap = { '10s': 3, '15s': 3, '20s': 4, '30s': 5, 'auto': 4 };
-  const timeSlotsMap = {
-    '10s': ['0-3','3-6','6-10'],
-    '15s': ['0-4','4-9','9-15'],
-    '20s': ['0-4','4-9','9-14','14-20'],
-    '30s': ['0-5','5-12','12-20','20-25','25-30'],
-    'auto': ['0-4','4-9','9-14','14-20'],
-  };
-const stageCount = stageMap[dur] || 4;
-const timeSlots = timeSlotsMap[dur] || timeSlotsMap['20s'];
-const timeNote = seqMode === 'ts' ? `（时间控制：${timeSlots.map(s => s + '秒').join('→')}…连续区间）`
-  : seqMode === 'point' ? '（时间控制：在第X秒指定事件）'
-  : seqMode === 'rel' ? '（时间控制：相对时间，如"按下按钮3秒后"）'
-  : seqMode === 'mix' ? '（时间控制：镜头N + 时间区间并用）'
-  : '（时间控制：以阶段划分，不指定精确秒数）';
+  /* 길이 계획: 단계 수·초 구간은 currentDurationPlan() 한 곳에서만 계산. 길이를 모델에 맡기면 timeSlots = null */
+  const durPlan = currentDurationPlan();
+  const stageCount = durPlan.count;
+  const timeSlots = durPlan.slots;
   const seqNames = (seqMode === 'n' || seqMode === 'mix') ? (i) => (i+1) : (i) => (i+1);
 
   let stages = '';
@@ -2427,14 +2565,15 @@ const timeNote = seqMode === 'ts' ? `（时间控制：${timeSlots.map(s => s + 
     const emoHere = emoKeysHere.length
       ? `，${emoKeysHere.map(k => optVal('emotion', k)).join('；')}`
       : '';
-    const timeTag = (seqMode === 'ts' || seqMode === 'mix') ? `(${timeSlots[i]}秒)` : '';
+    const timeTag = timeSlots && (seqMode === 'ts' || seqMode === 'mix') ? `(${timeSlots[i]}秒)` : '';
     const twHere = (i === 0 && twText) ? `，${twText}` : '';
     const compHere = (i === 0 && compText) ? `，${compText}` : '';
     /* 장면 타임라인 반영 (구간별 입력 우선) */
     const hookHere = (i === 0 && contentInput.hook)
-      ? `【开头3秒钩子】${contentInput.hook}。\n`
+      ? `${timeSlots ? '【开头3秒钩子】' : '【开头钩子】'}${contentInput.hook}。\n`
       : '';
-    const sceneText = tl.scene || contentInput.scene || contentInput.event || '<主要动作>';
+    /* 구간 장면이 비면 공통 장면·사건으로, 그것도 없으면 구간별 자리표시자를 남겨 경고에 잡히게 한다 (빈 문장 방지) */
+    const sceneText = tl.scene || contentInput.scene || contentInput.event || `<镜头${i + 1}画面>`;
     const camHere = tl.cam ? tl.cam : (camSeq[i] || camSeq[0]);
     const dialogHere = lang !== 'none' && tl.dialog
       ? `，${sayVerb}：{${tl.dialog}}`
@@ -2449,9 +2588,9 @@ const timeNote = seqMode === 'ts' ? `（时间控制：${timeSlots.map(s => s + 
   const fx = audio.includes('fx') ? (fxPresetLine || '<音效列表>') : '';
   const amb = audio.includes('amb') ? '环境音：<各场景环境音>' : '';
   const musVal = musicgenre !== 'none' ? optVal('musicgenre', musicgenre) : '（<描述>，音量很低）';
-  const musDurMap = { '10s': '1至9秒', '15s': '1至14秒', '20s': '1至18秒', '30s': '1至25秒', 'auto': '1至18秒' };
-  const musDur = musDurMap[dur] || '1至18秒';
-  const mus = audio.includes('mus') ? `音乐：${musVal}，播放于${musDur}` : '';
+  const musEnd = durPlan.seconds ? Math.max(2, durPlan.seconds - (durPlan.seconds <= 15 ? 1 : durPlan.seconds <= 20 ? 2 : 5)) : 0;
+  const musWhen = durPlan.seconds ? `播放于1至${musEnd}秒` : '贯穿全片，结尾前渐弱';
+  const mus = audio.includes('mus') ? `音乐：${musVal}，${musWhen}` : '';
 
   /* ⑨ 화질 + ⑳ 시각스타일 + ㉑ 스타일고정 + ㉒ 조명 */
   const qText = quality.map(k => optVal('quality', k)).join('，');
@@ -2480,7 +2619,7 @@ const timeNote = seqMode === 'ts' ? `（时间控制：${timeSlots.map(s => s + 
   const p_model = document.getElementById('p_model').value;
   const p_res = document.getElementById('p_res').value;
   const p_ratio = document.getElementById('p_ratio').value;
-  const p_dur = document.getElementById('p_dur').value;
+  const p_dur = durPlan.param;
   const p_audio = document.getElementById('p_audio').value;
   const p_fmt = document.getElementById('p_fmt').value;
   const p_wm = document.getElementById('p_wm').value;
@@ -2507,7 +2646,7 @@ output_format=${p_fmt} | watermark=${p_wm} | return_last_frame=${p_ret}
   const phoneMentioned = /手机|휴대폰|핸드폰|폰 /.test(phoneText);
   let out = `${taskBlock}${extraBlock}
 ${triggerNote ? triggerNote + '\n' : ''}${lockNote ? lockNote + '\n' : ''}${r2vBlock ? r2vBlock + '\n' : ''}
-【生成目标】生成一段${genHead}${dur === 'auto' ? '时长由模型决定' : dur.replace('s', '') + '秒'}短视频。核心主体是<主体>，主要事件是<事件概要>。${emoText}
+【生成目标】生成一段${genHead}${durPlan.seconds ? durPlan.seconds + '秒' : (durPlan.forcedAuto ? '' : '时长由模型决定的')}短视频。核心主体是<主体>，主要事件是<事件概要>。${emoText}
 
 ${cutLine ? cutLine + '\n' : ''}${speakerLine ? speakerLine + '\n' : ''}${flowLine ? flowLine + '\n' : ''}${textLine ? textLine + '\n' : ''}
 ${stages}
@@ -2683,6 +2822,8 @@ function translateToKorean(cn) {
 
 /* ✍️ 채워야 할 자리표시자 감지·표시 (콘텐츠 입력으로 채워진 곳은 자동 제외) */
 const PLACEHOLDER_MAP = {
+  '<镜头1画面>': '구간 1 장면', '<镜头2画面>': '구간 2 장면', '<镜头3画面>': '구간 3 장면',
+  '<镜头4画面>': '구간 4 장면', '<镜头5画面>': '구간 5 장면', '<镜头6画面>': '구간 6 장면',
   '<主体>': '주체', '<事件概要>': '사건', '<类型>': '영상 유형',
   '<人物/场景/初始状态>': '장면·배경', '<主要动作 — 肢体部位+程度+速度>': '동작',
   '<画面可见的结束状态>': '끝 상태', '<下一机位>': '다음 장면', '<台词说明>': '대사 내용',
@@ -2700,16 +2841,15 @@ const PLACEHOLDER_MAP = {
 function renderTimeline() {
   const wrap = document.getElementById('timelineWrap');
   if (!wrap) return;
-  const dur = sel('duration')[0] || '20s';
-  const slotsMap = { '10s': ['0-3','3-6','6-10'], '15s': ['0-4','4-9','9-15'], '20s': ['0-4','4-9','9-14','14-20'], '30s': ['0-5','5-12','12-20','20-25','25-30'], 'auto': ['0-4','4-9','9-14','14-20'] };
-  const slots = slotsMap[dur] || slotsMap['20s'];
+  const plan = currentDurationPlan();
+  const slots = plan.slots ? plan.slots.map(s => `${s}초`) : Array.from({ length: plan.count }, () => '순서만 · 초 없음');
   const prev = contentInput.timeline || [];
   wrap.innerHTML = `
     <div class="tl-head">⏱️ 장면 타임라인 — 구간별로 채우면 【단계 N】 문장에 자동 반영</div>
     ${slots.map((s, i) => {
       const p = prev[i] || {};
       return `<div class="tl-row">
-        <div class="tl-sec">구간 ${i+1}<span class="tl-time">(${s}초)</span></div>
+        <div class="tl-sec">구간 ${i+1}<span class="tl-time">(${s})</span></div>
         <div class="tl-fields">
           <div class="tl-field"><div class="tl-label">장면·동작</div><input class="tl-scene" type="text" value="${(p.scene||'').replace(/"/g,'&quot;')}" placeholder="예: 제품 클로즈업, 포장 뜯는 손" oninput="renderPrompt()"></div>
           <div class="tl-field"><div class="tl-label">대사 (공식 ${'{'}${'}'})</div><input class="tl-dialog" type="text" value="${(p.dialog||'').replace(/"/g,'&quot;')}" placeholder="예: 이거 진짜 좋아요" oninput="renderPrompt()"></div>
@@ -2791,6 +2931,8 @@ function renderPrompt() {
   /* DOM 렌더 재생성 (읽은 값으로 복원) */
   renderTimeline();
   renderSubjectMatrix();
+  const durParamEl = document.getElementById('p_dur');
+  if (durParamEl) durParamEl.value = currentDurationPlan().param;
   const cn = buildPrompt();
   out.textContent = promptLang === 'ko' ? translateToKorean(cn) : cn;
   renderPlaceholderWarn(cn);
@@ -2883,6 +3025,334 @@ document.getElementById('aiClearKeyBtn').addEventListener('click', () => {
 document.getElementById('aiApiKey').addEventListener('input', event => event.currentTarget.removeAttribute('aria-invalid'));
 document.getElementById('aiRequest').addEventListener('input', event => event.currentTarget.removeAttribute('aria-invalid'));
 
+/* ---- AI 컴포저 탭 전환 ---- */
+const AI_TAB_IDS = ['aiTabOnce', 'aiTabChat'];
+function selectAITab(tabId, focus) {
+  AI_TAB_IDS.forEach(id => {
+    const tab = document.getElementById(id);
+    const panel = document.getElementById(tab.getAttribute('aria-controls'));
+    const on = id === tabId;
+    tab.setAttribute('aria-selected', on ? 'true' : 'false');
+    tab.tabIndex = on ? 0 : -1;
+    panel.hidden = !on;
+    if (on && focus) tab.focus();
+  });
+  if (tabId === 'aiTabChat') renderChatLog();
+}
+AI_TAB_IDS.forEach((id, index) => {
+  const tab = document.getElementById(id);
+  tab.addEventListener('click', () => selectAITab(id));
+  tab.addEventListener('keydown', event => {
+    if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return;
+    event.preventDefault();
+    const next = (index + (event.key === 'ArrowRight' ? 1 : AI_TAB_IDS.length - 1)) % AI_TAB_IDS.length;
+    selectAITab(AI_TAB_IDS[next], true);
+  });
+});
+
+/* ---- 자유대화로 기획하기 · 대화와 사진은 이 탭의 메모리에만 두고 저장하지 않음 ---- */
+const CHAT_VISION_MODEL = 'deepseek-flash';
+const CHAT_MAX_IMAGES_PER_MSG = 6;
+const CHAT_MAX_IMAGES_TOTAL = 12;
+const CHAT_IMAGE_MAX_SIDE = 1280;
+const CHAT_TRANSCRIPT_LIMIT = 12000;
+const CHAT_SYSTEM_PROMPT = [
+  '너는 Seedance 2.5 영상 기획 파트너다. 사용자와 한국어로 대화하며 만들고 싶은 영상을 함께 구체화한다.',
+  '한 번에 질문은 한두 개만 하고, 사용자가 막연하면 구체적인 안을 두세 개 제안해 고르게 한다. 사용자가 맡기면 네가 정해서 제안한다.',
+  '정해야 할 항목: 영상 유형과 목적, 주체(누가·무엇), 사건·동작, 장면·배경, 대사(한국어. 없으면 없음), 끝 장면, 전체 톤, 첫 3초 훅, CTA, 길이(10·15·20·30초 중 하나).',
+  '사용자가 사진을 첨부하면 첨부 순서대로 사진1, 사진2처럼 번호로 부르고, 보이는 내용을 짧게 확인한 뒤 각 사진을 무엇에 쓸지(인물·제품 참조, 시작 프레임, 끝 프레임, 배경·스타일 참조) 정한다. 실존 인물의 얼굴 사진은 참조로 쓸 수 없다고 안내한다.',
+  '비율·해상도 같은 생성 파라미터와 최종 Seedance 프롬프트 문장은 다루지 않는다. 최종 프롬프트는 메이커가 규칙대로 만든다.',
+  '항목이 충분히 정해지면 "기획 요약"을 항목별로 짧게 정리하고, 맞으면 "이 기획으로 프롬프트 만들기" 버튼을 누르라고 안내한다.',
+  '답은 간결한 일반 텍스트로 쓴다. 마크다운 표, 코드 블록, 제목 기호는 쓰지 않는다.'
+].join('\n');
+const chatMessages = [];   // { role: 'user'|'assistant'|'note', text, images: [dataURL] }
+let chatPendingImages = [];
+
+function chatImageCount() {
+  return chatMessages.reduce((sum, message) => sum + (message.images ? message.images.length : 0), 0);
+}
+
+function makeChatThumb(dataUrl, number, onRemove) {
+  const wrap = document.createElement('div');
+  wrap.className = 'ai-thumb';
+  const img = document.createElement('img');
+  img.src = dataUrl;
+  img.alt = `사진${number}`;
+  wrap.appendChild(img);
+  const badge = document.createElement('span');
+  badge.className = 'ai-thumb-num';
+  badge.textContent = String(number);
+  wrap.appendChild(badge);
+  if (onRemove) {
+    const del = document.createElement('button');
+    del.type = 'button';
+    del.className = 'ai-thumb-del';
+    del.textContent = '✕';
+    del.setAttribute('aria-label', `사진${number} 첨부 취소`);
+    del.addEventListener('click', onRemove);
+    wrap.appendChild(del);
+  }
+  return wrap;
+}
+
+function renderChatLog() {
+  const log = document.getElementById('aiChatLog');
+  log.textContent = '';
+  if (!chatMessages.length) {
+    const empty = document.createElement('div');
+    empty.className = 'ai-chat-empty';
+    empty.textContent = '만들고 싶은 영상을 편하게 이야기해 보세요. 예: "신제품 립밤 쇼츠 광고를 만들고 싶어". 사진을 첨부하면 함께 보고 기획합니다. 기획이 정리되면 "이 기획으로 프롬프트 만들기"를 누르면 아래 메이커 규칙대로 프롬프트가 만들어집니다.';
+    log.appendChild(empty);
+    return;
+  }
+  let imageNumber = 0;
+  chatMessages.forEach(message => {
+    const bubble = document.createElement('div');
+    bubble.className = `ai-msg ${message.role}`;
+    if (message.images && message.images.length) {
+      const images = document.createElement('div');
+      images.className = 'ai-msg-imgs';
+      message.images.forEach(dataUrl => images.appendChild(makeChatThumb(dataUrl, ++imageNumber)));
+      bubble.appendChild(images);
+    }
+    if (message.text) bubble.appendChild(document.createTextNode(message.text));
+    log.appendChild(bubble);
+  });
+  log.scrollTop = log.scrollHeight;
+}
+
+function renderChatAttachments() {
+  const list = document.getElementById('aiChatAttachList');
+  list.textContent = '';
+  const base = chatImageCount();
+  chatPendingImages.forEach((dataUrl, index) => {
+    list.appendChild(makeChatThumb(dataUrl, base + index + 1, () => {
+      chatPendingImages.splice(index, 1);
+      renderChatAttachments();
+    }));
+  });
+}
+
+function loadChatImage(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const scale = Math.min(1, CHAT_IMAGE_MAX_SIDE / Math.max(img.naturalWidth, img.naturalHeight));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
+        canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
+        const context = canvas.getContext('2d');
+        context.fillStyle = '#fff';
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', 0.85));
+      } catch (error) {
+        reject(error);
+      } finally {
+        URL.revokeObjectURL(url);
+      }
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error(`${file.name} 파일을 이미지로 읽지 못했습니다.`));
+    };
+    img.src = url;
+  });
+}
+
+async function addChatImages(fileList) {
+  const files = Array.from(fileList || []).filter(file => file.type.startsWith('image/'));
+  if (!files.length) return;
+  const room = Math.min(CHAT_MAX_IMAGES_PER_MSG - chatPendingImages.length, CHAT_MAX_IMAGES_TOTAL - chatImageCount() - chatPendingImages.length);
+  if (room <= 0) {
+    setAIStatus('error', `사진은 한 번에 ${CHAT_MAX_IMAGES_PER_MSG}장, 대화 전체 ${CHAT_MAX_IMAGES_TOTAL}장까지 첨부할 수 있습니다.`);
+    return;
+  }
+  const accepted = files.slice(0, room);
+  const failed = [];
+  for (const file of accepted) {
+    try {
+      chatPendingImages.push(await loadChatImage(file));
+    } catch (error) {
+      failed.push(file.name);
+    }
+  }
+  renderChatAttachments();
+  if (failed.length) setAIStatus('error', `읽지 못한 사진: ${failed.join(', ')}`);
+  else if (files.length > accepted.length) setAIStatus('error', `첨부 한도를 넘는 사진 ${files.length - accepted.length}장은 제외했습니다.`);
+  else setAIStatus('default', `사진 ${chatPendingImages.length}장을 첨부했습니다. 메시지와 함께 전송됩니다.`);
+}
+
+function chatApiMessages() {
+  const messages = [{ role: 'system', content: CHAT_SYSTEM_PROMPT }];
+  let imageNumber = 0;
+  chatMessages.forEach(message => {
+    if (message.role === 'note') return;
+    if (message.role === 'user' && message.images && message.images.length) {
+      const first = imageNumber + 1;
+      imageNumber += message.images.length;
+      const label = first === imageNumber ? `(사진${first} 첨부)` : `(사진${first}~사진${imageNumber} 첨부)`;
+      messages.push({
+        role: 'user',
+        content: [{ type: 'text', text: `${label}\n${message.text || '첨부한 사진을 봐줘.'}` }]
+          .concat(message.images.map(dataUrl => ({ type: 'image_url', image_url: { url: dataUrl } })))
+      });
+    } else {
+      messages.push({ role: message.role, content: message.text });
+    }
+  });
+  return messages;
+}
+
+function chatTranscript() {
+  let imageNumber = 0;
+  const lines = [];
+  chatMessages.forEach(message => {
+    if (message.role === 'note') return;
+    let line = message.role === 'user' ? '[사용자] ' : '[기획 도우미] ';
+    if (message.images && message.images.length) {
+      const first = imageNumber + 1;
+      imageNumber += message.images.length;
+      line += first === imageNumber ? `(사진${first} 첨부) ` : `(사진${first}~사진${imageNumber} 첨부) `;
+    }
+    lines.push(line + (message.text || ''));
+  });
+  let text = lines.join('\n');
+  if (text.length > CHAT_TRANSCRIPT_LIMIT) {
+    text = `${text.slice(0, 2000)}\n…(중략)…\n${text.slice(-(CHAT_TRANSCRIPT_LIMIT - 2000))}`;
+  }
+  const header = '아래는 사용자와 기획 도우미가 나눈 영상 기획 대화다. 대화에서 최종 합의된 내용을 기준으로 구성하고, 뒤에 나온 결정이 앞선 내용보다 우선한다.'
+    + (imageNumber ? ` 사용자가 참조 사진 ${imageNumber}장을 첨부했으므로 대화에서 정한 사진의 쓰임에 맞는 작업 유형을 고른다.` : '');
+  return `${header}\n\n${text}`;
+}
+
+function readChatCredentials() {
+  const apiKeyInput = document.getElementById('aiApiKey');
+  const modelInput = document.getElementById('aiModel');
+  const apiKey = apiKeyInput.value.trim();
+  const model = modelInput.value;
+  apiKeyInput.removeAttribute('aria-invalid');
+  if (!apiKey) {
+    apiKeyInput.setAttribute('aria-invalid', 'true');
+    setAIStatus('error', 'DeepSeek API 키를 입력하세요. 키는 이 탭에서만 유지됩니다.');
+    apiKeyInput.focus();
+    return null;
+  }
+  if (!AI_MODELS.includes(model)) {
+    setAIStatus('error', '허용된 DeepSeek 모델을 선택하세요.');
+    modelInput.focus();
+    return null;
+  }
+  return { apiKey, model };
+}
+
+async function sendChatMessage() {
+  if (aiComposerBusy) return;
+  const input = document.getElementById('aiChatInput');
+  const text = input.value.trim();
+  if (!text && !chatPendingImages.length) {
+    setAIStatus('error', '메시지를 입력하거나 사진을 첨부하세요.');
+    input.focus();
+    return;
+  }
+  const credentials = readChatCredentials();
+  if (!credentials) return;
+  if ((chatPendingImages.length || chatImageCount()) && credentials.model !== CHAT_VISION_MODEL) {
+    setAIStatus('error', `사진은 ${CHAT_VISION_MODEL} 모델만 볼 수 있습니다. 모델을 ${CHAT_VISION_MODEL}로 바꾸거나 "새 대화"로 사진 없이 시작하세요.`);
+    return;
+  }
+
+  const userMessage = { role: 'user', text, images: chatPendingImages.slice() };
+  chatMessages.push(userMessage);
+  chatPendingImages = [];
+  input.value = '';
+  renderChatAttachments();
+  renderChatLog();
+
+  aiComposerBusy = true;
+  setAIComposerBusy(true);
+  setAIStatus('loading', '기획 도우미가 답하고 있습니다...');
+  try {
+    const reply = (await callDeepSeek(credentials.apiKey, credentials.model, chatApiMessages(), { json: false, effort: 'none' })).trim();
+    if (!reply) throw new Error('DeepSeek가 빈 답을 돌려줬습니다. 다시 보내 보세요.');
+    chatMessages.push({ role: 'assistant', text: reply, images: [] });
+    setAIStatus('default', '기획이 정리되면 "이 기획으로 프롬프트 만들기"를 누르세요.');
+  } catch (error) {
+    const index = chatMessages.indexOf(userMessage);
+    if (index !== -1) chatMessages.splice(index, 1);
+    chatPendingImages = userMessage.images;
+    input.value = text;
+    renderChatAttachments();
+    setAIStatus('error', redactSecret(error && error.message ? error.message : '알 수 없는 오류가 발생했습니다.', credentials.apiKey));
+  } finally {
+    aiComposerBusy = false;
+    setAIComposerBusy(false);
+    renderChatLog();
+    input.focus();
+  }
+}
+
+async function finalizeChatPlan() {
+  if (aiComposerBusy) return;
+  if (!chatMessages.some(message => message.role === 'user')) {
+    setAIStatus('error', '먼저 대화로 기획을 진행하세요.');
+    document.getElementById('aiChatInput').focus();
+    return;
+  }
+  const credentials = readChatCredentials();
+  if (!credentials) return;
+
+  aiComposerBusy = true;
+  setAIComposerBusy(true);
+  let applied = false;
+  try {
+    await runAIComposer(credentials.apiKey, credentials.model, chatTranscript());
+    applied = true;
+    chatMessages.push({ role: 'note', text: '이 기획을 메이커에 적용했습니다. 아래 축 선택과 프롬프트를 확인한 뒤 복사하세요. 대화를 이어가서 다시 만들 수도 있습니다.', images: [] });
+    showToast('🎬 기획을 메이커에 적용했습니다');
+  } catch (error) {
+    setAIStatus('error', redactSecret(error && error.message ? error.message : '알 수 없는 오류가 발생했습니다.', credentials.apiKey));
+  } finally {
+    aiComposerBusy = false;
+    setAIComposerBusy(false);
+    renderChatLog();
+  }
+  if (applied) {
+    const output = document.getElementById('promptOut');
+    if (output && output.scrollIntoView) output.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+}
+
+document.getElementById('aiChatSendBtn').addEventListener('click', sendChatMessage);
+document.getElementById('aiChatFinalizeBtn').addEventListener('click', finalizeChatPlan);
+document.getElementById('aiChatInput').addEventListener('keydown', event => {
+  if (event.key !== 'Enter' || event.shiftKey || event.isComposing || event.keyCode === 229) return;
+  event.preventDefault();
+  sendChatMessage();
+});
+document.getElementById('aiChatAttachBtn').addEventListener('click', () => document.getElementById('aiChatFile').click());
+document.getElementById('aiChatFile').addEventListener('change', async event => {
+  const picker = event.currentTarget;
+  await addChatImages(picker.files);
+  picker.value = '';
+});
+document.getElementById('aiChatInput').addEventListener('paste', event => {
+  const files = Array.from((event.clipboardData && event.clipboardData.files) || []).filter(file => file.type.startsWith('image/'));
+  if (!files.length) return;
+  event.preventDefault();
+  addChatImages(files);
+});
+document.getElementById('aiChatResetBtn').addEventListener('click', () => {
+  chatMessages.length = 0;
+  chatPendingImages = [];
+  document.getElementById('aiChatInput').value = '';
+  renderChatAttachments();
+  renderChatLog();
+  setAIStatus('default', '새 대화를 시작합니다. 메이커의 현재 선택은 그대로입니다.');
+});
+
 /* ---- 복사 (기존 클립보드 로직 유지 + 토스트 피드백) ---- */
 document.getElementById('copyBtn').addEventListener('click', async () => {
   const text = document.getElementById('promptOut').textContent;
@@ -2956,12 +3426,14 @@ function captureSelection() {
     const el = document.getElementById(id);
     if (el) params[id] = el.value;
   });
-  return { axes, params };
+  return { axes, params, customDuration: customDurationSeconds };
 }
 function applySelection(data) {
   if (!data || !data.axes) { showToast('프리셋 데이터가 올바르지 않습니다', true); return; }
   AXES.forEach(a => { state[a.id] = new Set(data.axes[a.id] || []); });
+  if (data.customDuration != null) customDurationSeconds = clampDuration(data.customDuration);
   if (data.params) Object.entries(data.params).forEach(([id, v]) => {
+    if (id === 'p_dur') return;                 // duration은 ③ 길이 축을 따름
     const el = document.getElementById(id);
     if (el) el.value = v;
   });
@@ -3256,7 +3728,6 @@ function wizardApply(applyAll) {
     if (cfg.set.params) {
       const pr = cfg.set.params;
       if (pr.ratio) document.getElementById('p_ratio').value = pr.ratio;
-      if (pr.duration) document.getElementById('p_dur').value = String(pr.duration);
     }
     if (subject) document.getElementById('ci_subject').value = subject;
     if (event) document.getElementById('ci_event').value = event;
