@@ -1850,6 +1850,7 @@ function buildAIAllowedContract(task) {
       'Decide every applicable axis, not only core ones (shot size, angle, lighting, composition, transition, music, sound effects, quality, style and so on). Leave an optional axis out only when it truly does not apply to this video.',
       'Each timeline scene states who, what action and where, in one sentence, and every scene differs from the others. The first scene is the hook.',
       'timeline[].cam is optional: exactly one decisive camera movement for that cut, in Chinese. Give it when the request specifies a camera move for the cut.',
+      'Voice consistency: when any dialog exists, axes.lang (accent), axes.voice (tone) and axes.speaker (voice traits) must all be set. One voice setting applies to the whole video, so never vary accent or tone between cuts.',
       'If fixedAxes is present, return those axes with exactly those keys. If baselineAxes is present, it is a tested combination close to this plan: start from it and change only what the plan needs.'
     ],
     axes
@@ -2099,6 +2100,19 @@ function validateComposition(payload, task) {
     });
   }
 
+  /* 한국 음성 고정 규칙: 대사가 있으면 억양(lang)·말투(voice)·화자 특성을 명시해 전 구간에 같은 목소리가 쓰이게 한다 */
+  const hasDialogue = Boolean(normalized.content.dialog) || normalized.timeline.some(entry => entry.dialog);
+  const dialogueOn = normalized.axes.lang && !normalized.axes.lang.includes('none');
+  if (hasDialogue && dialogueOn) {
+    if (applicableMap.has('voice') && !(normalized.axes.voice || []).length) {
+      errors.push(aiError('$.axes.voice', '대사가 있으면 말투(voice)를 하나 정해야 합니다. 영상 전체에 같은 말투가 쓰입니다.'));
+    }
+    const multiSpeaker = (normalized.axes.speakerflow || []).some(key => key !== 'none');
+    if (applicableMap.has('speaker') && !multiSpeaker && !(normalized.axes.speaker || []).length) {
+      errors.push(aiError('$.axes.speaker', '대사가 있으면 화자 특성(speaker)을 정해야 합니다. 영상 전체에 같은 목소리가 쓰입니다.'));
+    }
+  }
+
   return { ok: errors.length === 0, value: normalized, errors };
 }
 
@@ -2229,8 +2243,12 @@ function enforcePlanOnComposition(aiValue, task, plan, baselineAxes) {
     return { scene: entry.scene, dialog: usable ? planned : (dialogueOff ? '' : entry.dialog), cam: entry.cam || '' };
   });
   const check = validateComposition({ axes, content: aiValue.content, timeline }, task);
-  if (!check.ok) return { value: aiValue, enforced: false, source: {}, dropped, dialogKept: 0, errors: check.errors };
-  return { value: check.value, enforced: true, source, dropped, dialogKept, errors: [] };
+  if (check.ok) return { value: check.value, enforced: true, source, dropped, dialogKept, errors: [] };
+  /* 카드 대사를 넣어서 규칙에 걸리면(예: 목소리 미정) 축 강제는 유지하고 대사만 AI 구성본으로 되돌려 다시 본다 */
+  const aiTimeline = aiValue.timeline.map(entry => ({ scene: entry.scene, dialog: entry.dialog, cam: entry.cam || '' }));
+  const retry = validateComposition({ axes, content: aiValue.content, timeline: aiTimeline }, task);
+  if (retry.ok) return { value: retry.value, enforced: true, source, dropped, dialogKept: 0, errors: check.errors };
+  return { value: aiValue, enforced: false, source: {}, dropped, dialogKept: 0, errors: retry.errors };
 }
 
 /* options.plan이 있으면 기획 카드 기준 모드: 작업 유형 재판정 생략 · 프리셋 기반 · 카드 값 강제 */
@@ -2800,7 +2818,7 @@ ${triggerNote ? triggerNote + '\n' : ''}${lockNote ? lockNote + '\n' : ''}${r2vB
 
 ${cutLine ? cutLine + '\n' : ''}${speakerLine ? speakerLine + '\n' : ''}${flowLine ? flowLine + '\n' : ''}${textLine ? textLine + '\n' : ''}
 ${stages}
-【声音】对话${lang==='none'?'无，人物不开口说话':'有 — 口型与台词精准对位'}。${fx ? '音效：' + fx + '。' : ''}${amb ? amb + '。' : ''}${mus ? mus + '。' : ''}结尾最后1秒环境音渐弱，随后0.5秒静音。
+【声音】对话${lang==='none'?'无，人物不开口说话':'有 — 口型与台词精准对位'}。${lang !== 'none' && spCount === 0 ? '全片所有台词的语言、口音、语气与声线保持一致，不随镜头变化。' : ''}${fx ? '音效：' + fx + '。' : ''}${amb ? amb + '。' : ''}${mus ? mus + '。' : ''}结尾最后1秒环境音渐弱，随后0.5秒静音。
 
 【画质·风格·约束】画质：${qText || '高清，细节丰富，电影质感，色彩自然，光影柔和'}。风格：${styleText}${lightText ? '，' + lightText : ''}。${styleLockNote ? styleLockNote + '。' : ''}约束：<整体基调一句话>。面向韩国观众：未另行说明时，人物为韩国人，场景为韩国。
 
@@ -3217,8 +3235,9 @@ const CHAT_STARTERS = Object.freeze(['쇼츠 광고를 만들고 싶어', '드�
 const CHAT_SYSTEM_RULES = [
   '너는 Seedance 2.5 프롬프트 메이커 전용 영상 기획 파트너다. 사용자와 한국어로 대화하며 영상을 함께 기획하고, 그 결과를 메이커의 축 선택과 컷 구성으로 정리한다. 기획에 필요한 모든 결정은 대화로 한다.',
   '[고정: 한국 시청자] 결과물은 항상 한국 사람이 보는 영상이다. 대사·내레이션·화면 글자·자막·CTA는 반드시 한국어다. 사용자가 달리 말하지 않으면 인물은 한국인, 배경은 한국으로 기획한다. 대사 언어를 다른 나라 말로 바꾸자는 제안은 하지 않는다(사투리 선택은 가능). 최종 프롬프트가 중국어로 만들어지는 것은 구현 방식일 뿐이므로 사용자에게 중국어로 묻거나 답하지 않는다.',
+  '[목소리 통일] 대사나 내레이션이 있으면 목소리 세 가지를 반드시 사용자와 정한다: 억양(서울말 또는 사투리 → lang 축), 말투(→ voice 축), 화자 특성(성별·나이대·음색 등 → speaker 축). 정한 값은 plan.axes의 lang·voice·speaker에 넣는다. 목소리 설정은 영상 전체에 하나만 쓰인다. 컷마다 억양이나 말투를 바꾸자고 제안하지 않는다. 서로 다른 인물이 말해야 하면 복수 화자(speakerflow)로 정한다. 대사가 전혀 없으면 lang은 none이고 이 질문은 생략한다.',
   '[역인터뷰] 너는 받아 적는 사람이 아니라 인터뷰어다. 사용자가 무엇을 왜 만들려는지부터 캐묻는다: 목적, 볼 사람, 올릴 곳, 보고 난 뒤 기대하는 행동. 매 턴 기획 카드에서 비어 있거나 모호한 항목을 찾아 가장 중요한 것부터 되묻는다. 사용자가 미처 생각하지 못했을 빈틈도 네가 먼저 짚어 묻는다: 첫 3초에 무엇이 보이는지, 대사가 필요한지, 제품·인물이 어떻게 보여야 하는지, 마지막 장면, 꼭 피해야 할 것. 답이 모호하거나 앞의 결정과 충돌하면 그냥 넘어가지 말고 확인 질문을 한다.',
-  '[질문 순서] ① 목적·볼 사람 ② 주체와 핵심 사건 ③ 길이 ④ 분위기·스타일 ⑤ 컷 구성 ⑥ 대사·소리 ⑦ 끝 장면·CTA ⑧ 남은 필수 축. 이미 답이 나온 것은 다시 묻지 않는다. 사용자가 한 번에 많이 말하면 카드에 모두 반영하고 남은 것만 묻는다.',
+  '[질문 순서] ① 목적·볼 사람 ② 주체와 핵심 사건 ③ 길이 ④ 분위기·스타일 ⑤ 컷 구성 ⑥ 대사와 목소리(억양·말투·화자 특성) ⑦ 음악·효과음 ⑧ 끝 장면·CTA ⑨ 남은 필수 축. 이미 답이 나온 것은 다시 묻지 않는다. 사용자가 한 번에 많이 말하면 카드에 모두 반영하고 남은 것만 묻는다.',
   '[대화 방식] 매 답은 "방금 정해진 것 한 줄 확인 + 다음 질문 한두 개" 구조로 쓴다. 질문은 한 번에 한두 개만. 사용자가 막연하면 구체안 2~3개를 제안해 고르게 하고, 맡기면 네가 정해서 제안한 뒤 맞는지 확인한다. reply는 짧은 일반 텍스트로 쓴다(마크다운 표, 코드 블록, 제목 기호 금지).',
   '[남은 질문] plan.open에는 아직 물어봐야 할 것을 중요한 순서로 최대 5개, 각 25자 이내로 적는다. 이번 답에서 묻는 질문이 맨 앞이다. 더 물을 것이 없으면 빈 배열.',
   '[메이커 축] 아래 "축 메뉴"가 메이커에 실제로 있는 선택지 전부다. 사용자에게는 축 ID나 옵션 키를 말하지 말고 라벨의 뜻을 쉬운 말로 제안한다. plan.axes에는 반드시 메뉴에 있는 축 ID와 옵션 키만 쓴다. single 축은 키 1개, multi 축은 여러 개. 대화에서 정해졌거나 네가 제안해 사용자가 받아들인 것만 넣는다. "필수" 축은 기획이 끝나기 전에 모두 정한다. "작업 전용"·"조건" 표시가 있는 축은 그 조건이 맞을 때만 고른다.',
@@ -3283,6 +3302,19 @@ function normalizeChatPlan(raw, previous) {
     })).filter(photo => photo.n > 0 && photo.use);
   }
   return plan;
+}
+/* 대사가 있는 기획인지, 목소리 세 가지(억양·말투·화자)가 정해졌는지 */
+function chatPlanVoice(plan) {
+  const langKey = (plan.axes.lang || [])[0] || '';
+  const spoken = /^(없음|없다|無|none)?\.?$/i.test(plan.dialog.trim()) ? false : true;
+  const hasDialogue = langKey !== 'none' && (spoken || plan.cuts.some(cut => cut.dialog));
+  const multi = (plan.axes.speakerflow || []).some(key => key !== 'none');
+  const parts = [
+    ['억양', langKey && langKey !== 'none' ? optionShortLabel('lang', langKey) : ''],
+    ['말투', (plan.axes.voice || []).map(key => optionShortLabel('voice', key)).join('·')],
+    ['화자', multi ? '복수 화자' : (plan.axes.speaker || []).map(key => optionShortLabel('speaker', key)).join('·')]
+  ];
+  return { hasDialogue, noDialogue: langKey === 'none', parts, missing: hasDialogue ? parts.filter(part => !part[1]).map(part => part[0]) : [] };
 }
 function chatPlanCutTarget(plan) {
   return plan && plan.duration ? stageCountFor(plan.duration, plan.axes.task ? plan.axes.task[0] : 't2v') : 0;
@@ -3413,6 +3445,9 @@ function renderChatPlan() {
   card.appendChild(cuts);
 
   const extras = [];
+  const voice = chatPlanVoice(chatPlan);
+  if (voice.noDialogue) extras.push('🎙 목소리: 대사 없음');
+  else if (voice.hasDialogue) extras.push(`${voice.missing.length ? '⬜' : '✅'} 🎙 목소리(전 구간 통일): ${voice.parts.map(part => `${part[0]} ${part[1] || '미정'}`).join(' / ')}`);
   if (chatPlan.open.length) extras.push(`❓ 남은 질문: ${chatPlan.open.join(' · ')}`);
   if (chatPlan.photos.length) extras.push(`사진: ${chatPlan.photos.map(photo => `사진${photo.n}=${photo.use}`).join(', ')}`);
   const axisIds = Object.keys(chatPlan.axes).filter(id => id !== 'duration');
@@ -3672,6 +3707,8 @@ function chatPlanUnresolved(plan) {
   const filled = plan.cuts.filter(cut => cut.scene).length;
   if (target && filled !== target) items.push(`컷 구성 ${filled}/${target}`);
   if (!plan.subject) items.push('주체');
+  const voice = chatPlanVoice(plan);
+  if (voice.missing.length) items.push(`목소리(${voice.missing.join('·')})`);
   return Array.from(new Set(items));
 }
 
