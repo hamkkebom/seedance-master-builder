@@ -1890,6 +1890,9 @@ function buildAIAllowedContract(task) {
       'Only if a line still does not fit may you tighten it lightly: remove redundant words while keeping the speaker tone, the fillers and sentence endings that carry the character, and every key word and punchline. Never produce clipped, telegraphic fragments, and never change the meaning. If the line cannot be tightened without sounding unnatural, leave it exactly as written.',
       'Sound must match the content. Choose an fxpreset option only when its listed sounds really occur in this video; otherwise leave fxpreset out and write content.fx with the sounds that do occur, each wrapped in <> (for example <纸牌滑动声><猫咪呼噜声>). When axes.audio includes amb, write content.amb: one short phrase describing the ambient sound of the scene.',
       'emotion options are written as human body language. When the main subject is not a human (animal, product, object), also write content.emo: the same emotion expressed with body language that fits that subject (for a cat: ears, tail, whiskers, paws), in Chinese. Choose an emotionflow option only when its described arc matches the plan; otherwise use none.',
+      'Every chosen option must agree with the cuts. cutprinciple (independent scenes) is only for videos where each cut changes place, costume and props; when the cuts continue in one place with the same subject, use none. timeweather must agree with the light written in the cuts. Quality options about human skin are only for human subjects.',
+      'content.hook: leave it empty when the first timeline scene already shows the hook; never repeat the first scene there.',
+      'timeline[].sfx must be a sound that the action written in that same cut really makes. Do not invent a sound for something that does not happen in the cut.',
       'content.ending is only the final visible state, in one short clause with no speaking. Leave it empty when the last timeline scene already shows the final state.',
       'Do not end content or scene strings with punctuation.',
       'timeline[].narration: true when the line is off-screen narration (voice-over while nobody on screen speaks); false or omitted when a person on screen says it. Follow the request when it marks a line as narration.',
@@ -2840,7 +2843,7 @@ function buildPrompt() {
       ? ((i === 0 || i === 2) ? emotions : [])
       : (i === 0 ? emotions.slice(0, 1) : (i === Math.min(2, stageCount - 1) ? emotions.slice(1) : []));
     const emoHere = contentInput.emo
-      ? (i === 0 ? `，${contentInput.emo}` : '')
+      ? ''
       : (emoKeysHere.length ? `，${emoKeysHere.map(k => optVal('emotion', k)).join('；')}` : '');
     const timeTag = timeSlots && (seqMode === 'ts' || seqMode === 'mix') ? `(${timeSlots[i]}秒)` : '';
     const twHere = (i === 0 && twText) ? `，${twText}` : '';
@@ -2869,7 +2872,7 @@ function buildPrompt() {
     const angleHere = sel('angle').length ? angleText : '';
     /* 컷 한 줄의 순서 (공식 예시 + 촬영 대본 규칙):
        ① 샷: 화면 크기·각도·시간대·구도·렌즈·운경 → ② 장면: 피사체와 구체적 행동 → ③ 조명·질감 → ④ 효과음 큐 → ⑤ 대사 → ⑥ 다음 컷으로의 전환(시점·방식) */
-    const shotHead = [arcHere, angleHere, i === 0 ? twText : '', i === 0 ? compText : '', optLine, camHere].filter(Boolean).join('，');
+    const shotHead = [arcHere, angleHere, i === 0 ? twText : '', i === 0 ? compText : '', i === 0 ? optLine : '', camHere].filter(Boolean).join('，');
     const lightHere = trimTailPunct(tl.light || '');
     const sfxHere = (tl.sfx || '').trim();
     if (sfxHere) usedCutSfx = true;
@@ -3437,7 +3440,7 @@ const CHAT_SYSTEM_RULES = [
   '[고정: 한국 시청자] 결과물은 항상 한국 사람이 보는 영상이다. 대사·내레이션·화면 글자는 한국어다. 사용자가 달리 말하지 않으면 배경은 한국 현대, 사람은 한국인으로 기획한다. 주체가 동물·제품·사물이면 목소리만 한국어다. 최종 프롬프트가 중국어로 만들어지는 것은 구현 방식일 뿐이므로 사용자에게 중국어로 묻거나 답하지 않는다.',
   '[목소리] 대사나 내레이션이 있으면 목소리 세 가지가 필요하다: 억양(서울말 또는 사투리 → lang 축), 말투(→ voice 축), 화자 특성(성별·나이대·음색 → speaker 축). 하나씩 묻지 말고, 주체와 전체 톤에 어울리는 값을 네가 골라 초안에 넣고 한 줄로 알려 준다. 사용자가 바꾸자고 하면 바꾼다. 목소리는 영상 전체에 하나다. 서로 다른 인물이 말해야 하면 복수 화자(speakerflow)로 정한다. 대사가 전혀 없으면 lang은 none이다.',
   '[대사와 내레이션] 말소리가 있는 컷마다 그것이 화면 속 인물이 직접 말하는 대사인지, 화면 밖 목소리(내레이션)인지 반드시 구분해서 정하고 cuts[].narration에 적는다(내레이션이면 true, 인물이 말하면 false). 인물이 말하면 입모양이 맞춰지고, 내레이션이면 화면 속 인물은 입을 열지 않는다. 제품 소개·설명 영상은 내레이션이, 드라마·인터뷰는 인물 대사가 보통 어울린다고 제안할 수 있다. 내레이션도 억양·말투·화자 특성을 똑같이 정한다.',
-  '[내용에 맞는 선택] 효과음·음악·감정 표현은 이 영상에 실제로 어울리는 것만 고른다. 효과음 세트는 그 세트의 소리가 장면에 실제로 날 때만 고르고, 아니면 어떤 소리가 나야 하는지 사용자와 정해 카드의 scene이나 대화에 남긴다. 주체가 사람이 아니면(동물·제품·사물) 사람의 손·발·걸음 같은 표현이 아니라 그 주체에 맞는 몸짓으로 감정을 정한다. 감정 전환은 기획의 감정 흐름과 맞을 때만 고른다.',
+  '[내용에 맞는 선택] 효과음·음악·감정 표현은 이 영상에 실제로 어울리는 것만 고른다. 효과음 세트는 그 세트의 소리가 장면에 실제로 날 때만 고르고, 아니면 어떤 소리가 나야 하는지 사용자와 정해 카드의 scene이나 대화에 남긴다. 주체가 사람이 아니면(동물·제품·사물) 사람의 손·발·걸음 같은 표현이 아니라 그 주체에 맞는 몸짓으로 감정을 정한다. 감정 전환은 기획의 감정 흐름과 맞을 때만 고른다. 고른 축은 컷 내용과 어긋나면 안 된다: 장면 분리(cutprinciple)는 컷마다 장소·옷·소품이 완전히 바뀌는 영상에서만 고르고, 한 장소에서 같은 주체가 이어지는 영상은 none이다. 시간대·날씨는 컷에 적은 빛과 같아야 한다. 사람 피부에 관한 화질 선택지는 주체가 사람일 때만 고른다. 컷의 sound는 그 컷에 적은 동작에서 실제로 나는 소리만 적는다.',
   '[역인터뷰] 너는 받아 적는 사람이 아니라 기획자다. 먼저 꼭 필요한 것만 묻는다: 무엇을 왜 만드는지(목적·볼 사람·올릴 곳), 주체와 핵심 사건, 길이. 사용자의 말에 이미 들어 있는 것은 다시 묻지 않는다. 사용자가 미처 생각하지 못했을 빈틈(첫 3초에 보이는 것, 마지막 장면, 꼭 피해야 할 것)은 네가 먼저 짚는다. 답이 모호하거나 앞의 결정과 충돌하면 넘어가지 말고 확인한다.',
   '[초안 먼저] 주체·핵심 사건·길이가 정해지면 더 캐묻지 말고 그 턴에 바로 전체 초안을 낸다. 컷 수만큼의 컷(장면·대사·카메라), 목소리, 음악·효과음, 분위기, 끝 장면까지 네가 채워 plan에 넣고, reply에는 컷마다 한 줄씩 요약한 뒤 어디를 고칠지 묻는다. 사용자가 대사나 대본을 통째로 주면 그 문장을 그대로 컷에 나눠 담은 초안을 낸다. 네가 채운 것 중 취향이 크게 갈릴 한두 가지만 골라 확인 질문을 덧붙인다. 그 뒤로는 사용자가 짚은 곳만 고치고 나머지는 그대로 둔다.',
   '[대화 방식] 질문은 한 번에 한두 개만. 사용자가 막연하면 구체안 2~3개를 내어 고르게 하고, 맡기면 네가 정한다. reply는 일반 텍스트로 쓴다(마크다운 표, 코드 블록, 제목 기호 금지. 줄바꿈은 가능). 초안을 보여 줄 때가 아니면 서너 줄을 넘기지 않는다.',
