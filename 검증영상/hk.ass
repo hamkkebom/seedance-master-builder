@@ -1,0 +1,24 @@
+[Script Info]
+ScriptType: v4.00+
+PlayResX: 720
+PlayResY: 1280
+WrapStyle: 2
+ScaledBorderAndShadow: yes
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Cap,Malgun Gothic,58,&H00FFFFFF,&H00FFFFFF,&H00000000,&H64000000,-1,0,0,0,100,100,0,0,1,5,2,2,30,30,250,1
+Style: Pop,Malgun Gothic,96,&H0000E5FF,&H00FFFFFF,&H00000000,&H64000000,-1,0,0,0,100,100,0,0,1,7,3,5,30,30,0,1
+Style: Title,Malgun Gothic,78,&H00FFFFFF,&H00FFFFFF,&H00000000,&H64000000,-1,0,0,0,100,100,0,0,1,7,3,2,30,30,300,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.55,0:00:03.30,Cap,,0,0,0,,{\fscx125\fscy125\t(0,120,\fscx100\fscy100)}이 결혼 {\c&H0000E5FF&}절대{\c&H00FFFFFF&} 허락 못한다!
+Dialogue: 1,0:00:00.90,0:00:03.30,Pop,,0,0,0,,{\pos(360,330)\fs88\c&H003030FF&\frz8\fscx160\fscy160\t(0,150,\fscx100\fscy100)}결사반대!
+Dialogue: 1,0:00:03.70,0:00:07.10,Pop,,0,0,0,,{\pos(500,380)\fs80\c&H00FFFFFF&\frz-10\t(0,300,\frz10)\t(300,600,\frz-10)\t(600,900,\frz10)\t(900,1200,\frz-10)\t(1200,1500,\frz10)\t(1500,1800,\frz-10)\t(1800,2100,\frz10)\t(2100,2400,\frz-10)}따르릉~
+Dialogue: 0,0:00:08.00,0:00:10.35,Cap,,0,0,0,,두 분 궁합은 {\c&H00B469FF&\fscx115\fscy115}천생연분{\c&H00FFFFFF&\fscx100\fscy100}입니다!
+Dialogue: 0,0:00:10.50,0:00:13.55,Cap,,0,0,0,,{\c&H0000E5FF&}사주천궁{\c&H00FFFFFF&}이 오케이면,\N나도 오케이!
+Dialogue: 1,0:00:11.20,0:00:13.55,Pop,,0,0,0,,{\pos(540,470)\fs130\c&H0000E5FF&\frz-12\fscx200\fscy200\t(0,160,\fscx100\fscy100)}OK!
+Dialogue: 0,0:00:14.40,0:00:18.00,Cap,,0,0,0,,{\fscx125\fscy125\t(0,120,\fscx100\fscy100)}나도 해봤어!\N{\c&H0000E5FF&}사주천궁{\c&H00FFFFFF&} 보고 결혼했다!
+Dialogue: 1,0:00:14.50,0:00:18.00,Pop,,0,0,0,,{\pos(200,400)\fs70\c&H00FFFFFF&\frz10\fscx160\fscy160\t(0,150,\fscx100\fscy100)}아빠 인증!
+Dialogue: 0,0:00:19.00,0:00:23.00,Title,,0,0,0,,{\fad(150,0)}궁합이 궁금하면?\N{\fs118\c&H0000E5FF&\fscx150\fscy150\t(500,700,\fscx100\fscy100)}사주천궁
