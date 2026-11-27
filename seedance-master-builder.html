@@ -2850,8 +2850,13 @@ function buildPrompt() {
     const endingHere = i === stageCount - 1 && contentInput.ending && !sceneText.includes(contentInput.ending) && !contentInput.ending.includes(sceneText)
       ? `，${contentInput.ending}` : '';
     const arcHere = i === stageCount - 1 ? shotArc[shotArc.length - 1] : (shotArc[i] && i < shotArc.length - 1 ? shotArc[i] : shotArc[Math.max(0, shotArc.length - 2)]);
-    stages += `${hookHere}镜头 ${seqNames(i)}${timeTag}：${arcHere}${twHere}${compHere}，${sceneText}${camHere ? '，' + camHere : ''}${emoHere}${dialogHere}${endingHere}。\n`;
+    /* 카메라 각도: 고른 경우에만 화면 크기 바로 뒤에 붙인다 */
+    const angleHere = sel('angle').length ? `，${angleText}` : '';
+    stages += `${hookHere}镜头 ${seqNames(i)}${timeTag}：${arcHere}${angleHere}${twHere}${compHere}，${sceneText}${camHere ? '，' + camHere : ''}${emoHere}${dialogHere}${endingHere}。\n`;
   }
+
+  /* 장면 전환: 고른 경우에만 컷 목록 바로 아래 한 줄로 적는다 (컷 2개 이상일 때) */
+  if (sel('transition').length && stageCount > 1) stages += `镜头之间的转场：${transText}。\n`;
 
   /* ⑧ 사운드 + ⑰ 음악 + ⑱ 효과음 */
   const fxPresetLine = fxpreset.length ? fxpreset.map(k=>optVal('fxpreset',k)).join('') : '';
@@ -2920,6 +2925,7 @@ output_format=${p_fmt} | watermark=${p_wm} | return_last_frame=${p_ret}
     `画质：${qText || '高清，细节丰富，电影质感，色彩自然，光影柔和'}。`,
     [styleText, lightText].filter(Boolean).length ? `风格：${[styleText, lightText].filter(Boolean).join('，')}。` : '',
     styleLockNote ? `${styleLockNote}。` : '',
+    optLine ? `镜头效果：${optLine}。` : '',
     `约束：${contentInput.constraint || '整体风格统一，场景、人物、道具与现实逻辑一致，避免时代或设定冲突'}。`
   ].filter(Boolean);
   const styleBlock = `【画质·风格·约束】${styleParts.join('')}`;
