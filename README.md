@@ -192,25 +192,55 @@ AI 컴포저의 탭(한 번에 구성 · 💬 자유대화 · 🔁 영상 업그
 | 본체 스크립트 | `seedance-master-builder.html`의 첫 `<script>` | 41축·프롬프트 조립·프리셋·인터뷰 + **탭 틀 `AITabs`** + **AI 탭 공용 도구** |
 | 탭 스크립트 | 파일 맨 아래, 탭마다 `<script>` 하나 | 그 탭의 화면 동작만. 마지막에 `AITabs.register({...})` |
 
-**새 탭 추가 (2곳만 손대면 됨)**
+**새 탭 추가 (HTML 패널 1개 + script 1개 + 테스트 기대값 1줄)**
 1. HTML — `#aiComposerForm` 안에 패널 추가 (탭 버튼은 만들지 않음, 등록하면 자동 생성)
    ```html
    <div class="ai-panel" id="aiPanelXxx" data-tab-label="탭 이름" hidden> … </div>
    ```
-2. JS — 맨 아래 탭 스크립트들 옆에 `<script>` 하나
+2. JS — 맨 아래 탭 스크립트들 옆에 `<script>` 하나. 본문은 함수로 감싼다(탭 안 이름이 밖으로 새지 않음)
    ```js
-   AITabs.register({
-     key: 'xxx', label: '탭 이름', panelId: 'aiPanelXxx', order: 40,   // order = 탭 순서
-     onShow() {},           // 탭을 열 때 (선택)
-     onSubmit() {},         // 이 탭에서 Enter로 폼 제출할 때 (선택)
-     setLocked(busy) {}     // AI 호출 중 이 탭 입력칸 잠금 (선택)
-   });
+   (() => {
+     async function xxxRun() {
+       const credentials = readDeepSeekCredentials();
+       if (!credentials) return;
+       await runAIJob(async () => { /* AI 호출 */ }, [credentials.apiKey], { onStart() {}, onError(e) {}, onFinally() {} });
+     }
+     AITabs.register({
+       key: 'xxx', label: '탭 이름', panelId: 'aiPanelXxx', order: 40,   // order = 탭 순서
+       onShow() {},           // 탭을 열 때 (선택)
+       onSubmit: xxxRun,      // 이 탭에서 Enter로 폼 제출할 때 (선택)
+       setLocked(busy) {}     // AI 호출 중 이 탭 입력칸 잠금 (선택)
+     });
+   })();
    ```
+3. 테스트 — `maker-tests/specs/smoke.spec.js`의 탭 목록 기대값에 새 탭 key를 추가한다.
 
 **규칙**
-- 탭끼리 서로의 함수를 부르지 않는다. 여러 탭이 같이 쓸 것은 본체의 「AI 탭 공용 도구」로 올린다 — `runAIJob`(잠금·오류 표시), `readDeepSeekCredentials`, `normalizePlanCard`·`runAIComposer(…, { plan })`(기획 카드 → 메이커 적용), `loadMyDefaults`·`applyMyDefaultsToPlan`, `setMakerDurationSeconds`·`setMakerRatio`.
-- 탭 고유 이름에는 접두어를 붙인다 (`chat…`, `up…`) — 스크립트 간 이름이 겹치면 뒤 스크립트가 통째로 실패한다.
+- 탭끼리 서로의 함수를 부르지 않는다. 여러 탭이 같이 쓸 것은 본체의 「AI 탭 공용 도구」로 올린다 — `runAIJob`(잠금·오류 표시·잠금 해제), `readDeepSeekCredentials`, `getMakerSnapshot`(현재 설정 읽기), `normalizePlanCard`·`runAIComposer(…, { plan })`(기획 카드 → 메이커 적용), `loadMyDefaults`·`applyMyDefaultsToPlan`, `setMakerDurationSeconds`·`setMakerRatio`(쓰기), `escapeHtml`.
+- AI 호출 잠금은 `runAIJob`만 켜고 끈다. 상태는 `AITabs.isBusy()`로만 읽는다.
+- 탭은 `state`·`contentInput`·`p_ratio` 같은 메이커 내부 값을 직접 읽거나 쓰지 않는다 — 위의 읽기·쓰기 창구만 쓴다.
+- HTML에 문자열을 끼워 넣을 때는 `escapeHtml`을 거치거나 `textContent`를 쓴다.
 - 탭이 준 함수(`onShow`·`onSubmit`·`setLocked`)는 `AITabs`가 오류를 잡아 부른다.
+
+## 🧪 메이커 테스트 (`maker-tests/`)
+
+`seedance-master-builder.html`을 실제 브라우저(Playwright)로 열어 검사합니다. 외부 API는 가짜 응답으로 막으므로 키가 필요 없습니다. GitHub에 push·PR하면 `.github/workflows/maker-check.yml`이 자동으로 돌립니다.
+
+| 검사 | 내용 |
+|---|---|
+| 축 정의 불일치 | `axes.json` 2개가 HTML의 `AXES`·`BUILTIN_PRESETS`와 같은지 (`node tools/sync-axes.mjs --check`) |
+| 스모크 | 콘솔 오류 없음 · 탭 3개 등록 · 탭 전환·방향키 · Enter로 새로고침 안 됨 · 저장 프리셋 이름 XSS 차단 |
+| 탭 격리 | 탭 스크립트에 일부러 실행 오류·문법 오류를 넣어도 그 탭만 빠지고 메이커·다른 탭은 동작 · 탭 안 이름이 밖으로 새지 않음 |
+| AI 탭 | 호출 중 모든 탭 잠금 → 실패해도 잠금 해제 · 오류 메시지에서 키 가림 · 자유대화 실패 시 메시지 되돌림 · Gemini 키는 헤더로만 |
+| 프롬프트 스냅샷 | 프리셋 14개 + 콘텐츠를 채운 경우 1개의 `buildPrompt` 결과를 저장본과 비교 — 프롬프트 조립을 고쳤는데 결과가 바뀌면 실패 |
+
+```bash
+cd maker-tests
+npm install
+npx playwright install chromium      # 처음 한 번 (또는 PW_CHANNEL=chrome 으로 PC의 Chrome 사용)
+npx playwright test                  # 전체 실행
+npm run test:update                  # 프롬프트를 일부러 바꿨을 때: 스냅샷을 새로 만들고 차이를 확인한 뒤 커밋
+```
 
 ---
 
@@ -222,7 +252,7 @@ AI 컴포저의 탭(한 번에 구성 · 💬 자유대화 · 🔁 영상 업그
 
 | 자산 | 역할 |
 |---|---|
-| `axes.json` | **단일 진실 공급원** — 41축(id·tag·type·requires·dependsOn·옵션 키) + 프리셋 37종. 축·키 변경은 이 파일에서만 |
+| `axes.json` | 41축(id·tag·type·requires·dependsOn·옵션 키) + 프리셋 37종 레지스트리. **원본은 HTML의 `AXES`이고 이 파일은 `node tools/sync-axes.mjs`로 생성**한다 — 직접 고치지 말 것 (`seedance-llm/axes.json`도 같은 파일) |
 | `PROMPT_LLM.md` | LLM 시스템 프롬프트 — 축 사용 규칙·4기호·출력 JSON 계약 (LLM에 주입) |
 | `seedance-llm/seedance-schema.js` | JSON Schema 생성기 — task 확정 후 유효 축만 enum으로 강제 (`additionalProperties:false`) |
 | `seedance-llm/seedance-validate.js` | 서버 검증기 — 무효 키 오류 · dependsOn 자동 정리 · 콘텐츠 규칙 |
@@ -278,4 +308,4 @@ class BuilderState(BaseModel):
 
 ### 키 변경 워크플로
 
-축·키 추가/삭제 시: `axes.json` 수정 → `node seedance-llm/seedance-schema.js`(스키마 재생성) → 빌더 HTML AXES와 동기화 확인 (QA 스크립트). LLM_RULES.md §13 축 요약은 axes.json의 생성 뷰입니다.
+축·키 추가/삭제 시: **빌더 HTML의 `AXES` 수정 → `node tools/sync-axes.mjs`(axes.json 2개 재생성) → 커밋.** 잊으면 CI의 `sync-axes --check`가 실패합니다. 사람 전용 값(`manualOnly`, 예: 길이 직접 입력)은 LLM 스키마에서 빠지고 검증기는 유효로 받습니다. LLM_RULES.md §13 축 요약은 axes.json의 생성 뷰입니다.
