@@ -2740,7 +2740,9 @@ function buildPrompt() {
   /* 고정 한국 음성 문형: 언어·억양 + 말투 + (她说/他说 | 画外音旁白) + {}.
      내레이션은 같은 문형에서 화자 동사만 바꿔 화면 속 인물이 입을 열지 않게 한다. */
   const NARRATION_VERB = '画外音旁白（画面内人物不开口）';
-  const spokenLine = (text, narration) => `${optVal('lang', lang)}，${voiceText}，${narration ? NARRATION_VERB : sayVerb}：{${text}}`;
+  /* 언어·억양·말투(축 값)는 첫 대사에 한 번만 적고, 이후 컷은 화자 동사 + {대사}만 적는다 */
+  const spokenLine = (text, narration, full = true) => `${full ? `${optVal('lang', lang)}，${voiceText}，` : ''}${narration ? NARRATION_VERB : sayVerb}：{${text}}`;
+  let voiceStated = false;
   const globalNarration = contentInput.dialogmode === 'vo';
   const globalDialogLine = lang !== 'none' && contentInput.dialog
     ? spokenLine(contentInput.dialog, globalNarration)
@@ -2757,17 +2759,16 @@ function buildPrompt() {
 
   /* ⑤ 화면 글자 */
   /* 화면에 나오는 글자는 전부 한글. 문구는 콘텐츠 입력의 CTA 문구 칸을 쓰고, 자막·말풍선은 대사와 같은 한국어 문장을 쓴다 */
-  const KO_TEXT = '文字一律为韩文（한글），不出现中文';
   const textLine = textgen === 'slogan'
-    ? `【文字生成】广告语：「<CTA 문구>」—— 在最后一个镜头出现于画面中央，淡入显示，白色粗体，清晰易读。${KO_TEXT}。`
+    ? `【文字生成】广告语：「<CTA 문구>」—— 在最后一个镜头出现于画面中央，淡入显示，白色粗体，清晰易读。`
     : textgen === 'cta'
-      ? `【文字生成】CTA按钮文案：「<CTA 문구>」—— 在最后一个镜头出现于画面下方，以点击引导按钮的形式淡入显示，白色粗体，清晰易读。${KO_TEXT}。`
+      ? `【文字生成】CTA按钮文案：「<CTA 문구>」—— 在最后一个镜头出现于画面下方，以点击引导按钮的形式淡入显示，白色粗体，清晰易读。`
       : textgen === 'subtitle'
-        ? `【文字生成】字幕：画面底部出现韩文字幕，字幕内容与每句台词逐字一致，并与音频节奏完全同步。${KO_TEXT}。`
+        ? `【文字生成】字幕：画面底部出现韩文字幕，字幕内容与每句台词逐字一致，并与音频节奏完全同步。`
         : textgen === 'bubble'
-          ? `【文字生成】气泡台词：角色说话时身旁出现气泡，气泡里写着与该句台词逐字一致的韩文。${KO_TEXT}。`
+          ? `【文字生成】气泡台词：角色说话时身旁出现气泡，气泡里写着与该句台词逐字一致的韩文。`
           : textgen === 'both'
-            ? `【文字生成】画面底部出现与台词逐字一致的韩文字幕（与音频节奏同步），同时角色身旁出现写着同一句韩文台词的气泡。${KO_TEXT}。`
+            ? `【文字生成】画面底部出现与台词逐字一致的韩文字幕（与音频节奏同步），同时角色身旁出现写着同一句韩文台词的气泡。`
             : '';
 
   /* ⑥ 샷 크기 아크 */
@@ -2835,8 +2836,9 @@ function buildPrompt() {
     const ownDialog = lang !== 'none' && tl.dialog;
     const globalHere = !ownDialog && i === 1 && globalDialogLine && !timelineHasGlobalDialog;
     const dialogHere = ownDialog
-      ? `，${spokenLine(tl.dialog, tl.mode === 'vo')}`   /* 구간 대사에도 고정 문형 그대로 */
+      ? `，${spokenLine(tl.dialog, tl.mode === 'vo', !voiceStated)}`
       : (globalHere ? `，${globalDialogLine}` : '');
+    if (ownDialog || globalHere) voiceStated = true;
     if (ownDialog) { if (tl.mode === 'vo') usedNarration = true; else usedSpeech = true; }
     else if (globalHere) { if (globalNarration) usedNarration = true; else usedSpeech = true; }
     /* 끝 상태는 마지막 컷 장면과 겹치지 않을 때만 덧붙인다 */
@@ -2907,21 +2909,27 @@ output_format=${p_fmt} | watermark=${p_wm} | return_last_frame=${p_ret}
 
   /* 휴대폰이 장면에 나올 때만 '폰 화면 공백' 부정문 추가 */
   const phoneText = [stages, contentInput.subject, contentInput.event, contentInput.scene, contentInput.ending].join(' ');
-  const phoneMentioned = /手机|휴대폰|핸드폰|폰 /.test(phoneText);
+  /* 축에서 고른 값과 직접 입력한 제약만 내보낸다. 고른 것이 없으면 블록 자체를 뺀다 */
+  const styleParts = [
+    qText ? `画质：${qText}。` : '',
+    [styleText, lightText].filter(Boolean).length ? `风格：${[styleText, lightText].filter(Boolean).join('，')}。` : '',
+    styleLockNote ? `${styleLockNote}。` : '',
+    contentInput.constraint ? `约束：${contentInput.constraint}。` : ''
+  ].filter(Boolean);
+  const styleBlock = styleParts.length ? `【画质·风格·约束】${styleParts.join('')}` : '';
+  const negParts = [
+    textgen === 'none' ? '保持无字幕，避免生成任何文字或字幕。' : '',
+    negAudioLine ? `${negAudioLine}。` : ''
+  ].filter(Boolean);
+  const negBlock = negParts.length ? `【负向控制】${negParts.join('')}` : '';
   let out = `${taskBlock}${extraBlock}
 ${triggerNote ? triggerNote + '\n' : ''}${lockNote ? lockNote + '\n' : ''}${r2vBlock ? r2vBlock + '\n' : ''}
 【生成目标】生成一段${genHead}${durPlan.seconds ? durPlan.seconds + '秒' : (durPlan.forcedAuto ? '' : '时长由模型决定的')}短视频。核心主体是<主体>，主要事件是<事件概要>。${emoText}
 
 ${cutLine ? cutLine + '\n' : ''}${speakerLine ? speakerLine + '\n' : ''}${flowLine ? flowLine + '\n' : ''}${textLine ? textLine + '\n' : ''}
 ${stages}
-【声音】${lang === 'none' ? '对话无，人物不开口说话' : (usedNarration && !usedSpeech) ? '旁白有 — 全部为画外音旁白，画面内人物不开口说话，无需口型对位' : (usedNarration && usedSpeech) ? '对话与旁白并存 — 人物开口的台词口型精准对位；旁白为画外音，此时画面内人物不开口' : '对话有 — 口型与台词精准对位'}。${lang !== 'none' && spCount === 0 ? '全片所有台词的语言、口音、语气与声线保持一致，不随镜头变化。' : ''}${fx ? '音效：' + fx + '。' : ''}${amb ? amb + '。' : ''}${mus ? mus + '。' : ''}结尾最后1秒环境音渐弱，随后0.5秒静音。
-
-【画质·风格·约束】画质：${qText || '高清，细节丰富，电影质感，色彩自然，光影柔和'}。${[styleText, lightText].filter(Boolean).length ? '风格：' + [styleText, lightText].filter(Boolean).join('，') + '。' : ''}${styleLockNote ? styleLockNote + '。' : ''}约束：<整体基调一句话>。面向韩国观众：${lang !== 'none' ? '所有台词与旁白一律为韩语；' : ''}未另行说明时，场景、道具与生活细节为韩国当代风格；如出现人类角色且未另行说明，则为韩国人。
-
-【保持一致】保持人物外貌与服装、道具、场景、光线方向全程稳定，颜色不漂移，人物与道具数量固定。
-
-【负向控制】${textgen === 'none' ? '保持无字幕，避免生成任何文字或字幕。' : '除上述指定的韩文文字外，不生成其他任何文字或字幕。'}画面内任何可见文字（招牌、包装、屏幕、书页、服装印字等）不得出现中文、汉字或日文，如必须出现则一律为韩文（한글）。禁止出现中国元素：中式建筑、中式服饰、中国风道具与装饰、中国街景。禁止出现中文语音、中文旁白与中文歌词。不要生成水印，不要生成Logo。无多余人物，无变形的手，无模糊面部。禁止出现现实品牌、现实人脸、现实应用UI。${phoneMentioned ? '手机屏幕保持空白（不生成任何文字、图标或UI，后编辑合成）。' : ''}${lang === 'none' ? '' : (usedNarration && !usedSpeech) ? '禁止机器感声音、不自然的口音；旁白期间画面内人物不要张口说话。' : '禁止口型与台词错位、机器感声音、不自然的口音。'}${negAudioLine ? negAudioLine + '。' : ''}
-
+【声音】${lang === 'none' ? '对话无，人物不开口说话' : (usedNarration && !usedSpeech) ? '旁白有 — 全部为画外音旁白，画面内人物不开口说话，无需口型对位' : (usedNarration && usedSpeech) ? '对话与旁白并存 — 人物开口的台词口型精准对位；旁白为画外音，此时画面内人物不开口' : '对话有 — 口型与台词精准对位'}。${fx ? '音效：' + fx + '。' : ''}${amb ? amb + '。' : ''}${mus ? mus + '。' : ''}
+${styleBlock ? '\n' + styleBlock + '\n' : ''}${negBlock ? '\n' + negBlock + '\n' : ''}
 ${paramBlock}
 `;
   /* ✍️ 콘텐츠 입력 치환 (비어 있으면 자리표시자 유지) */
