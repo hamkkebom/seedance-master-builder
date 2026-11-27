@@ -4126,7 +4126,7 @@ function chatPlanUnresolved(plan) {
   return Array.from(new Set(items));
 }
 
-/* 적용된 결과 점검: 컷 대사 분량, 중복 장면, 남은 자리표시자, 본문 길이, 모순 */
+/* 적용된 결과 점검: 컷 대사 분량, 중복 장면, 남은 자리표시자, 모순 (프롬프트 전체 글자 수는 제한하지 않는다) */
 function chatResultChecks(value) {
   const notes = [];
   const durPlan = currentDurationPlan();
