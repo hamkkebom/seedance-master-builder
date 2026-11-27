@@ -1044,6 +1044,10 @@
               <option value="say" selected>인물이 말함 (입모양 맞춤)</option>
               <option value="vo">내레이션 (화면 밖 목소리)</option>
             </select>
+            <select id="ci_dialogfmt" onchange="renderPrompt()" title="대사를 프롬프트에 적는 방식. 같은 기획으로 둘 다 뽑아 비교해 보세요.">
+              <option value="brace" selected>대사 표기: 중괄호 — 猫说：{대사} (공식 스킬 표기)</option>
+              <option value="official">대사 표기: 따옴표 — 猫说：“대사” (공식 가이드 예시 표기)</option>
+            </select>
           </div>
           <div class="opt-row"><div class="opt-label">끝 상태 (컷 마무리)</div>
             <input id="ci_ending" type="text" placeholder="예: 두 사람이 마주 보며 웃는다" oninput="renderPrompt()">
@@ -1068,6 +1072,9 @@
           </div>
           <div class="opt-row"><div class="opt-label">감정 표현 직접 입력 (주체가 사람이 아닐 때)</div>
             <input id="ci_emo" type="text" placeholder="예: 꼬리를 살랑이며 귀를 쫑긋 세운다" oninput="renderPrompt()">
+          </div>
+          <div class="opt-row"><div class="opt-label">주체 겉모습 (한 번만 정의 — 컷마다 모습이 달라지지 않게)</div>
+            <input id="ci_look" type="text" placeholder="예: 黑白相间的燕尾服猫，绿色眼睛，戴一条紫色小领巾" oninput="renderPrompt()">
           </div>
           <div class="opt-row"><div class="opt-label">말하는 주체 (중국어 명사 — 비우면 他说/她说)</div>
             <input id="ci_speaker" type="text" placeholder="예: 猫 → 猫说：{대사}" oninput="renderPrompt()">
@@ -1717,7 +1724,7 @@ const DEEPSEEK_ENDPOINT = 'https://api.deepseek.com/chat/completions';
 const DEEPSEEK_TIMEOUT_MS = 120000;
 const AI_TASKS = Object.freeze(['t2v', 'r2v', 'edit', 'ext', 'fl']);
 const AI_MODELS = Object.freeze(['deepseek-flash', 'deepseek-v4-pro']);
-const AI_CONTENT_FIELDS = Object.freeze(['subject', 'event', 'scene', 'dialog', 'ending', 'constraint', 'cta', 'hook', 'amb', 'fx', 'emo', 'speaker']);
+const AI_CONTENT_FIELDS = Object.freeze(['subject', 'event', 'scene', 'dialog', 'ending', 'constraint', 'cta', 'hook', 'amb', 'fx', 'emo', 'speaker', 'look']);
 /* 장면 문장 안에 카메라 움직임이 적혀 있는지 (컷당 카메라 하나 규칙 — 카메라는 전용 칸에만) */
 const CAMERA_IN_SCENE = /镜头[^，。；、]{0,8}(推|拉|横移|平移|摇|环绕|跟随|跟拍|上升|下降|下压|升起|旋转|后退|前进|靠近|贴近|远离)|机位|运镜/;
 /* 한국어 대사 분량 기준: 컷 길이 1초당 한글 7자 (빠른 말하기 기준). 넘어도 사용자가 정한 문장은 고치지 않는다 */
@@ -1880,8 +1887,11 @@ function buildAIAllowedContract(task) {
       'Content and timeline scene/instruction text are Chinese. Only dialog values and content.cta are Korean. content.cta is the Korean text shown on screen when axes.textgen is slogan or cta.',
       'Decide every applicable axis, not only core ones (shot size, angle, lighting, composition, transition, music, sound effects, quality, style and so on). Leave an optional axis out only when it truly does not apply to this video.',
       'Each timeline scene is one sentence describing only what is visible on screen: the subject, one concrete action, where it looks or its expression, and the props it touches. No abstract mood words, no plot summary, no sound and no dialog in the scene. Call the subject by the same noun in content.subject and in every scene. Cuts may share one location, but each cut must show a different action. The first scene is the hook.',
+      'content.look: the fixed appearance of the main subject, written once in Chinese (species or age and gender, colours, clothing or accessories, distinctive marks). Do not repeat this description inside the scenes; scenes only use the short noun.',
       'content.speaker: when someone or something on screen says a line (narration is false), write the short Chinese noun that names that speaker, the same noun used in the scenes (for example 猫, 年轻女人, 店主). Leave it empty when every line is narration or there is no dialog.',
       'Write the timeline as a shooting script, cut by cut in order. Be concrete: spell out every action, never fill with abstract words (no 超写实, 大师级, 电影感, 氛围感, 高级感 and the like in scene or light). Use cinematography terms. When a term is specialised, add a short plain description after it.',
+      'One main change per cut: give each cut a single main action. When the plan packs too much into a cut, keep the main action and drop the minor ones rather than listing everything.',
+      'In a cut where someone on screen speaks (narration false), the scene must keep that speaker in frame with the face and mouth visible while speaking; do not make a hand-only or prop-only shot carry a spoken line.',
       'timeline[].light is required for every cut: the lighting and surface texture visible in that cut, in Chinese (light source, direction, colour temperature, what texture it reveals). When the light changes from the previous cut, say how it changes.',
       'timeline[].sfx: the sounds that occur in that cut, each wrapped in <> and tied to the action that makes them (for example <纸牌滑过桌布的沙沙声>). Leave it empty for a cut with no sound effect. When cuts carry sfx, leave content.fx empty.',
       'timeline[].cam is optional: exactly one decisive camera movement for that cut, in Chinese. Give it when the request specifies a camera move for the cut.',
@@ -2659,7 +2669,9 @@ function buildPrompt() {
   // 헬퍼
   const optVal = (axisId, key) => AXES.find(a=>a.id===axisId).options.find(o=>o.k===key).value;
   const optLabel = (axisId, key) => AXES.find(a=>a.id===axisId).options.find(o=>o.k===key).label;
-  const negAudioLine = negaudio !== 'none' ? optVal('negaudio', negaudio) : '';
+  const NO_MUSIC_LINE = '不要生成任何音乐、背景音乐、BGM、配乐、器乐、旋律，只生成环境音和动作音';
+  const negAudioLine = negaudio === 'nobgm' ? NO_MUSIC_LINE : (negaudio !== 'none' ? optVal('negaudio', negaudio) : '');
+  const noMusicHead = negaudio === 'nobgm' ? `${NO_MUSIC_LINE}。\n` : '';
 
   /* ① 작업 유형 (공식 5종) + ①-2 추가 능력 + ② 장르 */
   const taskNames = { t2v:'文生视频', r2v:'参考生视频', edit:'编辑视频', ext:'延长视频', fl:'首尾帧生视频' };
@@ -2752,8 +2764,18 @@ function buildPrompt() {
   /* 고정 한국 음성 문형: 언어·억양 + 말투 + (她说/他说 | 画外音旁白) + {}.
      내레이션은 같은 문형에서 화자 동사만 바꿔 화면 속 인물이 입을 열지 않게 한다. */
   const NARRATION_VERB = '画外音旁白（画面内人物不开口）';
-  /* 언어·억양·말투(축 값)는 첫 대사에 한 번만 적고, 이후 컷은 화자 동사 + {대사}만 적는다 */
-  const spokenLine = (text, narration, full = true) => `${full ? `${optVal('lang', lang)}，${voiceText}，` : ''}${narration ? NARRATION_VERB : sayVerb}：{${text}}`;
+  /* 언어·억양·말투(축 값)는 대사마다 붙인다. 공식 스킬 sd25-pe: "语言 + 口音 + 表达方式 + 说话人 + {台词}", 맨 앞에만 선언하지 말 것 */
+  /* 대사 표기 두 가지.
+     기존 방식: 台词语言：韩语，口音，语气，猫说：{대사}
+     공식 방식(화산방주 가이드 예시): 猫用韩语（口音，语气）说：“대사” / 画外音：“대사” */
+  const officialFmt = contentInput.dialogfmt === 'official';
+  const officialSpeaker = sayVerb.replace(/说$/, '');
+  const officialVoice = `${optVal('lang', lang).replace(/^台词语言：/, '')}，${voiceText}`.replace(/^([^，]+)，/, '$1（') + '）';
+  const spokenLine = (text, narration, full = true) => officialFmt
+    ? (narration
+        ? `画外音${full ? `（用${officialVoice}）` : ''}：“${text}”`
+        : `${officialSpeaker}${full ? `用${officialVoice}` : ''}说：“${text}”`)
+    : `${full ? `${optVal('lang', lang)}，${voiceText}，` : ''}${narration ? NARRATION_VERB : sayVerb}：{${text}}`;
   let voiceStated = false;
   const globalNarration = contentInput.dialogmode === 'vo';
   const globalDialogLine = lang !== 'none' && contentInput.dialog
@@ -2859,7 +2881,7 @@ function buildPrompt() {
     const ownDialog = lang !== 'none' && tl.dialog;
     const globalHere = !ownDialog && i === 1 && globalDialogLine && !timelineHasGlobalDialog;
     const dialogHere = ownDialog
-      ? spokenLine(tl.dialog, tl.mode === 'vo', !voiceStated)
+      ? spokenLine(tl.dialog, tl.mode === 'vo')
       : (globalHere ? globalDialogLine : '');
     if (ownDialog || globalHere) voiceStated = true;
     if (ownDialog) { if (tl.mode === 'vo') usedNarration = true; else usedSpeech = true; }
@@ -2871,15 +2893,15 @@ function buildPrompt() {
     /* 카메라 각도: 고른 경우에만 화면 크기 바로 뒤에 붙인다 */
     const angleHere = sel('angle').length ? angleText : '';
     /* 컷 한 줄의 순서 (공식 예시 + 촬영 대본 규칙):
-       ① 샷: 화면 크기·각도·시간대·구도·렌즈·운경 → ② 장면: 피사체와 구체적 행동 → ③ 조명·질감 → ④ 효과음 큐 → ⑤ 대사 → ⑥ 다음 컷으로의 전환(시점·방식) */
+       ① 샷: 화면 크기·각도·시간대·구도·렌즈·운경 → ② 장면: 피사체와 구체적 행동, 그 동작에 이어서 대사 → ③ 조명·질감 → ④ 효과음 큐 → ⑤ 다음 컷으로의 전환(시점·방식) */
     const shotHead = [arcHere, angleHere, i === 0 ? twText : '', i === 0 ? compText : '', i === 0 ? optLine : '', camHere].filter(Boolean).join('，');
     const lightHere = trimTailPunct(tl.light || '');
     const sfxHere = (tl.sfx || '').trim();
     if (sfxHere) usedCutSfx = true;
     const cutEnd = timeSlots ? Number(timeSlots[i].split('-')[1]) : 0;
-    const transHere = sel('transition').length && i < stageCount - 1
+    const transHere = sel('transition').length && transition !== 'hard' && i < stageCount - 1
       ? `${cutEnd ? `第${cutEnd}秒` : ''}以${transText}转入下一镜头。` : '';
-    stages += `${hookHere}镜头 ${seqNames(i)}${timeTag}：${shotHead}。${sceneText}${emoHere}${endingHere}。${lightHere ? `光线与质感：${lightHere}。` : ''}${sfxHere ? `音效：${sfxHere}。` : ''}${dialogHere ? dialogHere + '。' : ''}${transHere}\n`;
+    stages += `${hookHere}镜头 ${seqNames(i)}${timeTag}：${shotHead}。${sceneText}${emoHere}${endingHere}${dialogHere ? '，' + dialogHere : ''}。${lightHere ? `光线与质感：${lightHere}。` : ''}${sfxHere ? `音效：${sfxHere}。` : ''}${transHere}\n`;
   }
 
   /* ⑧ 사운드 + ⑰ 음악 + ⑱ 효과음 */
@@ -2961,10 +2983,10 @@ output_format=${p_fmt} | watermark=${p_wm} | return_last_frame=${p_ret}
     negAudioLine ? `${negAudioLine}。` : ''
   ].filter(Boolean);
   const negBlock = `【负向控制】${negParts.join('')}`;
-  let out = `${taskBlock}${extraBlock}
+  let out = `${noMusicHead}${taskBlock}${extraBlock}
 ${triggerNote ? triggerNote + '\n' : ''}${lockNote ? lockNote + '\n' : ''}${r2vBlock ? r2vBlock + '\n' : ''}
 【生成目标】生成一段${genHead}${durPlan.seconds ? durPlan.seconds + '秒' : (durPlan.forcedAuto ? '' : '时长由模型决定的')}短视频。核心主体是<主体>，主要事件是<事件概要>。${emoText}
-
+${contentInput.look ? `\n【主体设定】${contentInput.look}。全片保持这一外貌不变。\n` : ''}
 ${cutLine ? cutLine + '\n' : ''}${speakerLine ? speakerLine + '\n' : ''}${flowLine ? flowLine + '\n' : ''}${textLine ? textLine + '\n' : ''}
 ${stages}
 【声音】${lang === 'none' ? '对话无，人物不开口说话' : (usedNarration && !usedSpeech) ? '旁白有 — 全部为画外音旁白，画面内人物不开口说话，无需口型对位' : (usedNarration && usedSpeech) ? '对话与旁白并存 — 人物开口的台词口型精准对位；旁白为画外音，此时画面内人物不开口' : '对话有 — 口型与台词精准对位'}。${fx ? '音效：' + fx + '。' : ''}${amb ? amb + '。' : ''}${mus ? mus + '。' : ''}结尾最后1秒环境音渐弱，随后0.5秒静音。
@@ -3033,7 +3055,7 @@ ${paramBlock}
    프롬프트 언어 토글 (중국어 원문 ↔ 한국어 해석)
    ================================================================ */
 let promptLang = 'cn';   // 'cn' = 중국어 원문 (복사용) / 'ko' = 한국어 해석 표시
-const contentInput = { amb:'', fx:'', emo:'', dialogmode:'say', subject:'', event:'', scene:'', dialog:'', ending:'', constraint:'', cta:'', refcount:'', hook:'', timeline:[], subjects:[] };   // ✍️ 콘텐츠 입력 (자리표시자 채움)
+const contentInput = { look:'', dialogfmt:'brace', amb:'', fx:'', emo:'', dialogmode:'say', subject:'', event:'', scene:'', dialog:'', ending:'', constraint:'', cta:'', refcount:'', hook:'', timeline:[], subjects:[] };   // ✍️ 콘텐츠 입력 (자리표시자 채움)
 
 const CN_KO_MAP = [
   ['画外音旁白（画面内人物不开口）', '화면 밖 내레이션(화면 속 인물은 말하지 않음)'],
@@ -3262,12 +3284,12 @@ function renderPlaceholderWarn(cn) {
 function renderPrompt() {
   const out = document.getElementById('promptOut');
   /* ✍️ 콘텐츠 입력 읽기 (DOM 입력 먼저 읽고 → 아래에서 렌더 재생성) */
-  ['subject','event','scene','dialog','dialogmode','ending','constraint','cta','refcount','hook','amb','fx','emo','speaker'].forEach(k => {
+  ['subject','event','scene','dialog','dialogmode','dialogfmt','ending','constraint','cta','refcount','hook','amb','fx','emo','speaker','look'].forEach(k => {
     const el = document.getElementById('ci_' + k);
     if (el) contentInput[k] = el.value.trim();
   });
   /* 문장 끝 부호는 빌더가 붙이므로 내용 끝의 부호는 떼어 낸다 (대사·화면 글자는 그대로) */
-  ['subject','event','scene','ending','constraint','hook','amb','emo','speaker'].forEach(k => { contentInput[k] = trimTailPunct(contentInput[k]); });
+  ['subject','event','scene','ending','constraint','hook','amb','emo','speaker','look'].forEach(k => { contentInput[k] = trimTailPunct(contentInput[k]); });
   /* 장면 타임라인 읽기 (구간별) */
   contentInput.timeline = [];
   const tlWrap = document.getElementById('timelineWrap');
@@ -3447,7 +3469,7 @@ const CHAT_SYSTEM_RULES = [
   '[남은 질문] plan.open에는 아직 물어봐야 할 것을 중요한 순서로 최대 5개, 각 25자 이내로 적는다. 이번 답에서 묻는 질문이 맨 앞이다. 더 물을 것이 없으면 빈 배열.',
   '[메이커 축] 아래 "축 메뉴"가 메이커에 실제로 있는 선택지 전부다. 사용자에게는 축 ID나 옵션 키를 말하지 말고 라벨의 뜻을 쉬운 말로 제안한다. plan.axes에는 반드시 메뉴에 있는 축 ID와 옵션 키만 쓴다. single 축은 키 1개, multi 축은 여러 개. 대화에서 정해졌거나 네가 제안해 사용자가 받아들인 것만 넣는다. "필수" 축은 기획이 끝나기 전에 모두 정한다. "작업 전용"·"조건" 표시가 있는 축은 그 조건이 맞을 때만 고른다.',
   '[길이와 컷] 길이는 10s·15s·20s·30s·auto 중 하나다. 컷 수는 길이로 고정된다: 10s=3컷, 15s=4컷, 20s=5컷, 30s=6컷, auto=4컷(영상 편집 작업은 항상 4컷). 길이가 정해지면 정확히 그 수만큼 컷을 사용자와 함께 짜서 plan.cuts에 순서대로 넣는다. 첫 컷은 시선을 잡는 훅이다.',
-  '[컷 규칙] 한 컷에 카메라 움직임은 하나만. 컷마다 보이는 동작이 달라야 한다(장소는 같아도 된다). 컷의 scene에는 화면에 실제로 보이는 것만 쓴다: 누가, 어떤 동작을, 어디를 보며, 어떤 소품으로. "분위기가 고조된다" 같은 추상적인 말이나 줄거리 요약은 쓰지 않는다. 주체는 모든 컷에서 같은 말로 부른다. 컷의 scene에는 카메라 움직임을 쓰지 않고 camera 칸에만 쓴다. 컷은 촬영 대본처럼 순서대로 짠다: 컷마다 light에 그 컷의 조명과 질감(빛이 어디서 어떤 색으로 드는지, 앞 컷에서 바뀌면 어떻게 바뀌는지)을, sound에 그 컷에서 실제로 나는 효과음(어떤 동작에서 나는 소리인지)을 적는다. "고급스럽게", "영화처럼", "하이퍼리얼" 같은 추상적인 채움말은 쓰지 않고 보이는 것과 들리는 것으로 풀어 쓴다. 대사는 한국어다. 사용자가 정한 대사는 기본적으로 그대로 둔다. 분량 기준은 컷 길이 1초당 한글 7자 정도다(3초 컷 21자, 4초 컷 28자, 5초 컷 35자). 넘는 컷이 있으면 먼저 문장을 통째로 옆 컷으로 옮기는 안을 낸다. 그래도 넘치고, 고쳐도 어색해지지 않는 경우에만 다듬는다: 말투·추임새·끝맺음·핵심 단어·반전 문장은 살리고 겹치는 말만 덜어 낸다. 다듬은 문장은 반드시 "원래 → 수정"으로 나란히 보여 주고 사용자가 좋다고 한 뒤에만 plan에 넣는다. 뚝뚝 끊기는 전보체나 뜻이 바뀌는 축약은 하지 않는다. 자연스럽게 다듬을 수 없으면 손대지 말고 영상 길이를 늘리거나 그대로 두자고 한다. 화면 글자·자막은 사용자가 원할 때만 넣는다. 해상도 같은 생성 파라미터와 최종 프롬프트 문장은 다루지 않는다. 최종 프롬프트는 메이커가 규칙대로 만든다.',
+  '[컷 규칙] 한 컷에 카메라 움직임은 하나만. 컷마다 보이는 동작이 달라야 한다(장소는 같아도 된다). 컷의 scene에는 화면에 실제로 보이는 것만 쓴다: 누가, 어떤 동작을, 어디를 보며, 어떤 소품으로. "분위기가 고조된다" 같은 추상적인 말이나 줄거리 요약은 쓰지 않는다. 주체는 모든 컷에서 같은 말로 부른다. 주체의 겉모습(종류나 나이·성별, 색, 옷·소품, 눈에 띄는 특징)은 초안에서 한 번 정해 plan.subject에 함께 적는다. 컷의 scene에는 카메라 움직임을 쓰지 않고 camera 칸에만 쓴다. 한 컷에는 주된 동작을 하나만 넣는다. 인물이나 동물이 직접 말하는 컷은 말하는 이의 얼굴과 입이 화면에 보이게 짠다. 컷은 촬영 대본처럼 순서대로 짠다: 컷마다 light에 그 컷의 조명과 질감(빛이 어디서 어떤 색으로 드는지, 앞 컷에서 바뀌면 어떻게 바뀌는지)을, sound에 그 컷에서 실제로 나는 효과음(어떤 동작에서 나는 소리인지)을 적는다. "고급스럽게", "영화처럼", "하이퍼리얼" 같은 추상적인 채움말은 쓰지 않고 보이는 것과 들리는 것으로 풀어 쓴다. 대사는 한국어다. 사용자가 정한 대사는 기본적으로 그대로 둔다. 분량 기준은 컷 길이 1초당 한글 7자 정도다(3초 컷 21자, 4초 컷 28자, 5초 컷 35자). 넘는 컷이 있으면 먼저 문장을 통째로 옆 컷으로 옮기는 안을 낸다. 그래도 넘치고, 고쳐도 어색해지지 않는 경우에만 다듬는다: 말투·추임새·끝맺음·핵심 단어·반전 문장은 살리고 겹치는 말만 덜어 낸다. 다듬은 문장은 반드시 "원래 → 수정"으로 나란히 보여 주고 사용자가 좋다고 한 뒤에만 plan에 넣는다. 뚝뚝 끊기는 전보체나 뜻이 바뀌는 축약은 하지 않는다. 자연스럽게 다듬을 수 없으면 손대지 말고 영상 길이를 늘리거나 그대로 두자고 한다. 화면 글자·자막은 사용자가 원할 때만 넣는다. 해상도 같은 생성 파라미터와 최종 프롬프트 문장은 다루지 않는다. 최종 프롬프트는 메이커가 규칙대로 만든다.',
   '[화면 비율] 올릴 곳이 정해지면 plan.ratio에 비율을 적는다: 쇼츠·릴스·틱톡 등 세로 영상은 9:16, 유튜브·TV 등 가로 영상은 16:9, 정사각 피드는 1:1. 그 밖에 4:3, 3:4, 21:9도 가능하다. 올릴 곳을 모르면 비워 두고, 목적을 물을 때 함께 확인한다.',
   '[만든 뒤 수정] 프롬프트를 만든 뒤 사용자가 값을 바꾸자고 하면 plan.axes나 plan.cuts에 반영하고, 다시 "이 기획으로 프롬프트 만들기"를 누르라고 안내한다. plan.axes에 이미 있는 값은 사용자가 바꾸자고 하기 전에는 그대로 둔다.',
   '[사진] 사용자가 사진을 첨부하면 첨부 순서대로 사진1, 사진2로 부르고, 보이는 내용을 짧게 확인한 뒤 쓰임(인물·제품 참조, 시작 프레임, 끝 프레임, 배경·스타일 참조)을 정해 plan.photos에 넣는다. 실존 인물의 얼굴 사진은 참조로 쓸 수 없다고 안내한다. 사진을 쓰면 작업 유형도 그에 맞게 고른다.',
