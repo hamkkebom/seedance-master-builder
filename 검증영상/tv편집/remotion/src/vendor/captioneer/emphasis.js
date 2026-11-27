@@ -1,0 +1,187 @@
+/**
+ * Emphasis detection — find the words worth popping.
+ *
+ * Pro captioners manually flag the "juicy" words (stretched words, shouted
+ * words) so the animation can make them land harder. These helpers do that
+ * automatically from word timings alone:
+ *
+ * - "stretched" — spoken for far longer than the median word (slow, dragged
+ *   out, or emotionally charged delivery)
+ * - "caps" — transcribed in ALL CAPS (providers often capture shouting this
+ *   way)
+ * - "manual" — you set `word.emphasis = true` yourself
+ */
+const DEFAULTS = {
+    stretchFactor: 1.8,
+    minStretchedMs: 350,
+    maxPerSegment: 2,
+    detectCaps: true,
+    clearExisting: false,
+};
+const AUDIO_DEFAULTS = {
+    loudFactor: 1.6,
+    minLoudEnergy: 0.05,
+};
+/** Mean volume of frames inside the word's time span. */
+function wordEnergy(word, volumeFrames) {
+    let sum = 0;
+    let count = 0;
+    for (const frame of volumeFrames) {
+        if (frame.timeMs >= word.startMs && frame.timeMs <= word.endMs) {
+            sum += frame.volume;
+            count++;
+        }
+    }
+    return count > 0 ? sum / count : 0;
+}
+const CAPS_MIN_LETTERS = 2;
+function isCapsWord(word) {
+    const letters = word.replace(/[^A-Za-z]/g, "");
+    if (letters.length < CAPS_MIN_LETTERS)
+        return false;
+    return letters === letters.toUpperCase();
+}
+function medianDurations(segments) {
+    const durations = [];
+    for (const seg of segments) {
+        for (const w of seg.words) {
+            durations.push(Math.max(1, w.endMs - w.startMs));
+        }
+    }
+    if (durations.length === 0)
+        return 0;
+    durations.sort((a, b) => a - b);
+    const mid = Math.floor(durations.length / 2);
+    return durations.length % 2 === 0
+        ? (durations[mid - 1] + durations[mid]) / 2
+        : durations[mid];
+}
+/**
+ * Find emphasis candidates in caption data. Order follows the data; within a
+ * segment, capped candidates are the longest ones.
+ */
+export function detectEmphasis(captions, options = {}) {
+    const opts = { ...DEFAULTS, ...options };
+    const median = medianDurations(captions.segments);
+    const stretchedThreshold = Math.max(opts.minStretchedMs, median > 0 ? median * opts.stretchFactor : opts.minStretchedMs);
+    // Audio-aware detection: words spoken far louder than the baseline.
+    let wordLoudness = null;
+    if (options.audio && options.audio.volumeFrames.length > 0) {
+        const audioOpts = { ...AUDIO_DEFAULTS, ...options.audio };
+        const energies = captions.segments
+            .flatMap((s) => s.words)
+            .map((w) => wordEnergy(w, options.audio.volumeFrames))
+            .sort((a, b) => a - b);
+        const mid = Math.floor(energies.length / 2);
+        const medianEnergy = energies.length === 0
+            ? 0
+            : energies.length % 2 === 0
+                ? (energies[mid - 1] + energies[mid]) / 2
+                : energies[mid];
+        const loudThreshold = Math.max(audioOpts.minLoudEnergy, medianEnergy * audioOpts.loudFactor);
+        wordLoudness = new Map();
+        for (const segment of captions.segments) {
+            for (const w of segment.words) {
+                const energy = wordEnergy(w, options.audio.volumeFrames);
+                if (energy >= loudThreshold)
+                    wordLoudness.set(w, energy);
+            }
+        }
+    }
+    const results = [];
+    captions.segments.forEach((segment, segmentIndex) => {
+        const candidates = [];
+        segment.words.forEach((w, wordIndex) => {
+            const durationMs = Math.max(1, w.endMs - w.startMs);
+            if (w.emphasis) {
+                results.push({
+                    segmentIndex,
+                    wordIndex,
+                    word: w.word,
+                    durationMs,
+                    reason: "manual",
+                });
+                return;
+            }
+            const reasons = [];
+            if (opts.detectCaps && isCapsWord(w.word))
+                reasons.push("caps");
+            if (durationMs >= stretchedThreshold)
+                reasons.push("stretched");
+            if (wordLoudness?.has(w))
+                reasons.push("loud");
+            if (reasons.length === 0)
+                return;
+            candidates.push({
+                segmentIndex,
+                wordIndex,
+                word: w.word,
+                durationMs,
+                reason: reasons.includes("caps")
+                    ? "caps"
+                    : reasons.includes("loud")
+                        ? "loud"
+                        : "stretched",
+            });
+        });
+        // Keep only the longest candidates when a segment overflows the cap.
+        const auto = candidates.length > opts.maxPerSegment
+            ? [...candidates]
+                .sort((a, b) => b.durationMs - a.durationMs)
+                .slice(0, opts.maxPerSegment)
+                .sort((a, b) => a.wordIndex - b.wordIndex)
+            : candidates;
+        results.push(...auto);
+    });
+    return results;
+}
+/**
+ * Return a copy of `captions` with `word.emphasis` set from detection
+ * (manual flags are preserved). Idempotent: previous auto flags are cleared
+ * before re-detection. The input is never mutated; untouched segments are
+ * shared by reference.
+ */
+export function markEmphasis(captions, options = {}) {
+    const opts = { ...DEFAULTS, ...options };
+    const source = opts.clearExisting
+        ? {
+            ...captions,
+            segments: captions.segments.map((segment) => segment.words.some((w) => w.emphasis)
+                ? {
+                    ...segment,
+                    words: segment.words.map((w) => w.emphasis ? { ...w, emphasis: undefined } : w),
+                }
+                : segment),
+        }
+        : captions;
+    const detections = detectEmphasis(source, options);
+    const bySegment = new Map();
+    for (const d of detections) {
+        let set = bySegment.get(d.segmentIndex);
+        if (!set) {
+            set = new Set();
+            bySegment.set(d.segmentIndex, set);
+        }
+        set.add(d.wordIndex);
+    }
+    const segments = source.segments.map((segment, segmentIndex) => {
+        const hits = bySegment.get(segmentIndex);
+        const needsChange = segment.words.some((w, i) => Boolean(w.emphasis) !== (hits ? hits.has(i) : false));
+        if (!hits && !needsChange)
+            return segment;
+        const words = segment.words.map((w, i) => {
+            const flag = hits ? hits.has(i) : false;
+            if (Boolean(w.emphasis) === flag)
+                return w;
+            const next = { ...w };
+            if (flag)
+                next.emphasis = true;
+            else
+                delete next.emphasis;
+            return next;
+        });
+        return { ...segment, words };
+    });
+    return { ...captions, segments };
+}
+//# sourceMappingURL=emphasis.js.map

@@ -1,0 +1,49 @@
+[Script Info]
+; 유튜브 쇼츠 안전 영역(720x1280 기준): 위 192 / 아래 448 / 왼쪽 32 / 오른쪽 128 → 가운데(x 360) 정렬, 글자 폭은 464px 이하로 유지(오른쪽 버튼 줄 x 592 안쪽).
+; 브랜드 색(46saju.com): 주색 보라 #9377A1, 진보라 #5E4A77, 연보라 #C2AACD, 포인트 코랄 #FE6169, 로즈 #B92D62
+ScriptType: v4.00+
+PlayResX: 720
+PlayResY: 1280
+WrapStyle: 2
+ScaledBorderAndShadow: yes
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Cap,NanumSquare Neo OTF ExtraBold,44,&H00FFFFFF,&H00FFFFFF,&H003E1F2E,&H78000000,0,0,0,0,100,100,-1,0,1,4.5,3,2,0,0,0,1
+Style: Accent,Pretendard Black,92,&H00FFFFFF,&H00FFFFFF,&H003E1F2E,&H8C000000,0,0,0,0,100,100,-2,0,1,5,5,5,0,0,0,1
+Style: Sub,NanumSquare Neo OTF ExtraBold,46,&H00774A5E,&H00FFFFFF,&H00FFFFFF,&H00000000,0,0,0,0,100,100,0,0,1,0,0,5,0,0,0,1
+Style: CTA,NanumSquare Neo OTF ExtraBold,44,&H00FFFFFF,&H00FFFFFF,&H00A17793,&H00000000,0,0,0,0,100,100,0,0,3,20,0,5,0,0,0,1
+Style: Star,Pretendard Black,20,&H00FFF4FA,&H00FFFFFF,&H00CDAAC2,&H00000000,0,0,0,0,100,100,0,0,1,0,0,7,0,0,0,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+; ── 대사 자막: 한 줄씩, 안전 영역 맨 아래(y 822), 가운데 x 360. 사주천궁=연보라, 감정 강조어=코랄
+Dialogue: 5,0:00:00.60,0:00:01.60,Cap,,0,0,0,,{\pos(360,822)\fad(60,0)}이 결혼
+Dialogue: 5,0:00:01.60,0:00:03.30,Cap,,0,0,0,,{\pos(360,822)\fad(0,120)}{\c&H006961FE&\fscx120\fscy120\t(0,120,\fscx100\fscy100)}절대{\c&H00FFFFFF&} 허락 못한다!
+Dialogue: 5,0:00:08.05,0:00:09.25,Cap,,0,0,0,,{\pos(360,822)\fad(60,0)}두 분 궁합은
+Dialogue: 5,0:00:09.25,0:00:10.35,Cap,,0,0,0,,{\pos(360,822)\fad(0,100)}{\c&H006961FE&\fscx120\fscy120\t(0,150,\fscx100\fscy100)}천생연분{\c&H00FFFFFF&}입니다!
+Dialogue: 5,0:00:10.55,0:00:12.00,Cap,,0,0,0,,{\pos(360,822)\fad(60,0)}{\c&H00ECC8DC&}사주천궁{\c&H00FFFFFF&}이 오케이면,
+Dialogue: 5,0:00:12.00,0:00:13.55,Cap,,0,0,0,,{\pos(360,822)\fad(0,100)\fscx120\fscy120\t(0,130,\fscx100\fscy100)}나도 오케이!
+Dialogue: 5,0:00:14.45,0:00:15.60,Cap,,0,0,0,,{\pos(360,822)\fad(60,0)\fscx120\fscy120\t(0,130,\fscx100\fscy100)}나도 해봤어!
+Dialogue: 5,0:00:15.60,0:00:16.75,Cap,,0,0,0,,{\pos(360,822)}{\c&H00ECC8DC&}사주천궁{\c&H00FFFFFF&} 보고
+Dialogue: 5,0:00:16.75,0:00:18.00,Cap,,0,0,0,,{\pos(360,822)\fad(0,100)\fscx115\fscy115\t(0,120,\fscx100\fscy100)}결혼했다!
+Dialogue: 5,0:00:19.10,0:00:23.04,Cap,,0,0,0,,{\pos(360,822)\fad(150,0)}궁합이 궁금하면?
+; ── 강조 문구: 얼굴 없는 빈 벽, 안전 영역 안
+Dialogue: 6,0:00:01.15,0:00:03.30,Accent,,0,0,0,,{\pos(360,242)\c&H00FFFFFF&\3c&H00622DB9&\4c&H00622DB9&\fscx220\fscy220\alpha&H80&\t(0,120,\fscx92\fscy92\alpha&H00&)\t(120,200,\fscx108\fscy108)\t(200,280,\fscx100\fscy100)\fad(0,150)}결사반대!
+Dialogue: 6,0:00:03.75,0:00:07.15,Accent,,0,0,0,,{\pos(420,280)\fs80\3c&H00774A5E&\alpha&HFF&\fscx140\fscy140\t(0,100,\alpha&H00&\fscx100\fscy100)\t(100,190,\frz-10\fscx108\fscy108)\t(190,280,\frz10\fscx100\fscy100)\t(280,370,\frz-10\fscx108\fscy108)\t(370,460,\frz10\fscx100\fscy100)\t(460,550,\frz-10)\t(550,640,\frz10)\t(640,730,\frz-10)\t(730,820,\frz0)\t(1300,1390,\frz-10\fscx108\fscy108)\t(1390,1480,\frz10\fscx100\fscy100)\t(1480,1570,\frz-10\fscx108\fscy108)\t(1570,1660,\frz10\fscx100\fscy100)\t(1660,1750,\frz-10)\t(1750,1840,\frz10)\t(1840,1930,\frz-10)\t(1930,2020,\frz0)\fad(0,150)}따르릉
+Dialogue: 6,0:00:11.95,0:00:13.55,Accent,,0,0,0,,{\pos(170,300)\fs100\c&H00ECC8DC&\3c&H00774A5E&\frz8\fscx170\fscy170\alpha&H80&\t(0,130,\fscx100\fscy100\alpha&H00&)\fad(0,120)}OK!
+Dialogue: 7,0:00:09.20,0:00:10.35,Star,,0,0,0,,{\pos(170,430)\fscx0\fscy0\t(0,200,\fscx160\fscy160)\t(200,500,\fscx60\fscy60)\t(500,800,\fscx140\fscy140)\fad(0,200)\p1}m 0 -20 l 4 -4 20 0 4 4 0 20 -4 4 -20 0 -4 -4{\p0}
+Dialogue: 7,0:00:09.30,0:00:10.35,Star,,0,0,0,,{\pos(540,330)\fscx0\fscy0\t(0,200,\fscx190\fscy190)\t(200,500,\fscx80\fscy80)\t(500,800,\fscx170\fscy170)\fad(0,200)\p1}m 0 -20 l 4 -4 20 0 4 4 0 20 -4 4 -20 0 -4 -4{\p0}
+Dialogue: 7,0:00:09.40,0:00:10.35,Star,,0,0,0,,{\pos(560,700)\fscx0\fscy0\t(0,200,\fscx130\fscy130)\t(200,500,\fscx50\fscy50)\t(500,800,\fscx120\fscy120)\fad(0,200)\p1}m 0 -20 l 4 -4 20 0 4 4 0 20 -4 4 -20 0 -4 -4{\p0}
+; ── 결혼식: 로고 이미지는 render2.sh에서 천장 쪽(x 360, y 300)에 얹음
+; ── 엔드카드 (23.04-26.04): 자연 배경 이미지 위, 가운데 x 360, 브랜드 보라
+Dialogue: 3,0:00:23.20,0:00:26.04,Star,,0,0,0,,{\an7\pos(360,565)\org(360,565)\1a&HFF&\3c&H00A17793&\bord3\blur1\alpha&HFF&\t(0,400,\alpha&H30&\1a&HFF&)\t(0,2840,\frz40)\p1}m -220 0 b -220 -121 -121 -220 0 -220 b 121 -220 220 -121 220 0 b 220 121 121 220 0 220 b -121 220 -220 121 -220 0{\p0}
+Dialogue: 3,0:00:23.30,0:00:26.04,Star,,0,0,0,,{\an7\pos(360,565)\org(360,565)\1a&HFF&\3c&H00CDAAC2&\bord1.5\alpha&HFF&\t(0,400,\alpha&H50&\1a&HFF&)\t(0,2740,\frz-30)\p1}m -238 0 b -238 -131 -131 -238 0 -238 b 131 -238 238 -131 238 0 b 238 131 131 238 0 238 b -131 238 -238 131 -238 0{\p0}
+Dialogue: 5,0:00:23.10,0:00:26.04,Sub,,0,0,0,,{\pos(360,410)\blur0.6\fad(250,0)}궁합이 궁금하면?
+Dialogue: 5,0:00:23.60,0:00:26.04,Sub,,0,0,0,,{\pos(360,700)\fs28\c&H00A17793&\fad(300,0)}궁합 · 사주 · 운세
+Dialogue: 6,0:00:23.90,0:00:26.04,CTA,,0,0,0,,{\pos(360,775)\alpha&HFF&\fscx80\fscy80\t(0,200,\alpha&H00&\fscx100\fscy100)\t(500,800,\fscx108\fscy108)\t(800,1100,\fscx100\fscy100)\t(1300,1600,\fscx108\fscy108)\t(1600,1900,\fscx100\fscy100)}앱에서 궁합 보기
+Dialogue: 7,0:00:24.40,0:00:25.10,Star,,0,0,0,,{\an7\move(210,740,520,740)\1c&HFFFFFF&\alpha&H90&\bord0\blur6\frz-20\p1}m -10 -40 l 10 -40 10 40 -10 40{\p0}
+Dialogue: 7,0:00:25.30,0:00:26.00,Star,,0,0,0,,{\an7\move(210,740,520,740)\1c&HFFFFFF&\alpha&H90&\bord0\blur6\frz-20\p1}m -10 -40 l 10 -40 10 40 -10 40{\p0}
+Dialogue: 7,0:00:23.40,0:00:26.04,Star,,0,0,0,,{\pos(140,480)\fscx0\fscy0\t(0,250,\fscx180\fscy180)\t(250,700,\fscx70\fscy70)\t(700,1150,\fscx170\fscy170)\t(1150,1600,\fscx60\fscy60)\t(1600,2050,\fscx160\fscy160)\p1}m 0 -20 l 4 -4 20 0 4 4 0 20 -4 4 -20 0 -4 -4{\p0}
+Dialogue: 7,0:00:23.55,0:00:26.04,Star,,0,0,0,,{\pos(575,460)\fscx0\fscy0\t(0,250,\fscx220\fscy220)\t(250,700,\fscx90\fscy90)\t(700,1150,\fscx200\fscy200)\t(1150,1600,\fscx80\fscy80)\t(1600,2050,\fscx190\fscy190)\p1}m 0 -20 l 4 -4 20 0 4 4 0 20 -4 4 -20 0 -4 -4{\p0}
+Dialogue: 7,0:00:23.70,0:00:26.04,Star,,0,0,0,,{\pos(560,670)\fscx0\fscy0\t(0,250,\fscx140\fscy140)\t(250,700,\fscx50\fscy50)\t(700,1150,\fscx130\fscy130)\t(1150,1600,\fscx50\fscy50)\t(1600,2050,\fscx120\fscy120)\p1}m 0 -20 l 4 -4 20 0 4 4 0 20 -4 4 -20 0 -4 -4{\p0}
