@@ -2167,7 +2167,7 @@ function validateComposition(payload, task, options) {
     });
   }
 
-  /* 대사 분량: 컷 길이 1초당 한글 5자 이내 */
+  /* 대사 분량: AI가 쓴 대사는 컷 길이 1초당 DIALOG_HARD_SYLLABLES_PER_SECOND자 이내 (사용자가 정한 대사는 검사하지 않음) */
   const cutSeconds = cutSecondsFor(duration || 'auto', task);
   if (cutSeconds && normalized.timeline.length === cutSeconds.length && !(options && options.skipDialogLength)) {
     normalized.timeline.forEach((entry, index) => {
@@ -2395,7 +2395,7 @@ async function runAIComposer(apiKey, model, userRequest, options) {
   const parsedCandidate = parseAIJson(candidateContent);
   let validation = parsedCandidate.errors.length
     ? { ok: false, value: null, errors: parsedCandidate.errors }
-    : validateComposition(parsedCandidate.value, task);
+    : validateComposition(parsedCandidate.value, task, plan ? { skipDialogLength: true } : null);
 
   let lastContent = candidateContent;
   for (let attempt = 1; attempt <= 2 && !validation.ok; attempt++) {
@@ -2413,7 +2413,7 @@ async function runAIComposer(apiKey, model, userRequest, options) {
     const parsedRepair = parseAIJson(lastContent);
     validation = parsedRepair.errors.length
       ? { ok: false, value: null, errors: parsedRepair.errors }
-      : validateComposition(parsedRepair.value, task);
+      : validateComposition(parsedRepair.value, task, plan ? { skipDialogLength: true } : null);
   }
 
   if (!validation.ok) {
@@ -2778,10 +2778,10 @@ function buildPrompt() {
   const koDefFmt = contentInput.dialogfmt === 'kodef';
   const koVoiceDef = lang === 'none' ? '' : `대사 언어: ${optionShortLabel('lang', lang)}${voice ? `, 말투: ${optionShortLabel('voice', voice)}` : ''}`;
   const officialSpeaker = sayVerb.replace(/说$/, '');
-  const officialVoice = voiceText ? `${optVal('lang', lang).replace(/^台词语言：/, '')}，${voiceText}`.replace(/^([^，]+)，/, '$1（') + '）' : optVal('lang', lang).replace(/^台词语言：/, '');
+  const officialVoice = `${optVal('lang', lang).replace(/^台词语言：/, '')}${voiceText ? '，' + voiceText : ''}`.replace(/^([^，]+)，(.*)$/, '$1（$2）');
   const spokenLine = (text, narration, full = true) => officialFmt
     ? (narration
-        ? `画外音${full ? `（用${officialVoice}）` : ''}：“${text}”`
+        ? `画外音${full ? `用${officialVoice}` : ''}：“${text}”`
         : `${officialSpeaker}${full ? `用${officialVoice}` : ''}说：“${text}”`)
     : `${full ? (koDefFmt ? `${koVoiceDef}，` : `${optVal('lang', lang)}，${voiceText ? voiceText + '，' : ''}`) : ''}${narration ? NARRATION_VERB : sayVerb}：{${text}}`;
   let voiceStated = false;
@@ -2887,7 +2887,7 @@ function buildPrompt() {
     /* 컷당 카메라 하나: 구간 카메라가 있으면 그것만, 장면 문장에 이미 카메라가 적혀 있으면 덧붙이지 않는다 */
     const camHere = tl.cam ? trimTailPunct(tl.cam) : (CAMERA_IN_SCENE.test(sceneText) ? '' : camForStage(i));
     const ownDialog = lang !== 'none' && tl.dialog;
-    const globalHere = !ownDialog && i === 1 && globalDialogLine && !timelineHasGlobalDialog;
+    const globalHere = !ownDialog && i === Math.min(1, stageCount - 1) && globalDialogLine && !timelineHasGlobalDialog;
     const dialogHere = ownDialog
       ? spokenLine(tl.dialog, tl.mode === 'vo')
       : (globalHere ? globalDialogLine : '');
@@ -2920,7 +2920,7 @@ function buildPrompt() {
   const musVal = musicgenre !== 'none' ? optVal('musicgenre', musicgenre) : '（<描述>，音量很低）';
   const musEnd = durPlan.seconds ? Math.max(2, durPlan.seconds - (durPlan.seconds <= 15 ? 1 : durPlan.seconds <= 20 ? 2 : 5)) : 0;
   const musWhen = durPlan.seconds ? `播放于1至${musEnd}秒` : '贯穿全片，结尾前渐弱';
-  const mus = audio.includes('mus') ? `音乐：${musVal}，${musWhen}` : '';
+  const mus = audio.includes('mus') && negaudio !== 'nobgm' && negaudio !== 'silent' ? `音乐：${musVal}，${musWhen}` : '';
 
   /* ⑨ 화질 + ⑳ 시각스타일 + ㉑ 스타일고정 + ㉒ 조명 */
   const qText = quality.map(k => optVal('quality', k)).join('，');
@@ -2997,7 +2997,7 @@ ${triggerNote ? triggerNote + '\n' : ''}${lockNote ? lockNote + '\n' : ''}${r2vB
 ${contentInput.look ? `\n【主体设定】${contentInput.look}。全片保持这一外貌不变。\n` : ''}
 ${cutLine ? cutLine + '\n' : ''}${speakerLine ? speakerLine + '\n' : ''}${flowLine ? flowLine + '\n' : ''}${textLine ? textLine + '\n' : ''}
 ${stages}
-【声音】${lang === 'none' ? '对话无，人物不开口说话' : (usedNarration && !usedSpeech) ? '旁白有 — 全部为画外音旁白，画面内人物不开口说话，无需口型对位' : (usedNarration && usedSpeech) ? '对话与旁白并存 — 人物开口的台词口型精准对位；旁白为画外音，此时画面内人物不开口' : '对话有 — 口型与台词精准对位'}。${fx ? '音效：' + fx + '。' : ''}${amb ? amb + '。' : ''}${mus ? mus + '。' : ''}结尾最后1秒环境音渐弱，随后0.5秒静音。
+【声音】${(lang === 'none' || (!usedNarration && !usedSpeech)) ? '对话无，人物不开口说话' : (usedNarration && !usedSpeech) ? '旁白有 — 全部为画外音旁白，画面内人物不开口说话，无需口型对位' : (usedNarration && usedSpeech) ? '对话与旁白并存 — 人物开口的台词口型精准对位；旁白为画外音，此时画面内人物不开口' : '对话有 — 口型与台词精准对位'}。${fx ? '音效：' + fx + '。' : ''}${amb ? amb + '。' : ''}${mus ? mus + '。' : ''}结尾最后1秒环境音渐弱，随后0.5秒静音。
 
 ${styleBlock}
 
@@ -3322,9 +3322,13 @@ function renderPrompt() {
       contentInput.subjects.push({ name: nm ? nm.value.trim() : '', img: im ? im.value.trim() : '', aud: au ? au.value.trim() : '', role: rl ? rl.value : '' });
     });
   }
-  /* DOM 렌더 재생성 (읽은 값으로 복원) */
-  renderTimeline();
-  renderSubjectMatrix();
+  /* DOM 렌더 재생성 (읽은 값으로 복원). 그 안의 입력 칸에 글을 쓰는 중이면 다시 그리지 않는다 — 다시 그리면 포커스와 한글 조합이 끊긴다 */
+  const activeEl = document.activeElement;
+  const typingInRows = activeEl && activeEl.tagName === 'INPUT' && ((tlWrap && tlWrap.contains(activeEl)) || (smWrap && smWrap.contains(activeEl)));
+  if (!typingInRows) {
+    renderTimeline();
+    renderSubjectMatrix();
+  }
   const durParamEl = document.getElementById('p_dur');
   if (durParamEl) durParamEl.value = currentDurationPlan().param;
   const cn = buildPrompt();
@@ -3948,12 +3952,7 @@ function chatPlanUnresolved(plan) {
   if (!plan.subject) items.push('주체');
   const voice = chatPlanVoice(plan);
   if (voice.missing.length) items.push(`목소리(${voice.missing.join('·')})`);
-  const seconds = cutSecondsFor(plan.duration || 'auto', (plan.axes.task || ['t2v'])[0]);
-  if (seconds && plan.cuts.length === seconds.length) {
-    plan.cuts.forEach((cut, index) => {
-      if (hangulCount(cut.dialog) > seconds[index] * DIALOG_SYLLABLES_PER_SECOND) items.push(`컷 ${index + 1} 대사가 김`);
-    });
-  }
+  /* 긴 대사는 여기서 막지 않는다: 카드에 ⚠로 보이고, 사용자가 그대로 두기로 할 수 있다 */
   return Array.from(new Set(items));
 }
 
@@ -3971,7 +3970,6 @@ function chatResultChecks(value) {
   }
   const scenes = value.timeline.map(entry => entry.scene);
   if (new Set(scenes).size < scenes.length) notes.push('같은 장면 문장이 여러 컷에 반복됩니다');
-  if (!value.content.hook) notes.push('첫 훅 문장이 비어 있습니다');
   const multiSpeaker = (value.axes.speakerflow || []).some(key => key !== 'none');
   if (!multiSpeaker && !value.content.speaker && value.timeline.some(entry => entry.dialog && !entry.narration)) notes.push('말하는 주체가 비어 있어 "他说/她说"로 들어갔습니다');
   const textgen = (value.axes.textgen || ['none'])[0];
@@ -4461,6 +4459,7 @@ function wizardApply(applyAll) {
   const hook = document.getElementById('wz_hook').value.trim();
   const cta = document.getElementById('wz_cta').value.trim();
   const cfg = WIZARD_SCENARIOS[sc];
+  ['speaker', 'look'].forEach(k => { contentInput[k] = ''; const el = document.getElementById('ci_' + k); if (el) el.value = ''; });
   const resultEl = document.getElementById('wzResult');
   if (!cfg) {
     if (resultEl) resultEl.innerHTML = '';
