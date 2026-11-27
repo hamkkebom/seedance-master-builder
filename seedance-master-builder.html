@@ -337,6 +337,12 @@
 
   /* ===== 장면 타임라인 ===== */
   .tl-head { font-size: 11px; font-weight: 800; color: var(--accent2); margin-bottom: 7px; }
+  .ai-defaults { margin: 8px 0; border: 1px solid var(--border-soft); border-radius: 8px; padding: 6px 10px; background: rgba(140,160,220,.04); }
+  .ai-defaults summary { cursor: pointer; font-size: 12px; font-weight: 700; color: var(--text); }
+  .ai-defaults summary span { color: var(--accent2); font-weight: 600; margin-left: 6px; }
+  .ai-defaults-body { margin-top: 8px; display: flex; flex-direction: column; gap: 8px; }
+  .ai-defaults-help, .ai-defaults-axes { font-size: 11px; color: var(--muted); line-height: 1.5; }
+  .ai-defaults textarea { width: 100%; background: var(--panel2); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 7px 9px; font: inherit; font-size: 12px; resize: vertical; }
   .tl-row {
     border: 1px solid var(--border-soft);
     border-radius: 8px; padding: 8px 10px; margin-bottom: 6px;
@@ -1001,6 +1007,18 @@
             <div class="ai-suggest" id="aiChatSuggest" aria-label="빠른 답"></div>
             <div class="ai-plan" id="aiChatPlan" aria-label="기획 카드" hidden></div>
             <div class="ai-attach-list" id="aiChatAttachList" aria-label="첨부할 사진"></div>
+            <details class="ai-defaults" id="aiDefaults">
+              <summary>⭐ 내 기본값 <span id="aiDefaultsBadge"></span></summary>
+              <div class="ai-defaults-body">
+                <div class="ai-defaults-help">여기 적어 둔 취향은 이 브라우저에 저장되어, 새 대화를 열 때마다 자동으로 반영됩니다. 대화에서 다르게 말하면 그 말이 우선입니다.</div>
+                <textarea id="aiDefaultsNote" rows="3" aria-label="내 기본값 메모" placeholder="예: 목소리는 차분한 20대 여성. 대사는 내가 준 문장 그대로. 실내 장면은 창밖 야경 없이. 자막은 넣지 않는다."></textarea>
+                <div class="ai-defaults-axes" id="aiDefaultsAxes"></div>
+                <div class="ai-actions">
+                  <button class="btn ghost" id="aiDefaultsSaveAxesBtn" type="button">지금 메이커의 목소리·스타일 설정을 기본값으로</button>
+                  <button class="btn ghost" id="aiDefaultsClearBtn" type="button">기본값 지우기</button>
+                </div>
+              </div>
+            </details>
             <div class="ai-chat-input-row">
               <textarea id="aiChatInput" rows="2" aria-label="메시지" aria-describedby="aiStatus" placeholder="만들고 싶은 영상을 편하게 말해 보세요. Enter 전송 · Shift+Enter 줄바꿈"></textarea>
               <button class="btn primary" id="aiChatSendBtn" type="button">보내기</button>
@@ -1722,6 +1740,7 @@ const AXES = [
    AI 컴포저 — DeepSeek task-first JSON 생성 · 엄격 검증 · 원자적 적용
    ================================================================ */
 const DEEPSEEK_ENDPOINT = 'https://api.deepseek.com/chat/completions';
+const DEEPSEEK_BETA_ENDPOINT = 'https://api.deepseek.com/beta/chat/completions';   // 형식 강제(strict) 도구 호출용
 const DEEPSEEK_TIMEOUT_MS = 120000;
 const AI_TASKS = Object.freeze(['t2v', 'r2v', 'edit', 'ext', 'fl']);
 const AI_MODELS = Object.freeze(['deepseek-flash', 'deepseek-v4-pro']);
@@ -1976,14 +1995,28 @@ function httpErrorMessage(status, detail) {
    options.effort : 'none' | 'low' | 'high' | 'max' — V4 계열은 지정하지 않으면 생각 모드 high로 동작해 느리다 */
 async function callDeepSeek(apiKey, model, messages, options) {
   const opts = options || {};
+  /* JSON 모드는 형식이 깨지면 공백만 돌려줄 수 있다(공식 문서). 한 번 더 요청한다 */
+  for (let attempt = 1; ; attempt++) {
+    const content = await callDeepSeekOnce(apiKey, model, messages, opts);
+    if (content.trim() || attempt >= 2) return content;
+  }
+}
+
+/* options.temperature : 생각 모드가 꺼져 있을 때만 효과가 있다(공식 문서)
+   options.maxTokens   : 출력 길이 상한
+   options.tools       : 형식 강제(strict) 도구 목록 — 베타 주소로 보내고, 도구 호출의 arguments(JSON 문자열)를 돌려준다 */
+async function callDeepSeekOnce(apiKey, model, messages, opts) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), DEEPSEEK_TIMEOUT_MS);
   const body = { model, messages, stream: false };
   if (opts.json !== false) body.response_format = { type: 'json_object' };
   if (opts.effort === 'none') body.thinking = { type: 'disabled' };
   else if (opts.effort) body.reasoning_effort = opts.effort;
+  if (typeof opts.temperature === 'number' && opts.effort === 'none') body.temperature = opts.temperature;
+  if (opts.maxTokens) body.max_tokens = opts.maxTokens;
+  if (opts.tools) { body.tools = opts.tools; body.tool_choice = 'auto'; }
   try {
-    const response = await fetch(DEEPSEEK_ENDPOINT, {
+    const response = await fetch(opts.tools ? DEEPSEEK_BETA_ENDPOINT : DEEPSEEK_ENDPOINT, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
@@ -1994,7 +2027,9 @@ async function callDeepSeek(apiKey, model, messages, options) {
     });
     const responseText = await response.text();
     if (!response.ok) {
-      throw new Error(httpErrorMessage(response.status, defensiveErrorDetail(responseText, apiKey)));
+      const failure = new Error(httpErrorMessage(response.status, defensiveErrorDetail(responseText, apiKey)));
+      failure.status = response.status;
+      throw failure;
     }
     let envelope;
     try {
@@ -2002,13 +2037,16 @@ async function callDeepSeek(apiKey, model, messages, options) {
     } catch (error) {
       throw new Error('DeepSeek 응답 본문이 올바른 JSON API 응답이 아닙니다.');
     }
-    if (!Array.isArray(envelope.choices) || !envelope.choices[0] || !envelope.choices[0].message || typeof envelope.choices[0].message.content !== 'string') {
-      throw new Error('DeepSeek 응답에 choices[0].message.content가 없습니다.');
-    }
-    if (envelope.choices[0].finish_reason === 'length') {
+    const message = Array.isArray(envelope.choices) && envelope.choices[0] ? envelope.choices[0].message : null;
+    const toolCall = message && Array.isArray(message.tool_calls) && message.tool_calls[0] && message.tool_calls[0].function;
+    if (envelope.choices && envelope.choices[0] && envelope.choices[0].finish_reason === 'length') {
       throw new Error('DeepSeek 응답이 길이 제한으로 잘렸습니다. 요청을 짧게 정리해 다시 시도하세요.');
     }
-    return envelope.choices[0].message.content;
+    if (toolCall && typeof toolCall.arguments === 'string') return toolCall.arguments;
+    if (!message || typeof message.content !== 'string') {
+      throw new Error('DeepSeek 응답에 choices[0].message.content가 없습니다.');
+    }
+    return message.content;
   } catch (error) {
     if (error && error.name === 'AbortError') {
       throw new Error('DeepSeek 응답 시간이 120초를 초과해 요청을 중단했습니다.');
@@ -2020,6 +2058,67 @@ async function callDeepSeek(apiKey, model, messages, options) {
   } finally {
     clearTimeout(timeout);
   }
+}
+
+/* 형식 강제(strict) 스키마: 축 ID와 선택지 키를 허용값으로 못박아, 없는 키나 빠진 필드가 나오지 않게 한다.
+   strict 규칙상 모든 속성이 required라서, 고르지 않는 축은 빈 배열·쓰지 않는 글은 빈 문자열로 받는다 */
+function buildCompositionTool(task) {
+  const axisProps = {};
+  AXES.filter(axis => axisAppliesToTask(axis, task)).forEach(axis => {
+    axisProps[axis.id] = { type: 'array', items: { type: 'string', enum: allowedOptionsForTask(axis, task).map(option => option.k) } };
+  });
+  const contentProps = {};
+  AI_CONTENT_FIELDS.forEach(field => { contentProps[field] = { type: 'string' }; });
+  return [{
+    type: 'function',
+    function: {
+      name: 'submit_composition',
+      description: 'Return the final composition. Use an empty array for an axis you leave out and an empty string for a text you leave out.',
+      strict: true,
+      parameters: {
+        type: 'object', additionalProperties: false, required: ['axes', 'content', 'timeline'],
+        properties: {
+          axes: { type: 'object', additionalProperties: false, required: Object.keys(axisProps), properties: axisProps },
+          content: { type: 'object', additionalProperties: false, required: AI_CONTENT_FIELDS.slice(), properties: contentProps },
+          timeline: {
+            type: 'array',
+            items: {
+              type: 'object', additionalProperties: false, required: ['scene', 'dialog', 'light', 'sfx', 'cam', 'narration'],
+              properties: { scene: { type: 'string' }, dialog: { type: 'string' }, light: { type: 'string' }, sfx: { type: 'string' }, cam: { type: 'string' }, narration: { type: 'boolean' } }
+            }
+          }
+        }
+      }
+    }
+  }];
+}
+/* strict 응답의 빈 배열·빈 문자열을 "고르지 않음"으로 되돌린다 (기존 검증 규칙과 같은 모양으로) */
+function compactComposition(content) {
+  let value;
+  try { value = JSON.parse(content); } catch (error) { return content; }
+  if (!isPlainObject(value)) return content;
+  if (isPlainObject(value.axes)) Object.keys(value.axes).forEach(axisId => { if (Array.isArray(value.axes[axisId]) && !value.axes[axisId].length) delete value.axes[axisId]; });
+  if (isPlainObject(value.content)) Object.keys(value.content).forEach(field => { if (value.content[field] === '') delete value.content[field]; });
+  if (Array.isArray(value.timeline)) value.timeline.forEach(entry => {
+    if (!isPlainObject(entry)) return;
+    ['cam', 'sfx'].forEach(field => { if (entry[field] === '') delete entry[field]; });
+  });
+  return JSON.stringify(value);
+}
+let aiStrictUnavailable = false;   // 베타 주소가 거부되면 이 탭에서는 기존 JSON 방식으로만 호출한다
+async function callComposer(apiKey, model, messages, task) {
+  if (!aiStrictUnavailable) {
+    try {
+      const strictMessages = messages.map((message, index) => index === 0
+        ? { role: message.role, content: `${message.content}\n결과는 반드시 submit_composition 도구를 호출해 json으로 낸다. 고르지 않는 축은 빈 배열, 쓰지 않는 글은 빈 문자열로 둔다.` }
+        : message);
+      return compactComposition(await callDeepSeek(apiKey, model, strictMessages, { effort: 'low', tools: buildCompositionTool(task) }));
+    } catch (error) {
+      if (![400, 404, 422].includes(error && error.status)) throw error;
+      aiStrictUnavailable = true;
+    }
+  }
+  return callDeepSeek(apiKey, model, messages, { effort: 'low' });
 }
 
 function parseAIJson(content) {
@@ -2388,10 +2487,10 @@ async function runAIComposer(apiKey, model, userRequest, options) {
   }
   const systemMessage = compositionSystemMessage(allowedContract);
   setAIStatus('loading', `${plan ? '' : '2/2 '}${AI_TASK_LABELS[task]} 축과 콘텐츠를 구성하고 있습니다...`);
-  const candidateContent = await callDeepSeek(apiKey, model, [
+  const candidateContent = await callComposer(apiKey, model, [
     { role: 'system', content: systemMessage },
     { role: 'user', content: userRequest }
-  ], { effort: 'low' });
+  ], task);
   const parsedCandidate = parseAIJson(candidateContent);
   let validation = parsedCandidate.errors.length
     ? { ok: false, value: null, errors: parsedCandidate.errors }
@@ -2406,10 +2505,10 @@ async function runAIComposer(apiKey, model, userRequest, options) {
       validationErrors: validation.errors,
       instruction: '같은 허용 계약을 지켜 전체 JSON 객체를 수정해 다시 반환하세요. validationErrors의 모든 항목을 고쳐야 합니다. JSON 외 텍스트는 금지합니다.'
     };
-    lastContent = await callDeepSeek(apiKey, model, [
+    lastContent = await callComposer(apiKey, model, [
       { role: 'system', content: systemMessage },
       { role: 'user', content: JSON.stringify(repairRequest) }
-    ], { effort: 'low' });
+    ], task);
     const parsedRepair = parseAIJson(lastContent);
     validation = parsedRepair.errors.length
       ? { ok: false, value: null, errors: parsedRepair.errors }
@@ -3195,7 +3294,7 @@ async function runKoTranslation(cn, apiKey) {
     const translated = (await callDeepSeek(apiKey, CHAT_VISION_MODEL, [
       { role: 'system', content: KO_TRANSLATE_SYSTEM },
       { role: 'user', content: body }
-    ], { json: false, effort: 'none' })).trim();
+    ], { json: false, effort: 'none', temperature: 1.3, maxTokens: 8000 })).trim();
     if (!translated) throw new Error('빈 번역이 돌아왔습니다.');
     koTranslationCache.set(cn, `${translated}\n\n${tail}`);
     if (koTranslationCache.size > 20) koTranslationCache.delete(koTranslationCache.keys().next().value);
@@ -3486,9 +3585,10 @@ const CHAT_SYSTEM_RULES = [
   '[만든 뒤 수정] 프롬프트를 만든 뒤 사용자가 값을 바꾸자고 하면 plan.axes나 plan.cuts에 반영하고, 다시 "이 기획으로 프롬프트 만들기"를 누르라고 안내한다. plan.axes에 이미 있는 값은 사용자가 바꾸자고 하기 전에는 그대로 둔다.',
   '[사진] 사용자가 사진을 첨부하면 첨부 순서대로 사진1, 사진2로 부르고, 보이는 내용을 짧게 확인한 뒤 쓰임(인물·제품 참조, 시작 프레임, 끝 프레임, 배경·스타일 참조)을 정해 plan.photos에 넣는다. 실존 인물의 얼굴 사진은 참조로 쓸 수 없다고 안내한다. 사진을 쓰면 작업 유형도 그에 맞게 고른다.',
   '[현재 메이커 설정] 사용자 메시지 앞의 [컨텍스트]에 현재 메이커 설정이 올 수 있다. 사용자가 "지금 설정에서 길이만 바꿔"처럼 기존 설정을 가리킬 때만 그것을 그대로 이어받아 바뀐 부분만 고친다. 새 영상을 기획하면 무시한다.',
+  '[내 기본값] [컨텍스트]에 "내 기본값"이 있으면 사용자가 미리 저장해 둔 취향이다. 사용자가 이번 대화에서 다르게 말하지 않는 한 그대로 따른다: axes에 있는 값은 처음부터 plan.axes에 넣고 그 항목은 다시 묻지 않으며, note의 문장은 기획 전체에 반영한다. 첫 초안을 낼 때 "저장해 두신 기본값을 반영했습니다" 한 줄로만 알린다. 기본값의 axes는 네가 판단해서 바꾸지 않는다(주체가 동물이어도, 톤이 달라 보여도 그대로 둔다). 사용자가 이번 대화에서 그 항목을 다르게 하자고 직접 말했을 때만 바꾸고, 그때 그 축 ID를 plan.overrides 배열에 넣는다. 그 밖에는 overrides를 빈 배열로 둔다.',
   '[기획 카드] plan은 누적이다. [컨텍스트]의 현재 기획 카드를 기준으로 이번에 바뀐 것만 고쳐 매번 전체를 다시 반환한다. 미정 항목은 빈 문자열이나 빈 배열로 둔다. 모든 항목과 컷이 정해지면 짧게 요약하고 "이 기획으로 프롬프트 만들기" 버튼을 누르라고 안내한다.',
   '[출력] 반드시 아래 형태의 JSON 객체 하나만 출력한다. suggestions는 사용자가 눌러서 바로 답할 수 있는 짧은 답 2~4개(각 20자 이내)이고, 필요 없으면 빈 배열이다.',
-  '{"reply":"사용자에게 보일 한국어 답","suggestions":["답1","답2"],"plan":{"kind":"영상 유형","goal":"목적·볼 사람·올릴 곳","ratio":"9:16","duration":"15s","subject":"주체","event":"사건·동작","scene":"장면·배경","dialog":"핵심 대사 또는 없음","tone":"전체 톤","hook":"첫 훅","cta":"CTA 또는 없음","ending":"끝 장면","cuts":[{"scene":"컷1 피사체와 구체적 행동","dialog":"컷1 대사·내레이션 문장 또는 빈 문자열","narration":false,"camera":"카메라 움직임 하나","light":"이 컷의 조명·질감","sound":"이 컷에서 나는 효과음"}],"photos":[{"n":1,"use":"제품 참조"}],"open":["전체 분위기","대사 필요 여부"],"axes":{"task":["t2v"],"duration":["15s"]}}}'
+  '{"reply":"사용자에게 보일 한국어 답","suggestions":["답1","답2"],"plan":{"kind":"영상 유형","goal":"목적·볼 사람·올릴 곳","ratio":"9:16","duration":"15s","subject":"주체","event":"사건·동작","scene":"장면·배경","dialog":"핵심 대사 또는 없음","tone":"전체 톤","hook":"첫 훅","cta":"CTA 또는 없음","ending":"끝 장면","cuts":[{"scene":"컷1 피사체와 구체적 행동","dialog":"컷1 대사·내레이션 문장 또는 빈 문자열","narration":false,"camera":"카메라 움직임 하나","light":"이 컷의 조명·질감","sound":"이 컷에서 나는 효과음"}],"photos":[{"n":1,"use":"제품 참조"}],"open":["전체 분위기","대사 필요 여부"],"overrides":[],"axes":{"task":["t2v"],"duration":["15s"]}}}'
 ].join('\n');
 let chatSystemPromptCache = '';
 function chatAxisMenu() {
@@ -3573,9 +3673,74 @@ function chatContextBlock() {
   const lines = ['[컨텍스트]', `현재 기획 카드: ${chatPlan ? JSON.stringify(chatPlan) : '없음'}`];
   const maker = currentMakerSnapshot();
   if (maker) lines.push(`현재 메이커 설정: ${JSON.stringify(maker)}`);
+  const defaultsLine = myDefaultsContextLine();
+  if (defaultsLine) lines.push(defaultsLine);
   lines.push('[사용자 메시지]');
   return lines.join('\n');
 }
+/* 내 기본값: 이 브라우저에 저장하는 취향. 메모(자유 문장)와 목소리·스타일 축 선택 */
+const MY_DEFAULTS_KEY = 'seedanceMakerMyDefaults';
+const MY_DEFAULT_AXIS_IDS = Object.freeze(['lang', 'voice', 'speaker', 'stylepreset', 'stylelock', 'lighting', 'quality', 'musicgenre', 'negaudio', 'textgen']);
+function loadMyDefaults() {
+  const empty = { note: '', axes: {} };
+  try {
+    const raw = JSON.parse(localStorage.getItem(MY_DEFAULTS_KEY) || 'null');
+    if (!isPlainObject(raw)) return empty;
+    const axes = {};
+    if (isPlainObject(raw.axes)) MY_DEFAULT_AXIS_IDS.forEach(axisId => {
+      const axis = AXES.find(item => item.id === axisId);
+      const allowed = new Set(axis ? axis.options.map(option => option.k) : []);
+      const keys = Array.isArray(raw.axes[axisId]) ? raw.axes[axisId].filter(key => typeof key === 'string' && allowed.has(key)) : [];
+      if (keys.length) axes[axisId] = axis.type === 'single' ? keys.slice(0, 1) : keys;
+    });
+    return { note: typeof raw.note === 'string' ? raw.note.slice(0, 600) : '', axes };
+  } catch (error) {
+    return empty;
+  }
+}
+function saveMyDefaults(value) {
+  try {
+    if (!value.note && !Object.keys(value.axes).length) localStorage.removeItem(MY_DEFAULTS_KEY);
+    else localStorage.setItem(MY_DEFAULTS_KEY, JSON.stringify(value));
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+function myDefaultsAxisSummary(axes) {
+  return Object.entries(axes).map(([axisId, keys]) => `${axisShortTitle(axisId)}: ${keys.map(key => optionShortLabel(axisId, key)).join('·')}`).join(' / ');
+}
+function renderMyDefaults() {
+  const value = loadMyDefaults();
+  const note = document.getElementById('aiDefaultsNote');
+  const axesEl = document.getElementById('aiDefaultsAxes');
+  const badge = document.getElementById('aiDefaultsBadge');
+  if (!note || !axesEl || !badge) return;
+  if (document.activeElement !== note) note.value = value.note;
+  const summary = myDefaultsAxisSummary(value.axes);
+  axesEl.textContent = summary ? `저장된 설정 — ${summary}` : '저장된 축 설정이 없습니다.';
+  const count = (value.note ? 1 : 0) + Object.keys(value.axes).length;
+  badge.textContent = count ? `(${count}개 적용 중)` : '';
+}
+/* 저장한 기본값 축을 기획 카드에 강제로 넣는다. overrides = 사용자가 이번 대화에서 직접 바꾸자고 한 축 ID */
+let chatDefaultOverrides = new Set();
+function applyMyDefaultsToPlan(plan) {
+  if (!plan) return;
+  const defaults = loadMyDefaults().axes;
+  Object.entries(defaults).forEach(([axisId, keys]) => {
+    if (chatDefaultOverrides.has(axisId) && plan.axes[axisId]) return;
+    plan.axes[axisId] = keys.slice();
+  });
+  /* 말투·화자는 언어 축이 대사 없음이면 의미가 없다 */
+  if ((plan.axes.lang || []).includes('none')) ['voice', 'speaker'].forEach(axisId => { if (defaults[axisId] && !chatDefaultOverrides.has(axisId)) delete plan.axes[axisId]; });
+}
+/* 대화와 최종 변환에 넣을 문장 */
+function myDefaultsContextLine() {
+  const value = loadMyDefaults();
+  if (!value.note && !Object.keys(value.axes).length) return '';
+  return `내 기본값(사용자가 저장해 둔 취향): ${JSON.stringify(value)}`;
+}
+
 let chatPlan = null;       // 정리된 기획 카드 (없으면 null)
 const chatMessages = [];   // { role: 'user'|'assistant'|'note', text, images: [dataURL] }
 let chatPendingImages = [];
@@ -3855,7 +4020,7 @@ function chatFinalRequest() {
     `아래 기획 카드(JSON)가 사용자와 합의한 최종 기획이다. 카드의 axes에 있는 선택은 허용 계약 안에서 그대로 따르고, 카드에 없는 필수 축만 기획에 어울리게 고른다. 카드의 cuts는 순서 그대로 timeline의 각 단계가 된다(컷 수가 단계 수와 다르면 단계 수에 맞춰 나누거나 합친다). 컷에 camera가 있으면 그 컷의 cam에 중국어로 옮기고, 컷의 light는 timeline의 light에, 컷의 sound는 timeline의 sfx에 중국어로 옮긴다(sfx는 소리마다 <>로 감싼다). 컷의 narration 값은 timeline의 narration에 그대로 옮긴다. 카드에서 정하지 않은 축도 기획에 어울리게 모두 정한다. 카드의 한국어 내용은 계약대로 옮기되 대사는 한국어 그대로 둔다.${photoNote}`,
     `[기획 카드]\n${JSON.stringify(chatPlan)}`,
     `[대화 발췌 — 카드에 없는 뉘앙스 참고용]\n${transcript.text}`
-  ].join('\n\n');
+  ].concat(loadMyDefaults().note ? [`[내 기본값 메모 — 카드와 충돌하지 않는 한 따른다]\n${loadMyDefaults().note}`] : []).join('\n\n');
 }
 
 function readChatCredentials() {
@@ -3906,7 +4071,7 @@ async function sendChatMessage(presetText) {
   renderChatLog();
   setAIStatus('loading', '기획 도우미가 답하고 있습니다...');
   try {
-    const content = (await callDeepSeek(credentials.apiKey, credentials.model, chatApiMessages(), { effort: 'none' })).trim();
+    const content = (await callDeepSeek(credentials.apiKey, credentials.model, chatApiMessages(), { effort: 'none', temperature: 0.6, maxTokens: 8000 })).trim();
     if (!content) throw new Error('DeepSeek가 빈 답을 돌려줬습니다. 다시 보내 보세요.');
     const parsed = parseAIJson(content);
     const payload = isPlainObject(parsed.value) ? parsed.value : null;
@@ -3916,7 +4081,12 @@ async function sendChatMessage(presetText) {
     const suggestions = payload && Array.isArray(payload.suggestions)
       ? payload.suggestions.filter(item => typeof item === 'string' && item.trim()).map(item => item.trim().slice(0, 40)).slice(0, 4)
       : [];
-    if (payload) chatPlan = normalizeChatPlan(payload.plan, chatPlan);
+    if (payload) {
+      chatPlan = normalizeChatPlan(payload.plan, chatPlan);
+      const overrides = isPlainObject(payload.plan) && Array.isArray(payload.plan.overrides) ? payload.plan.overrides : [];
+      overrides.filter(axisId => MY_DEFAULT_AXIS_IDS.includes(axisId)).forEach(axisId => chatDefaultOverrides.add(axisId));
+      applyMyDefaultsToPlan(chatPlan);
+    }
     chatMessages.push({ role: 'assistant', text: reply, images: [], suggestions });
     setAIStatus('default', '기획 카드가 채워지면 "이 기획으로 프롬프트 만들기"를 누르세요.');
   } catch (error) {
@@ -4037,6 +4207,7 @@ async function finalizeChatPlan(force) {
   renderChatLog();
   let applied = false;
   try {
+    applyMyDefaultsToPlan(chatPlan);
     const result = await runAIComposer(credentials.apiKey, credentials.model, chatFinalRequest(), chatPlan ? { plan: chatPlan } : null);
     applied = true;
     if (chatPlan) {
@@ -4067,6 +4238,27 @@ async function finalizeChatPlan(force) {
   }
 }
 
+document.getElementById('aiDefaultsNote').addEventListener('input', event => {
+  const value = loadMyDefaults();
+  value.note = event.currentTarget.value.trim().slice(0, 600);
+  saveMyDefaults(value);
+  renderMyDefaults();
+});
+document.getElementById('aiDefaultsSaveAxesBtn').addEventListener('click', () => {
+  const value = loadMyDefaults();
+  value.axes = {};
+  MY_DEFAULT_AXIS_IDS.forEach(axisId => { if (state[axisId] && state[axisId].size) value.axes[axisId] = Array.from(state[axisId]); });
+  const ok = saveMyDefaults(value);
+  renderMyDefaults();
+  showToast(ok ? (Object.keys(value.axes).length ? '⭐ 지금 설정을 내 기본값으로 저장했습니다' : '저장할 목소리·스타일 설정이 없습니다. 먼저 축을 고르세요') : '이 브라우저에서는 저장할 수 없습니다', !ok);
+});
+document.getElementById('aiDefaultsClearBtn').addEventListener('click', () => {
+  saveMyDefaults({ note: '', axes: {} });
+  document.getElementById('aiDefaultsNote').value = '';
+  renderMyDefaults();
+  showToast('내 기본값을 지웠습니다');
+});
+renderMyDefaults();
 document.getElementById('aiChatSendBtn').addEventListener('click', () => sendChatMessage());
 document.getElementById('aiChatFinalizeBtn').addEventListener('click', () => finalizeChatPlan());
 document.getElementById('aiChatInput').addEventListener('keydown', event => {
@@ -4087,6 +4279,7 @@ document.getElementById('aiChatInput').addEventListener('paste', event => {
   addChatImages(files);
 });
 document.getElementById('aiChatResetBtn').addEventListener('click', () => {
+  chatDefaultOverrides = new Set();
   chatMessages.length = 0;
   chatPendingImages = [];
   chatPlan = null;
