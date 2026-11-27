@@ -182,6 +182,38 @@ python -m http.server 8765 --directory "C:\Dev\2026-08-08_193228"
 
 ---
 
+## 🧩 AI 컴포저 탭 구조 (탭 추가 방법)
+
+AI 컴포저의 탭(한 번에 구성 · 💬 자유대화 · 🔁 영상 업그레이드 …)은 **탭마다 독립된 `<script>`** 로 붙습니다.
+탭 코드 하나가 망가져도(문법 오류·실행 오류) 그 탭 버튼만 사라지고 상태줄에 「○○ 탭을 불러오지 못했습니다」가 뜨며, 메이커 본체와 다른 탭은 그대로 동작합니다.
+
+| 구분 | 위치 | 내용 |
+|---|---|---|
+| 본체 스크립트 | `seedance-master-builder.html`의 첫 `<script>` | 41축·프롬프트 조립·프리셋·인터뷰 + **탭 틀 `AITabs`** + **AI 탭 공용 도구** |
+| 탭 스크립트 | 파일 맨 아래, 탭마다 `<script>` 하나 | 그 탭의 화면 동작만. 마지막에 `AITabs.register({...})` |
+
+**새 탭 추가 (2곳만 손대면 됨)**
+1. HTML — `#aiComposerForm` 안에 패널 추가 (탭 버튼은 만들지 않음, 등록하면 자동 생성)
+   ```html
+   <div class="ai-panel" id="aiPanelXxx" data-tab-label="탭 이름" hidden> … </div>
+   ```
+2. JS — 맨 아래 탭 스크립트들 옆에 `<script>` 하나
+   ```js
+   AITabs.register({
+     key: 'xxx', label: '탭 이름', panelId: 'aiPanelXxx', order: 40,   // order = 탭 순서
+     onShow() {},           // 탭을 열 때 (선택)
+     onSubmit() {},         // 이 탭에서 Enter로 폼 제출할 때 (선택)
+     setLocked(busy) {}     // AI 호출 중 이 탭 입력칸 잠금 (선택)
+   });
+   ```
+
+**규칙**
+- 탭끼리 서로의 함수를 부르지 않는다. 여러 탭이 같이 쓸 것은 본체의 「AI 탭 공용 도구」로 올린다 — `runAIJob`(잠금·오류 표시), `readDeepSeekCredentials`, `normalizePlanCard`·`runAIComposer(…, { plan })`(기획 카드 → 메이커 적용), `loadMyDefaults`·`applyMyDefaultsToPlan`, `setMakerDurationSeconds`·`setMakerRatio`.
+- 탭 고유 이름에는 접두어를 붙인다 (`chat…`, `up…`) — 스크립트 간 이름이 겹치면 뒤 스크립트가 통째로 실패한다.
+- 탭이 준 함수(`onShow`·`onSubmit`·`setLocked`)는 `AITabs`가 오류를 잡아 부른다.
+
+---
+
 ## 🔌 개발자 통합 가이드 (LLM → 빌더)
 
 이 저장소는 단일 HTML 빌더일 뿐 아니라, **LLM이 정해진 41축 틀에서 벗어나지 않고 축·키를 선택**하도록 하는 개발 통합 자산을 포함합니다. "사용자 대화 → 축 선택 → 프롬프트 생성" 파이프라인을 자체 앱에 붙이는 방법입니다.
