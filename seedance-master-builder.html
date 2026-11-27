@@ -655,6 +655,10 @@
   .up-table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
   .up-table th, .up-table td { border: 1px solid var(--color-border); padding: 6px 8px; text-align: left; vertical-align: top; word-break: keep-all; overflow-wrap: anywhere; }
   .up-table th { background: var(--color-control); font-weight: 700; }
+  .up-check-row { display: flex; gap: 8px; align-items: flex-start; font-size: 11.5px; line-height: 1.6; word-break: keep-all; cursor: pointer; }
+  .up-check-row input { margin-top: 3px; flex: 0 0 auto; }
+  .up-voice { display: flex; flex-direction: column; gap: 6px; padding: 10px; border: 1px solid var(--color-border); border-radius: var(--radius-xs); background: var(--color-control); }
+  .up-voice audio { width: 100%; }
   .up-check { margin: 0; padding-left: 18px; }
   .up-check li { margin: 2px 0; word-break: keep-all; }
   .ai-chat-log {
@@ -1089,6 +1093,10 @@
                 <input id="upKeep" type="text" placeholder="예: 노래는 그대로, 인물 의상 유지">
               </div>
             </div>
+            <label class="up-check-row">
+              <input id="upKeepVoice" type="checkbox">
+              <span><b>A 목소리 음색 유지</b> — B를 참조 영상(r2v)으로 만들고, A에서 뽑은 목소리를 <b>음성 1</b> 참조로 씁니다. 대사는 새로 생성되지만 음색은 A를 따릅니다. 실사 얼굴은 참조할 수 없어 외모는 글로 묘사합니다.</span>
+            </label>
             <div class="ai-actions">
               <button class="btn primary" id="upAnalyzeBtn" type="button">🔍 A 분석하기</button>
               <button class="btn primary" id="upBuildBtn" type="button" disabled>🎬 B 프롬프트 만들기</button>
@@ -5001,7 +5009,7 @@ const UP_EDIT_CHECKLIST = Object.freeze([
   '광고주가 원하지 않는 안내 문구(예: "참고용", "연출된 장면")는 넣지 않기'
 ]);
 
-const upState = { file: null, url: '', seconds: 0, ratio: '', frames: [], uploaded: null, analysis: null, result: null };
+const upState = { file: null, url: '', seconds: 0, ratio: '', frames: [], uploaded: null, analysis: null, result: null, voice: null };
 
 function upEl(id) { return document.getElementById(id); }
 function upNode(tag, className, text) {
@@ -5014,7 +5022,7 @@ function upStatus(stateName, message) { setAIStatus(stateName, message); }
 function upGeminiKeyValue() { return upEl('upGeminiKey').value.trim(); }
 /* AI 컴포저가 일하는 동안(어느 탭이든) 이 탭의 입력칸도 잠근다 */
 function upSetLocked(busy) {
-  ['upGeminiKey', 'upAnalyzeBtn', 'upResetBtn', 'upFile'].forEach(id => { upEl(id).disabled = busy; });
+  ['upGeminiKey', 'upAnalyzeBtn', 'upResetBtn', 'upFile', 'upKeepVoice'].forEach(id => { upEl(id).disabled = busy; });
   upEl('upBuildBtn').disabled = busy || !upEl('upAnalysis').value.trim();
 }
 function upRedact(text) {
@@ -5132,6 +5140,63 @@ async function upVideoPart(apiKey) {
   return { fileData: upState.uploaded };
 }
 
+/* ---- A 목소리 추출 (음색 유지용 음성 참조 파일) ----
+   브라우저가 영상의 소리를 풀어(decodeAudioData) 모노 16비트 WAV로 다시 쓴다. 파일은 밖으로 보내지 않는다 */
+const UP_VOICE_MAX_SECONDS = 15;     // 음성 참조는 짧고 깨끗한 구간이 좋다 — 소리가 시작되는 곳부터 최대 15초
+const UP_VOICE_SILENCE = 0.01;       // 이보다 작은 소리는 앞쪽 무음으로 보고 건너뛴다
+function upEncodeWav(samples, sampleRate) {
+  const buffer = new ArrayBuffer(44 + samples.length * 2);
+  const view = new DataView(buffer);
+  const text = (offset, value) => { for (let i = 0; i < value.length; i++) view.setUint8(offset + i, value.charCodeAt(i)); };
+  text(0, 'RIFF'); view.setUint32(4, 36 + samples.length * 2, true); text(8, 'WAVE');
+  text(12, 'fmt '); view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, 1, true);
+  view.setUint32(24, sampleRate, true); view.setUint32(28, sampleRate * 2, true); view.setUint16(32, 2, true); view.setUint16(34, 16, true);
+  text(36, 'data'); view.setUint32(40, samples.length * 2, true);
+  for (let i = 0; i < samples.length; i++) view.setInt16(44 + i * 2, Math.max(-1, Math.min(1, samples[i])) * 0x7fff, true);
+  return new Blob([buffer], { type: 'audio/wav' });
+}
+async function upExtractVoice(file) {
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  if (!AudioCtx) throw new Error('이 브라우저는 소리 추출을 지원하지 않습니다. 최신 Chrome에서 다시 시도하세요.');
+  const context = new AudioCtx();
+  let decoded;
+  try {
+    decoded = await context.decodeAudioData(await file.arrayBuffer());
+  } catch (error) {
+    throw new Error('영상 A에서 소리를 읽지 못했습니다. 소리가 없거나 이 브라우저가 지원하지 않는 형식입니다(mp4·AAC 권장).');
+  } finally {
+    context.close();
+  }
+  /* 모노로 합치고, 앞쪽 무음은 건너뛰고, 최대 15초만, 가장 큰 소리를 0.9로 맞춘다 */
+  const length = decoded.length;
+  const mono = new Float32Array(length);
+  for (let channel = 0; channel < decoded.numberOfChannels; channel++) {
+    const data = decoded.getChannelData(channel);
+    for (let i = 0; i < length; i++) mono[i] += data[i] / decoded.numberOfChannels;
+  }
+  let start = 0;
+  while (start < length && Math.abs(mono[start]) < UP_VOICE_SILENCE) start++;
+  if (start >= length) throw new Error('영상 A의 소리가 비어 있습니다(무음). 목소리가 들어 있는 영상을 쓰세요.');
+  start = Math.max(0, start - Math.round(decoded.sampleRate * 0.1));
+  const clip = mono.slice(start, Math.min(length, start + decoded.sampleRate * UP_VOICE_MAX_SECONDS));
+  let peak = 0;
+  for (let i = 0; i < clip.length; i++) peak = Math.max(peak, Math.abs(clip[i]));
+  if (peak > 0) for (let i = 0; i < clip.length; i++) clip[i] *= 0.9 / peak;
+  return { blob: upEncodeWav(clip, decoded.sampleRate), seconds: Math.round(clip.length / decoded.sampleRate * 10) / 10, from: Math.round(start / decoded.sampleRate * 10) / 10 };
+}
+async function upPrepareVoice() {
+  if (upState.voice) return upState.voice;
+  if (!upState.file) throw new Error('먼저 영상 A를 고르세요. 목소리는 영상 A에서 뽑습니다.');
+  upStatus('loading', '영상 A에서 목소리를 뽑고 있습니다...');
+  const voice = await upExtractVoice(upState.file);
+  upState.voice = Object.assign(voice, { url: URL.createObjectURL(voice.blob), name: '음성1_A목소리.wav' });
+  return upState.voice;
+}
+function upClearVoice() {
+  if (upState.voice && upState.voice.url) URL.revokeObjectURL(upState.voice.url);
+  upState.voice = null;
+}
+
 /* ---- 영상 A 고르기 · 프레임 시트 ---- */
 function upRatioOf(width, height) {
   if (!width || !height) return '';
@@ -5186,6 +5251,7 @@ function upSetFile(file) {
     return;
   }
   if (upState.url) URL.revokeObjectURL(upState.url);
+  upClearVoice();
   Object.assign(upState, { file, url: URL.createObjectURL(file), seconds: 0, ratio: '', frames: [], uploaded: null, analysis: null, result: null });
   upEl('upFileInfo').textContent = `${file.name} · ${(file.size / 1048576).toFixed(1)}MB${file.size > GEMINI_INLINE_MAX_BYTES ? ' (Gemini에 업로드해 분석)' : ''}`;
   const video = upEl('upVideo');
@@ -5266,7 +5332,7 @@ function upTargetSeconds() {
 function upDurationKeyFor(seconds) {
   return ({ 3: '10s', 4: '15s', 5: '20s', 6: '30s' })[stageCountForSeconds(seconds)] || '20s';
 }
-function upPlanPrompt(analysisText, feedback, keep, format, seconds) {
+function upPlanPrompt(analysisText, feedback, keep, format, seconds, keepVoice) {
   const slots = timeSlotsForSeconds(seconds);
   return [
     '너는 한국 숏폼 광고 연출가다. 영상 A의 분석과 광고주 피드백을 받아, 피드백을 모두 반영한 새 광고 영상 B의 컷 기획을 만든다.',
@@ -5281,6 +5347,7 @@ function upPlanPrompt(analysisText, feedback, keep, format, seconds) {
     '6. 대사·가사는 컷 길이 1초당 한글 4자 안쪽이 자연스럽다. 피드백이 정한 문장은 길어도 그대로 두고 대신 컷 시간을 그 문장에 맞게 배치한다.',
     '7. scene은 그 컷에 보이는 장소·인물·동작·표정을 한국어로 구체적으로, camera는 샷 크기와 카메라 움직임 하나, light는 빛, sound는 효과음을 적는다.',
     '8. 화면 속 글자는 꼭 필요한 브랜드명만 둔다(자막은 편집에서 넣는다).',
+    keepVoice ? '9. A의 목소리 음색을 그대로 쓴다(음성 참조). 말하는 사람은 A의 화자 한 명으로 두고 다른 목소리의 인물을 새로 넣지 않는다. voiceNote에는 "음성 1(A 목소리)의 음색 그대로"와 말투·속도·감정 지시만 적는다.' : '',
     '[출력] JSON 객체 하나만. 형식:',
     '{"changes":[{"feedback":"피드백 항목 원문","change":"B에서 무엇을 어떻게 바꿨는지(어느 컷)"}],"plan":{"kind":"영상 유형","goal":"광고 목적·볼 사람","subject":"주인공과 외모·옷","event":"전체 사건 흐름","scene":"주요 장소","dialog":"핵심 대사 요약","tone":"전체 톤","hook":"첫 2초 훅","cta":"마지막 화면 문구(없으면 빈 문자열)","ending":"끝 장면","cuts":[{"scene":"","dialog":"","narration":false,"camera":"","light":"","sound":""}]},"voiceNote":"화자·보컬별 목소리(성별·나이·톤·말투·발음 지시)","musicNote":"음악(장르·악기·빠르기·언제 시작·끝)","editNotes":["편집 단계에서 챙길 점(효과자막 후보, 강조할 문장 등)"]}',
     '',
@@ -5290,12 +5357,14 @@ function upPlanPrompt(analysisText, feedback, keep, format, seconds) {
     `[영상 A 분석]\n${analysisText}`
   ].join('\n');
 }
-function upComposerRequest(planCard, analysisText, feedback, keep, voiceNote, musicNote) {
+function upComposerRequest(planCard, analysisText, feedback, keep, voiceNote, musicNote, keepVoice) {
   return [
     '이 요청은 기존 광고 영상 A를 광고주 피드백대로 고친 영상 B를 만드는 것이다.',
     `아래 기획 카드(JSON)가 확정된 B 기획이다. 카드의 axes에 있는 선택은 허용 계약 안에서 그대로 따르고, 카드에 없는 필수 축만 기획에 어울리게 고른다. 카드의 cuts는 순서 그대로 timeline의 각 단계가 된다. 컷에 camera가 있으면 그 컷의 cam에 중국어로 옮기고, 컷의 light는 timeline의 light에, 컷의 sound는 timeline의 sfx에 중국어로 옮긴다(sfx는 소리마다 <>로 감싼다). 컷의 narration 값은 timeline의 narration에 그대로 옮긴다. 대사는 한국어 그대로 둔다.`,
     `[기획 카드]\n${JSON.stringify(planCard)}`,
-    `[목소리 설정 — voice·speaker 축과 content.speaker에 반영]\n${voiceNote || '영상 A와 같게'}`,
+    keepVoice
+      ? `[목소리 — 참조 음성] 작업 유형은 참조 영상(r2v)이고 참조 재료는 음성 1개뿐이다(음성 1 = 영상 A에서 뽑은 화자의 목소리). refmat은 audiovoice만 고르고 이미지·영상 참조는 넣지 않는다(실사 얼굴은 참조 불가 — 인물 외모는 A 분석대로 장면 문장에 글로 묘사). 모든 대사는 음성 1의 음색 그대로 말한다. content.speaker에 "音频1的音色"를 따른다는 뜻을 넣는다.\n말투 지시: ${voiceNote || 'A와 같게'}`
+      : `[목소리 설정 — voice·speaker 축과 content.speaker에 반영]\n${voiceNote || '영상 A와 같게'}`,
     `[음악 — 음악 축에 반영]\n${musicNote || '영상 A와 같게'}`,
     `[바꾸지 말 것]\n${keep || '없음'}`,
     `[광고주 피드백 — 참고]\n${feedback || '없음'}`,
@@ -5336,6 +5405,20 @@ function upRenderResult(payload, applied) {
   });
   wrap.append(cuts);
   if (payload.voiceNote) wrap.append(upNode('div', '', `🗣 목소리: ${payload.voiceNote}`));
+  if (payload.keepVoice && upState.voice) {
+    const box = upNode('div', 'up-voice');
+    box.append(upNode('h4', '', '🎙 음성 참조 준비물 — Seedance에 같이 올리세요'));
+    box.append(upNode('div', 'up-help', `작업 유형은 「참조(r2v)」, 이 파일을 음성 1로 올립니다(A의 ${upState.voice.from}초 지점부터 ${upState.voice.seconds}초 길이). 배경음악이 섞여 있으면 목소리만 분리한 파일이 더 좋습니다. 이미지 참조는 넣지 않습니다.`));
+    const player = upNode('audio');
+    player.controls = true;
+    player.src = upState.voice.url;
+    const link = upNode('a', 'btn ghost', `⬇ ${upState.voice.name} 내려받기`);
+    link.href = upState.voice.url;
+    link.download = upState.voice.name;
+    link.id = 'upVoiceDownload';
+    box.append(player, link);
+    wrap.append(box);
+  }
   if (payload.musicNote) wrap.append(upNode('div', '', `🎵 음악: ${payload.musicNote}`));
   wrap.append(upNode('h4', '', '생성 뒤 편집 체크리스트'));
   const list = upNode('ul', 'up-check');
@@ -5362,6 +5445,7 @@ function upRecordText() {
     const slots = timeSlotsForSeconds(result.seconds);
     (result.plan.cuts || []).forEach((cut, index) => lines.push(`컷 ${index + 1} (${slots[index]}초) ${cut.scene}${cut.dialog ? ` / ${cut.narration ? '(화면 밖) ' : ''}"${cut.dialog}"` : ''}`));
     if (result.voiceNote) lines.push(`목소리: ${result.voiceNote}`);
+    if (result.keepVoice && upState.voice) lines.push(`음성 참조: 음성 1 = A 목소리 (${upState.voice.name}, A의 ${upState.voice.from}초 지점부터 ${upState.voice.seconds}초 길이) — 작업 유형 r2v`);
     if (result.musicNote) lines.push(`음악: ${result.musicNote}`);
     lines.push('', '## 편집 체크리스트');
     UP_EDIT_CHECKLIST.concat((result.editNotes || []).map(note => `이번 광고: ${note}`)).forEach(item => lines.push(`- [ ] ${item}`));
@@ -5391,24 +5475,28 @@ async function upBuild() {
   const keep = upEl('upKeep').value.trim();
   const format = upEl('upFormat').value === 'song' ? 'song' : 'dialog';
   const seconds = upTargetSeconds();
+  const keepVoice = upEl('upKeepVoice').checked;
+  const task = keepVoice ? 'r2v' : 't2v';
   const applied = await runAIJob(async () => {
+    if (keepVoice) await upPrepareVoice();   // 목소리를 못 뽑으면 Gemini를 부르기 전에 멈춘다
     upStatus('loading', `1/2 Gemini가 피드백을 반영한 ${seconds}초 B 기획을 짜고 있습니다...`);
-    const payload = await callGemini(geminiKey, [{ text: upPlanPrompt(analysisText, feedback, keep, format, seconds) }], { label: 'B 기획', temperature: 0.4 });
+    const payload = await callGemini(geminiKey, [{ text: upPlanPrompt(analysisText, feedback, keep, format, seconds, keepVoice) }], { label: 'B 기획', temperature: 0.4 });
     if (!payload.plan || !Array.isArray(payload.plan.cuts) || !payload.plan.cuts.length) throw new Error('B 기획에 컷이 없습니다. 다시 시도해 주세요.');
     const durationKey = upDurationKeyFor(seconds);
     const ratio = PLAN_RATIOS.includes(upState.ratio) ? upState.ratio : '9:16';
-    const planCard = normalizePlanCard(Object.assign({}, payload.plan, { duration: durationKey, ratio, axes: { task: ['t2v'], duration: [durationKey] } }), null);
-    planCard.axes.task = ['t2v'];
+    const axes = Object.assign({ task: [task], duration: [durationKey] }, keepVoice ? { refmat: ['audiovoice'] } : {});
+    const planCard = normalizePlanCard(Object.assign({}, payload.plan, { duration: durationKey, ratio, axes }), null);
+    planCard.axes.task = [task];
     applyMyDefaultsToPlan(planCard);
-    upState.result = Object.assign({}, payload, { seconds, plan: planCard });
+    upState.result = Object.assign({}, payload, { seconds, plan: planCard, keepVoice });
     upRenderResult(upState.result, false);
     upStatus('loading', '2/2 DeepSeek가 B 기획을 메이커 41축·컷 대본으로 구성하고 있습니다...');
-    await runAIComposer(credentials.apiKey, credentials.model, upComposerRequest(planCard, analysisText, feedback, keep, payload.voiceNote, payload.musicNote), { plan: planCard });
+    await runAIComposer(credentials.apiKey, credentials.model, upComposerRequest(planCard, analysisText, feedback, keep, payload.voiceNote, payload.musicNote, keepVoice), { plan: planCard });
     /* 길이·비율은 A(또는 입력한 길이)에 맞춘다. 컷 수는 구성할 때와 같다 */
     setMakerDurationSeconds(seconds);
     setMakerRatio(ratio);
     upRenderResult(upState.result, true);
-    upStatus('success', `영상 B 프롬프트를 메이커에 적용했습니다 — ${seconds}초 · ${ratio} · 컷 ${planCard.cuts.length}개. 대조표와 체크리스트는 탭 아래에 있습니다.`);
+    upStatus('success', `영상 B 프롬프트를 메이커에 적용했습니다 — ${keepVoice ? '참조 영상(음성 1 = A 목소리) · ' : ''}${seconds}초 · ${ratio} · 컷 ${planCard.cuts.length}개. 대조표와 체크리스트는 탭 아래에 있습니다.`);
     showToast('🔁 영상 B 프롬프트를 적용했습니다');
   }, [geminiKey, credentials.apiKey]);
   if (applied) {
@@ -5430,7 +5518,9 @@ upEl('upBuildBtn').addEventListener('click', () => upBuild());
 upEl('upAnalysis').addEventListener('input', () => { upEl('upBuildBtn').disabled = AITabs.isBusy() || !upEl('upAnalysis').value.trim(); });
 upEl('upResetBtn').addEventListener('click', () => {
   if (upState.url) URL.revokeObjectURL(upState.url);
+  upClearVoice();
   Object.assign(upState, { file: null, url: '', seconds: 0, ratio: '', frames: [], uploaded: null, analysis: null, result: null });
+  upEl('upKeepVoice').checked = false;
   const video = upEl('upVideo');
   video.removeAttribute('src'); video.load(); video.hidden = true;
   ['upFile', 'upFeedback', 'upSeconds', 'upKeep', 'upAnalysis'].forEach(id => { upEl(id).value = ''; });
