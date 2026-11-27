@@ -635,6 +635,30 @@
   }
   .ai-panel { display: flex; flex-direction: column; gap: 12px; }
   .ai-panel[hidden] { display: none; }
+  .ai-tabs { overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
+  .ai-tab { flex: 0 0 auto; white-space: nowrap; }
+  /* ---- 영상 업그레이드 (A→B) ---- */
+  .up-help { font-size: 11.5px; line-height: 1.6; color: var(--color-muted); word-break: keep-all; }
+  .up-drop {
+    position: relative; display: flex; align-items: center; justify-content: center; text-align: center;
+    min-height: 64px; padding: 10px; border: 1px dashed var(--color-border); border-radius: var(--radius-xs);
+    background: var(--color-control); color: var(--color-muted); font-size: 11.5px; line-height: 1.5; word-break: keep-all;
+  }
+  .up-drop.drag { border-color: var(--color-blue); color: var(--color-text); }
+  .up-drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .up-video { width: 100%; max-height: 260px; background: #000; border-radius: var(--radius-xs); }
+  .up-frames { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 6px; }
+  .up-frame { position: relative; border-radius: 6px; overflow: hidden; border: 1px solid var(--color-border); }
+  .up-frame img { width: 100%; display: block; }
+  .up-frame span { position: absolute; left: 3px; bottom: 3px; font-size: 10px; padding: 1px 4px; border-radius: 4px; background: rgba(0,0,0,.65); color: #fff; }
+  .up-analysis { min-height: 200px !important; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 11.5px !important; }
+  .up-result { display: flex; flex-direction: column; gap: 10px; font-size: 12px; line-height: 1.6; }
+  .up-result h4 { margin: 0; font-size: 12px; }
+  .up-table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+  .up-table th, .up-table td { border: 1px solid var(--color-border); padding: 6px 8px; text-align: left; vertical-align: top; word-break: keep-all; overflow-wrap: anywhere; }
+  .up-table th { background: var(--color-control); font-weight: 700; }
+  .up-check { margin: 0; padding-left: 18px; }
+  .up-check li { margin: 2px 0; word-break: keep-all; }
   .ai-chat-log {
     display: flex; flex-direction: column; gap: 8px;
     min-height: 160px; max-height: 420px; overflow-y: auto;
@@ -988,6 +1012,7 @@
           <div class="ai-tabs" role="tablist" aria-label="AI 구성 방식">
             <button class="ai-tab" id="aiTabOnce" type="button" role="tab" aria-selected="true" aria-controls="aiPanelOnce">한 번에 구성</button>
             <button class="ai-tab" id="aiTabChat" type="button" role="tab" aria-selected="false" aria-controls="aiPanelChat" tabindex="-1">💬 자유대화로 기획하기</button>
+            <button class="ai-tab" id="aiTabUpgrade" type="button" role="tab" aria-selected="false" aria-controls="aiPanelUpgrade" tabindex="-1">🔁 영상 업그레이드 (A→B)</button>
           </div>
           <div class="ai-panel" id="aiPanelOnce" role="tabpanel" aria-labelledby="aiTabOnce">
             <div class="ai-field">
@@ -1029,6 +1054,56 @@
               <button class="btn primary" id="aiChatFinalizeBtn" type="button">🎬 이 기획으로 프롬프트 만들기</button>
               <button class="btn ghost" id="aiChatResetBtn" type="button">새 대화</button>
             </div>
+          </div>
+          <div class="ai-panel up-panel" id="aiPanelUpgrade" role="tabpanel" aria-labelledby="aiTabUpgrade" hidden>
+            <div class="up-help">이미 만든 광고 <b>영상 A</b>와 받은 피드백을 넣으면, A를 분석해 피드백을 반영한 <b>영상 B</b> 프롬프트를 메이커에 적용합니다. 영상 분석은 Gemini, 메이커 구성은 위의 DeepSeek 키를 씁니다. Gemini 키는 이 탭의 입력 메모리에만 두며, 14MB가 넘는 영상은 Gemini 파일 저장소에 올려 분석합니다(Google이 48시간 뒤 자동 삭제).</div>
+            <div class="ai-config-grid">
+              <div class="ai-field">
+                <label for="upGeminiKey">Gemini API 키 (영상·소리 분석)</label>
+                <input id="upGeminiKey" name="gemini-api-key" type="password" autocomplete="off" spellcheck="false" placeholder="AIza...">
+              </div>
+              <div class="ai-field">
+                <label for="upFormat">영상 형식</label>
+                <select id="upFormat">
+                  <option value="auto" selected>자동 판단</option>
+                  <option value="dialog">대사 광고 (인물이 말함)</option>
+                  <option value="song">CM송 (노래 광고)</option>
+                </select>
+              </div>
+            </div>
+            <div class="ai-field">
+              <label for="upFile">① 영상 A</label>
+              <div class="up-drop" id="upDrop">
+                <input id="upFile" type="file" accept="video/mp4,video/quicktime,video/webm,video/*">
+                <span id="upFileInfo">영상 파일을 여기에 끌어다 놓거나 눌러서 고르세요 (mp4 권장)</span>
+              </div>
+              <video id="upVideo" class="up-video" controls muted playsinline preload="metadata" hidden></video>
+              <div class="up-frames" id="upFrames" aria-label="영상 A 장면 프레임"></div>
+            </div>
+            <div class="ai-field">
+              <label for="upFeedback">② 받은 피드백</label>
+              <textarea id="upFeedback" rows="4" placeholder="받은 그대로 붙여넣으세요.&#10;예: 강렬함이 부족 / '사주천궁이라면 OK' 같은 강한 문장 / 마지막에 아빠가 '나도 해봤어!'"></textarea>
+            </div>
+            <div class="ai-config-grid">
+              <div class="ai-field">
+                <label for="upSeconds">B 길이 (초, 10~30 · 비우면 A와 같게)</label>
+                <input id="upSeconds" type="number" inputmode="numeric" min="10" max="30" step="1" placeholder="예: 23">
+              </div>
+              <div class="ai-field">
+                <label for="upKeep">바꾸지 말 것 (선택)</label>
+                <input id="upKeep" type="text" placeholder="예: 노래는 그대로, 인물 의상 유지">
+              </div>
+            </div>
+            <div class="ai-actions">
+              <button class="btn primary" id="upAnalyzeBtn" type="button">🔍 A 분석하기</button>
+              <button class="btn primary" id="upBuildBtn" type="button" disabled>🎬 B 프롬프트 만들기</button>
+              <button class="btn ghost" id="upResetBtn" type="button">처음부터</button>
+            </div>
+            <div class="ai-field" id="upAnalysisWrap" hidden>
+              <label for="upAnalysis">A 분석 결과 — 받아쓰기가 틀렸으면 여기서 고친 뒤 B를 만드세요</label>
+              <textarea id="upAnalysis" class="up-analysis" rows="12" spellcheck="false"></textarea>
+            </div>
+            <div class="up-result" id="upResult" hidden></div>
           </div>
           <div class="ai-security-note" id="aiSecurityNote"><b>보안·연결 안내:</b> 키는 이 탭의 입력 메모리에만 둡니다. <span class="nowrap ai-copy-token">브라우저 개발자 도구나 확장 프로그램</span>에서는 키를 볼 수 있습니다. DeepSeek는 <span class="nowrap ai-copy-token">브라우저 직접 호출과 <code>file://</code> 지원을 공식 보장하지 않습니다.</span> CORS 오류가 나면 문서의 로컬 HTTP 서버를 시도해 보세요. <span class="nowrap ai-copy-token">항상 해결되는 것은 아닙니다.</span> 계속 차단되면 <span class="nowrap ai-copy-token">프록시/백엔드가 필요합니다.</span></div>
           <div class="ai-status" id="aiStatus" role="status" aria-live="polite" aria-atomic="true" data-state="default">API 키와 요청을 입력하면 현재 수동 설정을 검증된 결과로 <span class="nowrap ai-status-predicate">한 번에 교체합니다.</span></div>
@@ -2320,10 +2395,12 @@ function setAIStatus(stateName, message) {
 function setAIComposerBusy(busy) {
   const composer = document.getElementById('aiComposer');
   const label = document.getElementById('aiGenerateLabel');
-  ['aiApiKey', 'aiModel', 'aiRequest', 'aiGenerateBtn', 'aiClearKeyBtn', 'aiChatInput', 'aiChatSendBtn', 'aiChatAttachBtn', 'aiChatFinalizeBtn', 'aiChatResetBtn'].forEach(id => {
+  ['aiApiKey', 'aiModel', 'aiRequest', 'aiGenerateBtn', 'aiClearKeyBtn', 'aiChatInput', 'aiChatSendBtn', 'aiChatAttachBtn', 'aiChatFinalizeBtn', 'aiChatResetBtn', 'upGeminiKey', 'upAnalyzeBtn', 'upResetBtn', 'upFile'].forEach(id => {
     const control = document.getElementById(id);
     if (control) control.disabled = busy;
   });
+  const upBuild = document.getElementById('upBuildBtn');
+  if (upBuild) upBuild.disabled = busy || !document.getElementById('upAnalysis').value.trim();
   if (composer) composer.setAttribute('aria-busy', busy ? 'true' : 'false');
   if (label) label.textContent = busy ? 'AI로 구성 중...' : 'AI로 구성하기';
 }
@@ -3530,7 +3607,7 @@ document.getElementById('aiApiKey').addEventListener('input', event => event.cur
 document.getElementById('aiRequest').addEventListener('input', event => event.currentTarget.removeAttribute('aria-invalid'));
 
 /* ---- AI 컴포저 탭 전환 ---- */
-const AI_TAB_IDS = ['aiTabOnce', 'aiTabChat'];
+const AI_TAB_IDS = ['aiTabOnce', 'aiTabChat', 'aiTabUpgrade'];
 function selectAITab(tabId, focus) {
   AI_TAB_IDS.forEach(id => {
     const tab = document.getElementById(id);
@@ -4287,6 +4364,490 @@ document.getElementById('aiChatResetBtn').addEventListener('click', () => {
   renderChatAttachments();
   renderChatLog();
   setAIStatus('default', '새 대화를 시작합니다. 메이커의 현재 선택은 그대로입니다.');
+});
+
+/* ================================================================
+   🔁 영상 업그레이드 (A→B)
+   영상 A를 Gemini로 분석(화면·대사·가사·목소리·음악) → 피드백을 반영한 B 기획 카드
+   → 기존 메이커 구성(runAIComposer, 기획 카드 기준 모드)으로 프롬프트 적용.
+   Gemini 키·영상은 이 탭의 메모리에만 두고 저장하지 않는다.
+   ================================================================ */
+const GEMINI_MODEL = 'gemini-3.5-flash';
+const GEMINI_BASE = 'https://generativelanguage.googleapis.com';
+const GEMINI_INLINE_MAX_BYTES = 14 * 1024 * 1024;   // 이보다 크면 파일 업로드 방식 (요청 한도 20MB, base64로 약 1.33배)
+const GEMINI_FILE_MAX_BYTES = 500 * 1024 * 1024;
+const GEMINI_TIMEOUT_MS = 240000;
+const UP_FRAME_COUNT = 8;
+const UP_EDIT_CHECKLIST = Object.freeze([
+  '생성 후 대사·가사를 받아쓰기(Whisper·Gemini)로 검수하고, 틀린 발음·빠진 문장은 프롬프트를 고쳐 다시 생성',
+  '말하는 자막: 의미 단위로 묶고 타이밍은 받아쓰기 단어 시간 그대로 (흰 글씨 + 검은 테두리, 말하는 단어 강조)',
+  '효과자막: 말하는 자막과 완전히 다른 스타일(예능 폰트·색 채움·2겹 테두리), 효과자막마다 팝 소리 넣지 않기',
+  '유튜브 쇼츠 안전 영역 안 · 가운데 정렬 · 얼굴 가리지 않기 (720×1280 기준 위 192 / 아래 448 / 오른쪽 128 비움)',
+  '소리: 노래 광고는 목소리·반주 분리 후 반주 크기 재조정, 대사 광고는 대사만 분리하고 배경음악 새로 설계, 최종 -14 LUFS',
+  '엔드카드: 브랜드 공식 로고 · 바로 앞 장면 문구 반복하지 않기 · 끝에 멈칫하는 정지 구간 없이 바로 넘어가기',
+  '광고주가 원하지 않는 안내 문구(예: "참고용", "연출된 장면")는 넣지 않기'
+]);
+
+let upBusy = false;
+const upState = { file: null, url: '', seconds: 0, ratio: '', frames: [], uploaded: null, analysis: null, result: null };
+
+function upEl(id) { return document.getElementById(id); }
+function upNode(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined) node.textContent = text;
+  return node;
+}
+function upStatus(stateName, message) { setAIStatus(stateName, message); }
+function upGeminiKeyValue() { return upEl('upGeminiKey').value.trim(); }
+function upRedact(text) {
+  let out = redactSecret(String(text || ''), upGeminiKeyValue());
+  const dsKey = upEl('aiApiKey').value.trim();
+  if (dsKey) out = redactSecret(out, dsKey);
+  return out.replace(/AIza[0-9A-Za-z_\-]{20,}/g, '[숨김]');
+}
+function upParseJson(text) {
+  const cleaned = String(text || '').trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+  try { return JSON.parse(cleaned); } catch (error) {
+    const start = cleaned.indexOf('{');
+    const end = cleaned.lastIndexOf('}');
+    if (start !== -1 && end > start) return JSON.parse(cleaned.slice(start, end + 1));
+    throw new Error('Gemini 응답이 JSON 형식이 아닙니다. 다시 시도해 주세요.');
+  }
+}
+function upSleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+/* Gemini 호출: 혼잡(429·500·503)이면 잠시 쉬었다 두 번 더 시도한다 */
+async function upGeminiFetch(url, init, label) {
+  for (let attempt = 1; ; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);
+    let response;
+    try {
+      response = await fetch(url, Object.assign({}, init, { signal: controller.signal }));
+    } catch (error) {
+      if (error && error.name === 'AbortError') throw new Error(`Gemini ${label} 응답 시간이 ${GEMINI_TIMEOUT_MS / 1000}초를 넘어 중단했습니다.`);
+      throw new Error(`네트워크 오류로 Gemini에 연결하지 못했습니다 (${label}). 인터넷 연결을 확인하세요.`);
+    } finally {
+      clearTimeout(timer);
+    }
+    if (response.ok) return response;
+    const text = await response.text();
+    /* 하루 사용량 소진(무료 등급 등)은 기다려도 풀리지 않으므로 바로 알린다 */
+    if (response.status === 429 && /per day|PerDay|free_tier/i.test(text)) {
+      throw new Error(`Gemini ${label} 실패 — 이 키의 하루 사용량을 다 썼습니다(무료 등급은 하루 약 20회, 업그레이드 1회에 2회 사용). 내일 다시 시도하거나 결제를 연결한 키를 쓰세요.`);
+    }
+    if ([429, 500, 503].includes(response.status) && attempt < 3) {
+      upStatus('loading', `Gemini가 혼잡합니다. ${attempt * 5}초 뒤 다시 시도합니다... (${attempt}/2)`);
+      await upSleep(attempt * 5000);
+      continue;
+    }
+    let detail = '';
+    try { detail = JSON.parse(text).error.message || ''; } catch (error) { detail = text.slice(0, 200); }
+    const hint = response.status === 400 && /API key/i.test(detail) ? ' — Gemini API 키를 확인하세요.'
+      : response.status === 403 ? ' — 키 권한 또는 결제 설정을 확인하세요.'
+      : response.status === 429 ? ' — 사용 한도에 걸렸습니다. 잠시 뒤 다시 시도하세요.' : '';
+    throw new Error(`Gemini ${label} 실패 (HTTP ${response.status})${hint}\n세부 정보: ${upRedact(detail)}`);
+  }
+}
+async function callGemini(apiKey, parts, opts) {
+  const options = opts || {};
+  const response = await upGeminiFetch(`${GEMINI_BASE}/v1beta/models/${GEMINI_MODEL}:generateContent`, {
+    method: 'POST',
+    headers: { 'x-goog-api-key': apiKey, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ role: 'user', parts }],
+      generationConfig: { responseMimeType: 'application/json', temperature: options.temperature ?? 0.3, maxOutputTokens: options.maxTokens || 16000 }
+    })
+  }, options.label || '요청');
+  const envelope = await response.json();
+  const candidate = envelope.candidates && envelope.candidates[0];
+  if (!candidate) {
+    const reason = envelope.promptFeedback && envelope.promptFeedback.blockReason;
+    throw new Error(`Gemini가 답을 주지 않았습니다${reason ? ` (차단 사유: ${reason})` : ''}.`);
+  }
+  if (candidate.finishReason === 'MAX_TOKENS') throw new Error('Gemini 응답이 길이 제한으로 잘렸습니다. 피드백을 조금 줄여 다시 시도하세요.');
+  const text = ((candidate.content && candidate.content.parts) || []).filter(part => !part.thought && typeof part.text === 'string').map(part => part.text).join('');
+  if (!text.trim()) throw new Error(`Gemini 응답이 비어 있습니다 (종료 사유: ${candidate.finishReason || '알 수 없음'}).`);
+  return upParseJson(text);
+}
+function upReadAsBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
+    reader.onerror = () => reject(new Error('영상 파일을 읽지 못했습니다.'));
+    reader.readAsDataURL(file);
+  });
+}
+/* 큰 영상은 Gemini 파일 저장소에 올린다 (멀티파트 1회 요청 → 처리 완료 대기). 올린 파일은 Google이 48시간 뒤 지운다 */
+async function upUploadToGemini(apiKey, file) {
+  const boundary = `seedance${Math.random().toString(16).slice(2)}`;
+  const meta = JSON.stringify({ file: { display_name: 'video-A' } });
+  const mime = file.type || 'video/mp4';
+  const body = new Blob([
+    `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${meta}\r\n--${boundary}\r\nContent-Type: ${mime}\r\n\r\n`,
+    file,
+    `\r\n--${boundary}--\r\n`
+  ]);
+  upStatus('loading', `영상 A(${(file.size / 1048576).toFixed(1)}MB)를 Gemini에 올리고 있습니다...`);
+  const response = await upGeminiFetch(`${GEMINI_BASE}/upload/v1beta/files?uploadType=multipart`, {
+    method: 'POST',
+    headers: { 'x-goog-api-key': apiKey, 'Content-Type': `multipart/related; boundary=${boundary}` },
+    body
+  }, '영상 업로드');
+  let info = (await response.json()).file;
+  if (!info || !info.name) throw new Error('Gemini 업로드 응답에 파일 정보가 없습니다.');
+  for (let i = 0; i < 60 && info.state === 'PROCESSING'; i++) {
+    upStatus('loading', `Gemini가 영상을 처리하고 있습니다... (${(i + 1) * 3}초)`);
+    await upSleep(3000);
+    info = await (await upGeminiFetch(`${GEMINI_BASE}/v1beta/${info.name}`, { headers: { 'x-goog-api-key': apiKey } }, '처리 확인')).json();
+  }
+  if (info.state !== 'ACTIVE') throw new Error(`Gemini가 영상을 처리하지 못했습니다 (상태: ${info.state || '알 수 없음'}).`);
+  return { fileUri: info.uri, mimeType: info.mimeType || mime };
+}
+async function upVideoPart(apiKey) {
+  const file = upState.file;
+  if (file.size <= GEMINI_INLINE_MAX_BYTES) {
+    upStatus('loading', '영상 A를 읽고 있습니다...');
+    return { inlineData: { mimeType: file.type || 'video/mp4', data: await upReadAsBase64(file) } };
+  }
+  if (!upState.uploaded) upState.uploaded = await upUploadToGemini(apiKey, file);
+  return { fileData: upState.uploaded };
+}
+
+/* ---- 영상 A 고르기 · 프레임 시트 ---- */
+function upRatioOf(width, height) {
+  if (!width || !height) return '';
+  const value = width / height;
+  const known = [['9:16', 9 / 16], ['3:4', 3 / 4], ['1:1', 1], ['4:3', 4 / 3], ['16:9', 16 / 9], ['21:9', 21 / 9]];
+  return known.reduce((best, item) => Math.abs(item[1] - value) < Math.abs(best[1] - value) ? item : best)[0];
+}
+function upSeek(video, time) {
+  return new Promise(resolve => {
+    const done = () => { video.removeEventListener('seeked', done); resolve(); };
+    video.addEventListener('seeked', done);
+    video.currentTime = time;
+    setTimeout(done, 3000);
+  });
+}
+async function upExtractFrames(video) {
+  const wrap = upEl('upFrames');
+  wrap.textContent = '';
+  upState.frames = [];
+  const duration = video.duration;
+  if (!Number.isFinite(duration) || duration <= 0) return;
+  const canvas = document.createElement('canvas');
+  const scale = 160 / Math.max(1, video.videoWidth);
+  canvas.width = Math.round(video.videoWidth * scale);
+  canvas.height = Math.round(video.videoHeight * scale);
+  const context = canvas.getContext('2d');
+  for (let i = 0; i < UP_FRAME_COUNT; i++) {
+    const time = Math.min(duration - 0.05, (i + 0.5) * duration / UP_FRAME_COUNT);
+    await upSeek(video, time);
+    try {
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const src = canvas.toDataURL('image/jpeg', 0.7);
+      upState.frames.push({ time, src });
+      const frame = upNode('div', 'up-frame');
+      const img = upNode('img');
+      img.src = src;
+      img.alt = `${time.toFixed(1)}초 장면`;
+      frame.append(img, upNode('span', '', `${time.toFixed(1)}s`));
+      wrap.append(frame);
+    } catch (error) { break; }
+  }
+  await upSeek(video, 0);
+}
+function upSetFile(file) {
+  if (!file) return;
+  if (!/^video\//.test(file.type) && !/\.(mp4|mov|webm|m4v)$/i.test(file.name)) {
+    upStatus('error', '영상 파일(mp4·mov·webm)을 골라 주세요.');
+    return;
+  }
+  if (file.size > GEMINI_FILE_MAX_BYTES) {
+    upStatus('error', '영상이 너무 큽니다 (최대 500MB). 해상도를 낮춰 다시 저장해 주세요.');
+    return;
+  }
+  if (upState.url) URL.revokeObjectURL(upState.url);
+  Object.assign(upState, { file, url: URL.createObjectURL(file), seconds: 0, ratio: '', frames: [], uploaded: null, analysis: null, result: null });
+  upEl('upFileInfo').textContent = `${file.name} · ${(file.size / 1048576).toFixed(1)}MB${file.size > GEMINI_INLINE_MAX_BYTES ? ' (Gemini에 업로드해 분석)' : ''}`;
+  const video = upEl('upVideo');
+  video.hidden = false;
+  video.src = upState.url;
+  video.onloadedmetadata = async () => {
+    upState.seconds = Math.round(video.duration * 10) / 10;
+    upState.ratio = upRatioOf(video.videoWidth, video.videoHeight);
+    upEl('upFileInfo').textContent += ` · ${upState.seconds}초 · ${upState.ratio || '비율 미확인'}`;
+    if (!upEl('upSeconds').value) upEl('upSeconds').placeholder = `비우면 ${Math.min(30, Math.max(10, Math.round(upState.seconds)))}초`;
+    await upExtractFrames(video);
+  };
+  upEl('upAnalysis').value = '';
+  upEl('upAnalysisWrap').hidden = true;
+  upEl('upResult').hidden = true;
+  upEl('upBuildBtn').disabled = true;
+  upStatus('default', '영상 A를 골랐습니다. 피드백을 적고 「A 분석하기」를 누르세요.');
+}
+
+/* ---- 1단계: A 분석 ---- */
+function upAnalysisPrompt(formatHint) {
+  return [
+    '너는 한국 숏폼 광고 영상 분석가다. 첨부한 영상 A를 화면과 소리 모두 끝까지 보고 듣고 분석한다.',
+    '이 분석은 같은 광고를 피드백대로 고쳐 다시 만드는(영상 B) 기준이 된다. 들리는 대로 정확히 받아쓰고, 추측은 "(추정)"으로 표시한다. 보이지 않는 것을 지어내지 않는다.',
+    formatHint === 'song' ? '이 영상은 CM송(노래 광고)이다. 가사를 줄 단위로 받아쓴다.'
+      : formatHint === 'dialog' ? '이 영상은 인물이 말하는 대사 광고다. 대사를 화자별로 받아쓴다.'
+      : '대사 광고인지 CM송인지 먼저 판단한다.',
+    '장면이 바뀌는 지점마다 컷을 나눈다. 시간은 초 단위(소수 첫째 자리)로 적는다.',
+    '모든 글은 한국어로 쓴다. 대사·가사는 들린 그대로 쓴다.',
+    'JSON 객체 하나만 출력한다. 형식:',
+    '{"seconds":숫자,"format":"dialog 또는 song","summary":"광고 한 줄 요약(누가·무엇을·어떤 흐름)","brand":"화면이나 소리에 나온 브랜드·서비스 이름","characters":[{"who":"인물","look":"나이·성별·머리·옷차림"}],"voices":[{"who":"화자 또는 보컬","voice":"성별·나이대·톤·말투"}],"music":"음악 장르·악기·빠르기·분위기·시작과 끝","cuts":[{"start":0,"end":3.5,"scene":"장소·인물 동작·표정","camera":"샷 크기·앵글·움직임","speech":"그 컷의 대사 또는 가사(없으면 빈 문자열)","speaker":"누가 말하거나 부르는지(화면 밖이면 화면 밖이라고)","sound":"효과음·환경음"}],"onscreenText":["화면에 보이는 글자·자막"],"issues":["발음이 뭉개진 곳, 어색한 연기, 전달력이 약한 곳 등 고칠 만한 점"]}'
+  ].join('\n');
+}
+function upAnalysisToText(a) {
+  const lines = [];
+  const num = value => (Number.isFinite(Number(value)) ? Number(value).toFixed(1) : '?');
+  lines.push(`[요약] ${a.summary || ''}`);
+  if (a.brand) lines.push(`[브랜드] ${a.brand}`);
+  lines.push(`[형식] ${a.format === 'song' ? 'CM송' : '대사 광고'} · 길이 ${a.seconds || upState.seconds}초 · 비율 ${upState.ratio || '미확인'}`);
+  (a.characters || []).forEach(item => lines.push(`[인물] ${item.who}: ${item.look}`));
+  (a.voices || []).forEach(item => lines.push(`[목소리] ${item.who}: ${item.voice}`));
+  if (a.music) lines.push(`[음악] ${a.music}`);
+  lines.push('');
+  (a.cuts || []).forEach((cut, index) => {
+    lines.push(`컷 ${index + 1} (${num(cut.start)}-${num(cut.end)}초) ${cut.scene || ''}`);
+    if (cut.camera) lines.push(`  카메라: ${cut.camera}`);
+    if (cut.speech) lines.push(`  ${cut.speaker || '화자'}: "${cut.speech}"`);
+    if (cut.sound) lines.push(`  소리: ${cut.sound}`);
+  });
+  if ((a.onscreenText || []).length) { lines.push(''); lines.push(`[화면 글자] ${a.onscreenText.join(' / ')}`); }
+  if ((a.issues || []).length) { lines.push(''); a.issues.forEach(item => lines.push(`[고칠 점] ${item}`)); }
+  return lines.join('\n');
+}
+async function upAnalyze() {
+  if (upBusy || aiComposerBusy) return;
+  const apiKey = upGeminiKeyValue();
+  if (!apiKey) { upStatus('error', 'Gemini API 키를 입력하세요. 키는 이 탭에서만 유지됩니다.'); upEl('upGeminiKey').focus(); return; }
+  if (!upState.file) { upStatus('error', '먼저 영상 A를 고르세요.'); upEl('upFile').focus(); return; }
+  upBusy = true; aiComposerBusy = true; setAIComposerBusy(true);
+  try {
+    const videoPart = await upVideoPart(apiKey);
+    upStatus('loading', 'Gemini가 영상 A의 화면·대사·음악을 분석하고 있습니다... (보통 30초~1분)');
+    const analysis = await callGemini(apiKey, [videoPart, { text: upAnalysisPrompt(upEl('upFormat').value) }], { label: 'A 분석', temperature: 0.2 });
+    if (!Array.isArray(analysis.cuts) || !analysis.cuts.length) throw new Error('분석 결과에 컷 정보가 없습니다. 다시 시도해 주세요.');
+    upState.analysis = analysis;
+    if (upEl('upFormat').value === 'auto' && (analysis.format === 'song' || analysis.format === 'dialog')) upEl('upFormat').value = analysis.format;
+    upEl('upAnalysis').value = upAnalysisToText(analysis);
+    upEl('upAnalysisWrap').hidden = false;
+    upStatus('success', `A 분석 완료 — 컷 ${analysis.cuts.length}개. 받아쓰기를 확인하고 「B 프롬프트 만들기」를 누르세요.`);
+  } catch (error) {
+    upStatus('error', upRedact(error && error.message ? error.message : '알 수 없는 오류가 발생했습니다.'));
+  } finally {
+    upBusy = false; aiComposerBusy = false; setAIComposerBusy(false);
+  }
+}
+
+/* ---- 2단계: 피드백 반영 B 기획 → 메이커 적용 ---- */
+function upTargetSeconds() {
+  const typed = Math.round(Number(upEl('upSeconds').value));
+  const base = Number.isFinite(typed) && typed > 0 ? typed : Math.round(upState.seconds || 20);
+  return Math.min(30, Math.max(10, base));
+}
+function upDurationKeyFor(seconds) {
+  return ({ 3: '10s', 4: '15s', 5: '20s', 6: '30s' })[stageCountForSeconds(seconds)] || '20s';
+}
+function upPlanPrompt(analysisText, feedback, keep, format, seconds) {
+  const slots = timeSlotsForSeconds(seconds);
+  return [
+    '너는 한국 숏폼 광고 연출가다. 영상 A의 분석과 광고주 피드백을 받아, 피드백을 모두 반영한 새 광고 영상 B의 컷 기획을 만든다.',
+    '[규칙]',
+    '1. 피드백에 적힌 문장·멘트·가사는 글자 그대로 넣는다. "A → B로 바꿔"라고 하면 A 문장을 지우고 B 문장을 쓴다.',
+    '2. 피드백이 말하지 않은 것(인물, 장소, 흐름, 브랜드, 분위기, 좋은 장면)은 A를 최대한 그대로 유지한다. 바꾸지 말 것으로 적힌 것은 절대 바꾸지 않는다.',
+    '3. "강렬함 부족", "전달력 부족" 같은 추상 피드백은 구체적인 연출(더 과장된 반응, 또렷하고 천천히 말하기, 강한 한 문장, 클로즈업 등)로 바꿔 반영하고 무엇을 했는지 changes에 적는다.',
+    `4. B 길이는 ${seconds}초, 컷은 정확히 ${slots.length}개다. 컷 시간: ${slots.map((slot, index) => `컷${index + 1}=${slot}초`).join(', ')}. A의 흐름을 이 컷 수에 맞게 나누거나 합친다.`,
+    format === 'song'
+      ? '5. CM송이다. 각 컷의 dialog에 그 컷에서 부르는 가사를 한국어로 적고 narration은 true(화면 밖 보컬)로 한다. 화면 속 인물은 노래하지 않는다. 피드백이 "노래는 그대로"라고 하면 가사·멜로디 느낌을 A와 같게 둔다.'
+      : '5. 대사 광고다. 각 컷의 dialog에 그 컷의 한국어 대사를 한 화자 기준으로 적고(말하는 사람이 둘이면 더 중요한 대사), 화면 밖 내레이션이면 narration을 true로 한다.',
+    '6. 대사·가사는 컷 길이 1초당 한글 4자 안쪽이 자연스럽다. 피드백이 정한 문장은 길어도 그대로 두고 대신 컷 시간을 그 문장에 맞게 배치한다.',
+    '7. scene은 그 컷에 보이는 장소·인물·동작·표정을 한국어로 구체적으로, camera는 샷 크기와 카메라 움직임 하나, light는 빛, sound는 효과음을 적는다.',
+    '8. 화면 속 글자는 꼭 필요한 브랜드명만 둔다(자막은 편집에서 넣는다).',
+    '[출력] JSON 객체 하나만. 형식:',
+    '{"changes":[{"feedback":"피드백 항목 원문","change":"B에서 무엇을 어떻게 바꿨는지(어느 컷)"}],"plan":{"kind":"영상 유형","goal":"광고 목적·볼 사람","subject":"주인공과 외모·옷","event":"전체 사건 흐름","scene":"주요 장소","dialog":"핵심 대사 요약","tone":"전체 톤","hook":"첫 2초 훅","cta":"마지막 화면 문구(없으면 빈 문자열)","ending":"끝 장면","cuts":[{"scene":"","dialog":"","narration":false,"camera":"","light":"","sound":""}]},"voiceNote":"화자·보컬별 목소리(성별·나이·톤·말투·발음 지시)","musicNote":"음악(장르·악기·빠르기·언제 시작·끝)","editNotes":["편집 단계에서 챙길 점(효과자막 후보, 강조할 문장 등)"]}',
+    '',
+    `[영상 형식] ${format === 'song' ? 'CM송' : '대사 광고'}`,
+    `[바꾸지 말 것] ${keep || '없음'}`,
+    `[광고주 피드백]\n${feedback || '(피드백 없음 — A를 같은 내용으로 더 완성도 높게)'}`,
+    `[영상 A 분석]\n${analysisText}`
+  ].join('\n');
+}
+function upComposerRequest(planCard, analysisText, feedback, keep, voiceNote, musicNote) {
+  return [
+    '이 요청은 기존 광고 영상 A를 광고주 피드백대로 고친 영상 B를 만드는 것이다.',
+    `아래 기획 카드(JSON)가 확정된 B 기획이다. 카드의 axes에 있는 선택은 허용 계약 안에서 그대로 따르고, 카드에 없는 필수 축만 기획에 어울리게 고른다. 카드의 cuts는 순서 그대로 timeline의 각 단계가 된다. 컷에 camera가 있으면 그 컷의 cam에 중국어로 옮기고, 컷의 light는 timeline의 light에, 컷의 sound는 timeline의 sfx에 중국어로 옮긴다(sfx는 소리마다 <>로 감싼다). 컷의 narration 값은 timeline의 narration에 그대로 옮긴다. 대사는 한국어 그대로 둔다.`,
+    `[기획 카드]\n${JSON.stringify(planCard)}`,
+    `[목소리 설정 — voice·speaker 축과 content.speaker에 반영]\n${voiceNote || '영상 A와 같게'}`,
+    `[음악 — 음악 축에 반영]\n${musicNote || '영상 A와 같게'}`,
+    `[바꾸지 말 것]\n${keep || '없음'}`,
+    `[광고주 피드백 — 참고]\n${feedback || '없음'}`,
+    `[영상 A 분석 — 인물 외모·장소·분위기 참고]\n${analysisText.slice(0, 4000)}`
+  ].concat(loadMyDefaults().note ? [`[내 기본값 메모 — 카드와 충돌하지 않는 한 따른다]\n${loadMyDefaults().note}`] : []).join('\n\n');
+}
+function upRenderResult(payload, applied) {
+  const wrap = upEl('upResult');
+  wrap.textContent = '';
+  wrap.append(upNode('h4', '', '피드백 → B 반영 대조표'));
+  const table = upNode('table', 'up-table');
+  const head = upNode('tr');
+  head.append(upNode('th', '', '피드백'), upNode('th', '', 'B에서 바꾼 것'));
+  table.append(head);
+  (payload.changes || []).forEach(item => {
+    const row = upNode('tr');
+    row.append(upNode('td', '', item.feedback || ''), upNode('td', '', item.change || ''));
+    table.append(row);
+  });
+  if (!(payload.changes || []).length) {
+    const row = upNode('tr');
+    const cell = upNode('td', '', '피드백이 없어 A를 그대로 다듬었습니다.');
+    cell.colSpan = 2;
+    row.append(cell);
+    table.append(row);
+  }
+  wrap.append(table);
+  wrap.append(upNode('h4', '', 'B 컷 구성'));
+  const cuts = upNode('table', 'up-table');
+  const cutHead = upNode('tr');
+  cutHead.append(upNode('th', '', '컷'), upNode('th', '', '장면'), upNode('th', '', '대사·가사'));
+  cuts.append(cutHead);
+  const slots = timeSlotsForSeconds(payload.seconds);
+  (payload.plan.cuts || []).forEach((cut, index) => {
+    const row = upNode('tr');
+    row.append(upNode('td', '', `${index + 1} (${slots[index] || '?'}초)`), upNode('td', '', cut.scene || ''), upNode('td', '', cut.dialog ? `${cut.narration ? '🎙 ' : ''}${cut.dialog}` : '—'));
+    cuts.append(row);
+  });
+  wrap.append(cuts);
+  if (payload.voiceNote) wrap.append(upNode('div', '', `🗣 목소리: ${payload.voiceNote}`));
+  if (payload.musicNote) wrap.append(upNode('div', '', `🎵 음악: ${payload.musicNote}`));
+  wrap.append(upNode('h4', '', '생성 뒤 편집 체크리스트'));
+  const list = upNode('ul', 'up-check');
+  UP_EDIT_CHECKLIST.concat((payload.editNotes || []).map(note => `이번 광고: ${note}`)).forEach(item => list.append(upNode('li', '', item)));
+  wrap.append(list);
+  const actions = upNode('div', 'ai-actions');
+  const copy = upNode('button', 'btn ghost', '📋 작업 기록 복사 (분석·대조표·체크리스트)');
+  copy.type = 'button';
+  copy.addEventListener('click', () => upCopyRecord());
+  actions.append(copy);
+  wrap.append(actions);
+  wrap.append(upNode('div', 'up-help', applied
+    ? '✅ B 프롬프트를 메이커에 적용했습니다. 아래 프롬프트를 확인한 뒤 복사하세요. 생성 설정: 위 길이·비율 그대로, 소리 생성 켬.'
+    : '⚠️ 메이커 적용은 실패했습니다. 위 상태 메시지를 확인한 뒤 「B 프롬프트 만들기」를 다시 누르세요.'));
+  wrap.hidden = false;
+}
+function upRecordText() {
+  const result = upState.result;
+  const lines = ['# 영상 업그레이드 기록 (A → B)', '', `원본 A: ${upState.file ? upState.file.name : ''}`, '', '## A 분석', upEl('upAnalysis').value, '', '## 피드백', upEl('upFeedback').value.trim() || '(없음)'];
+  if (result) {
+    lines.push('', '## 피드백 → B 반영');
+    (result.changes || []).forEach(item => lines.push(`- ${item.feedback} → ${item.change}`));
+    lines.push('', `## B 컷 구성 (${result.seconds}초)`);
+    const slots = timeSlotsForSeconds(result.seconds);
+    (result.plan.cuts || []).forEach((cut, index) => lines.push(`컷 ${index + 1} (${slots[index]}초) ${cut.scene}${cut.dialog ? ` / ${cut.narration ? '(화면 밖) ' : ''}"${cut.dialog}"` : ''}`));
+    if (result.voiceNote) lines.push(`목소리: ${result.voiceNote}`);
+    if (result.musicNote) lines.push(`음악: ${result.musicNote}`);
+    lines.push('', '## 편집 체크리스트');
+    UP_EDIT_CHECKLIST.concat((result.editNotes || []).map(note => `이번 광고: ${note}`)).forEach(item => lines.push(`- [ ] ${item}`));
+  }
+  lines.push('', '## B 프롬프트 (중국어 원문)', lastPromptCn || '');
+  return lines.join('\n');
+}
+async function upCopyRecord() {
+  const text = upRecordText();
+  try { await navigator.clipboard.writeText(text); showToast('📋 작업 기록을 복사했습니다'); }
+  catch (error) {
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); showToast('📋 작업 기록을 복사했습니다'); } catch (e) { showToast('복사 실패', true); }
+    ta.remove();
+  }
+}
+async function upBuild() {
+  if (upBusy || aiComposerBusy) return;
+  const geminiKey = upGeminiKeyValue();
+  const analysisText = upEl('upAnalysis').value.trim();
+  if (!geminiKey) { upStatus('error', 'Gemini API 키를 입력하세요.'); upEl('upGeminiKey').focus(); return; }
+  if (!analysisText) { upStatus('error', '먼저 「A 분석하기」를 누르세요.'); return; }
+  const credentials = readChatCredentials();   // DeepSeek 키·모델 (없으면 안내하고 멈춤)
+  if (!credentials) return;
+  const feedback = upEl('upFeedback').value.trim();
+  const keep = upEl('upKeep').value.trim();
+  const format = upEl('upFormat').value === 'song' ? 'song' : 'dialog';
+  const seconds = upTargetSeconds();
+  upBusy = true; aiComposerBusy = true; setAIComposerBusy(true);
+  let applied = false;
+  try {
+    upStatus('loading', `1/2 Gemini가 피드백을 반영한 ${seconds}초 B 기획을 짜고 있습니다...`);
+    const payload = await callGemini(geminiKey, [{ text: upPlanPrompt(analysisText, feedback, keep, format, seconds) }], { label: 'B 기획', temperature: 0.4 });
+    if (!payload.plan || !Array.isArray(payload.plan.cuts) || !payload.plan.cuts.length) throw new Error('B 기획에 컷이 없습니다. 다시 시도해 주세요.');
+    const durationKey = upDurationKeyFor(seconds);
+    const ratio = CHAT_RATIOS.includes(upState.ratio) ? upState.ratio : '9:16';
+    const planCard = normalizeChatPlan(Object.assign({}, payload.plan, { duration: durationKey, ratio, axes: { task: ['t2v'], duration: [durationKey] } }), null);
+    planCard.axes.task = ['t2v'];
+    applyMyDefaultsToPlan(planCard);
+    upState.result = Object.assign({}, payload, { seconds, plan: planCard });
+    upRenderResult(upState.result, false);
+    upStatus('loading', '2/2 DeepSeek가 B 기획을 메이커 41축·컷 대본으로 구성하고 있습니다...');
+    await runAIComposer(credentials.apiKey, credentials.model, upComposerRequest(planCard, analysisText, feedback, keep, payload.voiceNote, payload.musicNote), { plan: planCard });
+    /* 길이: 프리셋 길이와 다르면 직접 입력 길이로 맞춘다 (컷 수는 같다) */
+    if (durationKeySeconds(durationKey) !== seconds) {
+      customDurationSeconds = seconds;
+      state.duration.clear();
+      state.duration.add('custom');
+      renderSlots();
+    }
+    const ratioInput = upEl('p_ratio');
+    if (ratioInput) ratioInput.value = ratio;
+    renderPrompt();
+    applied = true;
+    upRenderResult(upState.result, true);
+    upStatus('success', `영상 B 프롬프트를 메이커에 적용했습니다 — ${seconds}초 · ${ratio} · 컷 ${planCard.cuts.length}개. 대조표와 체크리스트는 탭 아래에 있습니다.`);
+    showToast('🔁 영상 B 프롬프트를 적용했습니다');
+  } catch (error) {
+    upStatus('error', upRedact(error && error.message ? error.message : '알 수 없는 오류가 발생했습니다.'));
+  } finally {
+    upBusy = false; aiComposerBusy = false; setAIComposerBusy(false);
+  }
+  if (applied) {
+    const output = upEl('promptOut');
+    if (output && output.scrollIntoView) output.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+}
+
+upEl('upFile').addEventListener('change', event => { upSetFile(event.currentTarget.files[0]); });
+['dragenter', 'dragover'].forEach(type => upEl('upDrop').addEventListener(type, event => { event.preventDefault(); upEl('upDrop').classList.add('drag'); }));
+['dragleave', 'drop'].forEach(type => upEl('upDrop').addEventListener(type, () => upEl('upDrop').classList.remove('drag')));
+upEl('upDrop').addEventListener('drop', event => {
+  event.preventDefault();
+  const file = event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0];
+  if (file) upSetFile(file);
+});
+upEl('upAnalyzeBtn').addEventListener('click', () => upAnalyze());
+upEl('upBuildBtn').addEventListener('click', () => upBuild());
+upEl('upAnalysis').addEventListener('input', () => { upEl('upBuildBtn').disabled = upBusy || !upEl('upAnalysis').value.trim(); });
+upEl('upResetBtn').addEventListener('click', () => {
+  if (upState.url) URL.revokeObjectURL(upState.url);
+  Object.assign(upState, { file: null, url: '', seconds: 0, ratio: '', frames: [], uploaded: null, analysis: null, result: null });
+  const video = upEl('upVideo');
+  video.removeAttribute('src'); video.load(); video.hidden = true;
+  ['upFile', 'upFeedback', 'upSeconds', 'upKeep', 'upAnalysis'].forEach(id => { upEl(id).value = ''; });
+  upEl('upSeconds').placeholder = '예: 23';
+  upEl('upFormat').value = 'auto';
+  upEl('upFrames').textContent = '';
+  upEl('upFileInfo').textContent = '영상 파일을 여기에 끌어다 놓거나 눌러서 고르세요 (mp4 권장)';
+  upEl('upAnalysisWrap').hidden = true;
+  upEl('upResult').hidden = true;
+  upEl('upBuildBtn').disabled = true;
+  upStatus('default', '업그레이드 탭을 비웠습니다. 메이커의 현재 설정은 그대로입니다.');
+});
+/* 이 탭의 입력칸에서 Enter를 눌러도 「한 번에 구성」이 실행되지 않게 한다 */
+upEl('aiPanelUpgrade').addEventListener('keydown', event => {
+  if (event.key === 'Enter' && event.target.tagName === 'INPUT') event.preventDefault();
 });
 
 /* ---- 복사 (기존 클립보드 로직 유지 + 토스트 피드백) ---- */
