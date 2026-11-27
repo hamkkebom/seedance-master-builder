@@ -12,6 +12,7 @@ const CORE_LABEL = (axis) => axis.tag === 'core';
 const CONTENT_FIELDS = ['subject', 'event', 'scene', 'dialog', 'ending', 'constraint', 'cta', 'hook'];
 
 function findAxis(id) { return AXES.find(a => a.id === id); }
+/* 사람 전용 값(manualOnly)도 메이커가 실제로 만드는 값이므로 유효로 본다 */
 function validKeys(axis) { return axis.options.map(o => o.key); }
 
 /**

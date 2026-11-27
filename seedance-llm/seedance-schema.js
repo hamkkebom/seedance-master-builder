@@ -8,9 +8,12 @@ const path = require('path');
 const registry = JSON.parse(fs.readFileSync(path.join(__dirname, 'axes.json'), 'utf8'));
 const AXES = registry.axes;
 
-/** single 축 → {type:'string', enum}, multi 축 → {type:'array', uniqueItems:true, items:{enum}} */
-function axisSchema(axis) {
-  const keys = axis.options.map(o => o.key);
+/** single 축 → {type:'string', enum}, multi 축 → {type:'array', uniqueItems:true, items:{enum}}
+ *  LLM이 고를 수 있는 키만: 사람 전용 값(manualOnly, 예: 길이 직접 입력)과 이 task에 쓸 수 없는 옵션은 뺀다 */
+function axisSchema(axis, task) {
+  const keys = axis.options
+    .filter(o => !o.manualOnly && (!o.requires || !o.requires.length || !task || o.requires.includes(task)))
+    .map(o => o.key);
   const base = { description: `${axis.title} (${axis.group})` };
   if (axis.type === 'multi') {
     return { ...base, type: 'array', uniqueItems: true, items: { type: 'string', enum: keys } };
@@ -31,7 +34,7 @@ function buildStateSchema(task) {
     // R2V 축: task=r2v일 때만
     if (axis.tag === 'r2v' && task !== 'r2v') continue;
     // dependsOn 자식은 optional로 포함 (enum만 강제 — 값 검증은 서버에서)
-    properties[axis.id] = axisSchema(axis);
+    properties[axis.id] = axisSchema(axis, task);
     if (axis.tag === 'core' && !(axis.requires && axis.requires.length && !axis.requires.includes(task))) {
       required.push(axis.id);
     }

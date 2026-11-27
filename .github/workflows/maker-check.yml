@@ -1,0 +1,38 @@
+# 메이커(seedance-master-builder.html) 검사 — 축 정의 불일치 + 브라우저 테스트(스모크·탭 격리·AI 탭·프롬프트 스냅샷)
+name: maker-check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: maker-tests
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: maker-tests/package-lock.json
+      - name: axes.json이 HTML 축 정의와 같은지
+        run: node ../tools/sync-axes.mjs --check
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: 브라우저 테스트
+        run: npx playwright test
+      - name: 실패하면 결과 보관
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maker-test-results
+          path: maker-tests/test-results/
+          retention-days: 7

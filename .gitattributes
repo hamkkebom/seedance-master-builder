@@ -1,0 +1,2 @@
+# 프롬프트 스냅샷은 OS와 상관없이 LF로 비교한다 (윈도우 체크아웃에서 CRLF로 바뀌면 테스트가 실패)
+maker-tests/specs/__snapshots__/** text eol=lf
