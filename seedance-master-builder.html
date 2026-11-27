@@ -1047,6 +1047,7 @@
             <select id="ci_dialogfmt" onchange="renderPrompt()" title="대사를 프롬프트에 적는 방식. 같은 기획으로 둘 다 뽑아 비교해 보세요.">
               <option value="brace" selected>대사 표기: 중괄호 — 猫说：{대사} (공식 스킬 표기)</option>
               <option value="official">대사 표기: 따옴표 — 猫说：“대사” (공식 가이드 예시 표기)</option>
+              <option value="kodef">대사 표기: 목소리 정의를 한국어로 — 대사 언어: 한국어 + 서울 억양, 말투: …, 猫说：{대사} (시험용)</option>
             </select>
           </div>
           <div class="opt-row"><div class="opt-label">끝 상태 (컷 마무리)</div>
@@ -1727,10 +1728,10 @@ const AI_MODELS = Object.freeze(['deepseek-flash', 'deepseek-v4-pro']);
 const AI_CONTENT_FIELDS = Object.freeze(['subject', 'event', 'scene', 'dialog', 'ending', 'constraint', 'cta', 'hook', 'amb', 'fx', 'emo', 'speaker', 'look']);
 /* 장면 문장 안에 카메라 움직임이 적혀 있는지 (컷당 카메라 하나 규칙 — 카메라는 전용 칸에만) */
 const CAMERA_IN_SCENE = /镜头[^，。；、]{0,8}(推|拉|横移|平移|摇|环绕|跟随|跟拍|上升|下降|下压|升起|旋转|后退|前进|靠近|贴近|远离)|机位|运镜/;
-/* 한국어 대사 분량 기준: 컷 길이 1초당 한글 7자 (빠른 말하기 기준). 넘어도 사용자가 정한 문장은 고치지 않는다 */
-const DIALOG_SYLLABLES_PER_SECOND = 7;
+/* 한국어 대사 분량 기준: 컷 길이 1초당 한글 4자. 넘어도 사용자가 정한 문장은 고치지 않고 알리기만 한다 */
+const DIALOG_SYLLABLES_PER_SECOND = 4;   // 실제 생성 시험: 초당 3~4자일 때 한국어가 자연스럽고, 6~7자를 넘으면 급하게 들린다
 /* 이 값을 넘으면 사실상 말할 수 없으므로 AI 구성본은 통과시키지 않는다 (사용자가 확정한 대사는 예외) */
-const DIALOG_HARD_SYLLABLES_PER_SECOND = 9;
+const DIALOG_HARD_SYLLABLES_PER_SECOND = 6;
 function hangulCount(text) { return (String(text || '').match(/[가-힣]/g) || []).length; }
 function trimTailPunct(text) { return String(text || '').replace(/[\s。．，,；;、]+$/u, ''); }
 /* 길이 키 → 컷별 초 (길이를 모델에 맡기는 경우는 null) */
@@ -1867,7 +1868,7 @@ function buildAIAllowedContract(task) {
     title: axis.title,
     type: axis.type,
     core: axis.tag === 'core',
-    options: allowedOptionsForTask(axis, task).map(option => ({ key: option.k, label: option.label })),
+    options: allowedOptionsForTask(axis, task).map(option => option.value ? ({ key: option.k, label: option.label, text: String(option.value).slice(0, 70) }) : ({ key: option.k, label: option.label })),
     dependsOn: axis.dependsOn || null
   }));
   return {
@@ -1892,20 +1893,23 @@ function buildAIAllowedContract(task) {
       'Write the timeline as a shooting script, cut by cut in order. Be concrete: spell out every action, never fill with abstract words (no 超写实, 大师级, 电影感, 氛围感, 高级感 and the like in scene or light). Use cinematography terms. When a term is specialised, add a short plain description after it.',
       'One main change per cut: give each cut a single main action. When the plan packs too much into a cut, keep the main action and drop the minor ones rather than listing everything.',
       'In a cut where someone on screen speaks (narration false), the scene must keep that speaker in frame with the face and mouth visible while speaking; do not make a hand-only or prop-only shot carry a spoken line.',
+      'Never describe light, highlights, reflections or sparkle on or in the eyes (no 眼睛里的亮点/倒影/光点, no 眼神发亮), in scene, light or emotion text: the model renders it as glowing eyes. Describe light on the face, fur or outline instead.',
       'timeline[].light is required for every cut: the lighting and surface texture visible in that cut, in Chinese (light source, direction, colour temperature, what texture it reveals). When the light changes from the previous cut, say how it changes.',
       'timeline[].sfx: the sounds that occur in that cut, each wrapped in <> and tied to the action that makes them (for example <纸牌滑过桌布的沙沙声>). Leave it empty for a cut with no sound effect. When cuts carry sfx, leave content.fx empty.',
       'timeline[].cam is optional: exactly one decisive camera movement for that cut, in Chinese. Give it when the request specifies a camera move for the cut.',
       'Scene sentences must never describe camera movement (no 镜头推近/拉远/横移/环绕, no 机位). Camera movement goes only in timeline[].cam, one move per cut.',
-      'Dialog wording: when the request gives dialog lines, keep them as written. Aim for at most 7 Hangul syllables per second of a cut (cut lengths are in cutSecondsByDuration[axes.duration[0]]). When a line does not fit, first move whole sentences of it to a neighbouring cut, including a cut that would otherwise be silent, keeping the original order.',
+      'Dialog wording: when the request gives dialog lines, keep them as written. Aim for at most 4 Hangul syllables per second of a cut (cut lengths are in cutSecondsByDuration[axes.duration[0]]). When a line does not fit, first move whole sentences of it to a neighbouring cut, including a cut that would otherwise be silent, keeping the original order.',
       'Only if a line still does not fit may you tighten it lightly: remove redundant words while keeping the speaker tone, the fillers and sentence endings that carry the character, and every key word and punchline. Never produce clipped, telegraphic fragments, and never change the meaning. If the line cannot be tightened without sounding unnatural, leave it exactly as written.',
       'Sound must match the content. Choose an fxpreset option only when its listed sounds really occur in this video; otherwise leave fxpreset out and write content.fx with the sounds that do occur, each wrapped in <> (for example <纸牌滑动声><猫咪呼噜声>). When axes.audio includes amb, write content.amb: one short phrase describing the ambient sound of the scene.',
       'emotion options are written as human body language. When the main subject is not a human (animal, product, object), also write content.emo: the same emotion expressed with body language that fits that subject (for a cat: ears, tail, whiskers, paws), in Chinese. Choose an emotionflow option only when its described arc matches the plan; otherwise use none.',
+      'An option\'s "text" is the exact sentence that option puts into the prompt. Never choose an option whose text contradicts the plan or the cuts (for example a city-lights night option for an indoor candle scene, or an anxiety-to-relief emotion arc for a playful video); leave that axis out or use none instead.',
       'Every chosen option must agree with the cuts. cutprinciple (independent scenes) is only for videos where each cut changes place, costume and props; when the cuts continue in one place with the same subject, use none. timeweather must agree with the light written in the cuts. Quality options about human skin are only for human subjects.',
       'content.hook: leave it empty when the first timeline scene already shows the hook; never repeat the first scene there.',
       'timeline[].sfx must be a sound that the action written in that same cut really makes. Do not invent a sound for something that does not happen in the cut.',
       'content.ending is only the final visible state, in one short clause with no speaking. Leave it empty when the last timeline scene already shows the final state.',
       'Do not end content or scene strings with punctuation.',
       'timeline[].narration: true when the line is off-screen narration (voice-over while nobody on screen speaks); false or omitted when a person on screen says it. Follow the request when it marks a line as narration.',
+      'The voice option and the speaker options must not contradict each other.',
       'Voice consistency: when any dialog exists, axes.lang (accent), axes.voice (tone) and axes.speaker (voice traits) must all be set. One voice setting applies to the whole video, so never vary accent or tone between cuts.',
       'If fixedAxes is present, return those axes with exactly those keys. If baselineAxes is present, it is a tested combination close to this plan: start from it and change only what the plan needs.'
     ],
@@ -2651,7 +2655,7 @@ function buildPrompt() {
   const keyframe   = sel('keyframe')[0] || 'none';
   const seqMode    = sel('shotseq')[0] || 'ts';
   const genre      = sel('genre')[0] || 'none';
-  const voice      = sel('voice')[0] || 'soft';
+  const voice      = sel('voice')[0] || '';   // 고르지 않으면 말투 문장을 넣지 않는다
   const speaker    = sel('speaker');
   const speakerflow = sel('speakerflow')[0] || 'none';
   const cutprinciple = sel('cutprinciple')[0] || 'none';
@@ -2732,7 +2736,8 @@ function buildPrompt() {
   const emoText = contentInput.emo
     ? `整体情绪：${contentInput.emo}。`
     : (emotions.length ? `整体情绪：${emotions.map(k => optVal('emotion', k)).join('；')}。` : '');
-  const voiceText = optVal('voice', voice) || '语气温柔舒缓，语速缓慢';
+  /* 말투를 고르지 않았으면 말투 문장을 아예 넣지 않는다 (기본 문장을 대신 넣지 않음) */
+  const voiceText = voice ? (optVal('voice', voice) || '') : '';
   /* 복수 화자 블록: 화자 N명 역할+특성 → 【人物声音设定】 자동 생성 (v3 드라마 패턴) */
   const spCount = speakerflow === '2' ? 2 : speakerflow === '3' ? 3 : speakerflow === '4' ? 4 : 0;
   let spBlock = '';
@@ -2769,13 +2774,16 @@ function buildPrompt() {
      기존 방식: 台词语言：韩语，口音，语气，猫说：{대사}
      공식 방식(화산방주 가이드 예시): 猫用韩语（口音，语气）说：“대사” / 画外音：“대사” */
   const officialFmt = contentInput.dialogfmt === 'official';
+  /* 시험용 표기: 목소리 정의(언어·억양·말투)만 한국어로 적는다 — 한국어 발음이 어색할 때 비교해 보기 위한 선택지 */
+  const koDefFmt = contentInput.dialogfmt === 'kodef';
+  const koVoiceDef = lang === 'none' ? '' : `대사 언어: ${optionShortLabel('lang', lang)}${voice ? `, 말투: ${optionShortLabel('voice', voice)}` : ''}`;
   const officialSpeaker = sayVerb.replace(/说$/, '');
-  const officialVoice = `${optVal('lang', lang).replace(/^台词语言：/, '')}，${voiceText}`.replace(/^([^，]+)，/, '$1（') + '）';
+  const officialVoice = voiceText ? `${optVal('lang', lang).replace(/^台词语言：/, '')}，${voiceText}`.replace(/^([^，]+)，/, '$1（') + '）' : optVal('lang', lang).replace(/^台词语言：/, '');
   const spokenLine = (text, narration, full = true) => officialFmt
     ? (narration
         ? `画外音${full ? `（用${officialVoice}）` : ''}：“${text}”`
         : `${officialSpeaker}${full ? `用${officialVoice}` : ''}说：“${text}”`)
-    : `${full ? `${optVal('lang', lang)}，${voiceText}，` : ''}${narration ? NARRATION_VERB : sayVerb}：{${text}}`;
+    : `${full ? (koDefFmt ? `${koVoiceDef}，` : `${optVal('lang', lang)}，${voiceText ? voiceText + '，' : ''}`) : ''}${narration ? NARRATION_VERB : sayVerb}：{${text}}`;
   let voiceStated = false;
   const globalNarration = contentInput.dialogmode === 'vo';
   const globalDialogLine = lang !== 'none' && contentInput.dialog
@@ -3460,7 +3468,7 @@ const CHAT_STARTERS = Object.freeze(['쇼츠 광고를 만들고 싶어', '드�
 const CHAT_SYSTEM_RULES = [
   '너는 Seedance 2.5 프롬프트 메이커 전용 영상 기획 파트너다. 사용자와 한국어로 대화하며 영상을 함께 기획하고, 그 결과를 메이커의 축 선택과 컷 구성으로 정리한다. 기획에 필요한 모든 결정은 대화로 한다.',
   '[고정: 한국 시청자] 결과물은 항상 한국 사람이 보는 영상이다. 대사·내레이션·화면 글자는 한국어다. 사용자가 달리 말하지 않으면 배경은 한국 현대, 사람은 한국인으로 기획한다. 주체가 동물·제품·사물이면 목소리만 한국어다. 최종 프롬프트가 중국어로 만들어지는 것은 구현 방식일 뿐이므로 사용자에게 중국어로 묻거나 답하지 않는다.',
-  '[목소리] 대사나 내레이션이 있으면 목소리 세 가지가 필요하다: 억양(서울말 또는 사투리 → lang 축), 말투(→ voice 축), 화자 특성(성별·나이대·음색 → speaker 축). 하나씩 묻지 말고, 주체와 전체 톤에 어울리는 값을 네가 골라 초안에 넣고 한 줄로 알려 준다. 사용자가 바꾸자고 하면 바꾼다. 목소리는 영상 전체에 하나다. 서로 다른 인물이 말해야 하면 복수 화자(speakerflow)로 정한다. 대사가 전혀 없으면 lang은 none이다.',
+  '[목소리] 대사나 내레이션이 있으면 목소리 세 가지가 필요하다: 억양(서울말 또는 사투리 → lang 축), 말투(→ voice 축), 화자 특성(성별·나이대·음색 → speaker 축). 하나씩 묻지 말고, 주체와 전체 톤에 어울리는 값을 네가 골라 초안에 넣고 한 줄로 알려 준다. 사용자가 바꾸자고 하면 바꾼다. 말투와 화자 특성이 서로 어긋나지 않게 고른다(밝은 말투에 침착하고 차가운 정서 등은 피한다). 된소리나 겹받침이 몰려 발음이 뭉개지기 쉬운 단어(예: 습식, 섞어, 쫀득)가 대사에 있으면 그 단어를 짚어 주고, 뜻이 같은 발음 쉬운 말로 바꿀지 묻는다(사용자가 좋다고 할 때만 바꾼다). 목소리는 영상 전체에 하나다. 서로 다른 인물이 말해야 하면 복수 화자(speakerflow)로 정한다. 대사가 전혀 없으면 lang은 none이다.',
   '[대사와 내레이션] 말소리가 있는 컷마다 그것이 화면 속 인물이 직접 말하는 대사인지, 화면 밖 목소리(내레이션)인지 반드시 구분해서 정하고 cuts[].narration에 적는다(내레이션이면 true, 인물이 말하면 false). 인물이 말하면 입모양이 맞춰지고, 내레이션이면 화면 속 인물은 입을 열지 않는다. 제품 소개·설명 영상은 내레이션이, 드라마·인터뷰는 인물 대사가 보통 어울린다고 제안할 수 있다. 내레이션도 억양·말투·화자 특성을 똑같이 정한다.',
   '[내용에 맞는 선택] 효과음·음악·감정 표현은 이 영상에 실제로 어울리는 것만 고른다. 효과음 세트는 그 세트의 소리가 장면에 실제로 날 때만 고르고, 아니면 어떤 소리가 나야 하는지 사용자와 정해 카드의 scene이나 대화에 남긴다. 주체가 사람이 아니면(동물·제품·사물) 사람의 손·발·걸음 같은 표현이 아니라 그 주체에 맞는 몸짓으로 감정을 정한다. 감정 전환은 기획의 감정 흐름과 맞을 때만 고른다. 고른 축은 컷 내용과 어긋나면 안 된다: 장면 분리(cutprinciple)는 컷마다 장소·옷·소품이 완전히 바뀌는 영상에서만 고르고, 한 장소에서 같은 주체가 이어지는 영상은 none이다. 시간대·날씨는 컷에 적은 빛과 같아야 한다. 사람 피부에 관한 화질 선택지는 주체가 사람일 때만 고른다. 컷의 sound는 그 컷에 적은 동작에서 실제로 나는 소리만 적는다.',
   '[역인터뷰] 너는 받아 적는 사람이 아니라 기획자다. 먼저 꼭 필요한 것만 묻는다: 무엇을 왜 만드는지(목적·볼 사람·올릴 곳), 주체와 핵심 사건, 길이. 사용자의 말에 이미 들어 있는 것은 다시 묻지 않는다. 사용자가 미처 생각하지 못했을 빈틈(첫 3초에 보이는 것, 마지막 장면, 꼭 피해야 할 것)은 네가 먼저 짚는다. 답이 모호하거나 앞의 결정과 충돌하면 넘어가지 말고 확인한다.',
@@ -3469,7 +3477,7 @@ const CHAT_SYSTEM_RULES = [
   '[남은 질문] plan.open에는 아직 물어봐야 할 것을 중요한 순서로 최대 5개, 각 25자 이내로 적는다. 이번 답에서 묻는 질문이 맨 앞이다. 더 물을 것이 없으면 빈 배열.',
   '[메이커 축] 아래 "축 메뉴"가 메이커에 실제로 있는 선택지 전부다. 사용자에게는 축 ID나 옵션 키를 말하지 말고 라벨의 뜻을 쉬운 말로 제안한다. plan.axes에는 반드시 메뉴에 있는 축 ID와 옵션 키만 쓴다. single 축은 키 1개, multi 축은 여러 개. 대화에서 정해졌거나 네가 제안해 사용자가 받아들인 것만 넣는다. "필수" 축은 기획이 끝나기 전에 모두 정한다. "작업 전용"·"조건" 표시가 있는 축은 그 조건이 맞을 때만 고른다.',
   '[길이와 컷] 길이는 10s·15s·20s·30s·auto 중 하나다. 컷 수는 길이로 고정된다: 10s=3컷, 15s=4컷, 20s=5컷, 30s=6컷, auto=4컷(영상 편집 작업은 항상 4컷). 길이가 정해지면 정확히 그 수만큼 컷을 사용자와 함께 짜서 plan.cuts에 순서대로 넣는다. 첫 컷은 시선을 잡는 훅이다.',
-  '[컷 규칙] 한 컷에 카메라 움직임은 하나만. 컷마다 보이는 동작이 달라야 한다(장소는 같아도 된다). 컷의 scene에는 화면에 실제로 보이는 것만 쓴다: 누가, 어떤 동작을, 어디를 보며, 어떤 소품으로. "분위기가 고조된다" 같은 추상적인 말이나 줄거리 요약은 쓰지 않는다. 주체는 모든 컷에서 같은 말로 부른다. 주체의 겉모습(종류나 나이·성별, 색, 옷·소품, 눈에 띄는 특징)은 초안에서 한 번 정해 plan.subject에 함께 적는다. 컷의 scene에는 카메라 움직임을 쓰지 않고 camera 칸에만 쓴다. 한 컷에는 주된 동작을 하나만 넣는다. 인물이나 동물이 직접 말하는 컷은 말하는 이의 얼굴과 입이 화면에 보이게 짠다. 컷은 촬영 대본처럼 순서대로 짠다: 컷마다 light에 그 컷의 조명과 질감(빛이 어디서 어떤 색으로 드는지, 앞 컷에서 바뀌면 어떻게 바뀌는지)을, sound에 그 컷에서 실제로 나는 효과음(어떤 동작에서 나는 소리인지)을 적는다. "고급스럽게", "영화처럼", "하이퍼리얼" 같은 추상적인 채움말은 쓰지 않고 보이는 것과 들리는 것으로 풀어 쓴다. 대사는 한국어다. 사용자가 정한 대사는 기본적으로 그대로 둔다. 분량 기준은 컷 길이 1초당 한글 7자 정도다(3초 컷 21자, 4초 컷 28자, 5초 컷 35자). 넘는 컷이 있으면 먼저 문장을 통째로 옆 컷으로 옮기는 안을 낸다. 그래도 넘치고, 고쳐도 어색해지지 않는 경우에만 다듬는다: 말투·추임새·끝맺음·핵심 단어·반전 문장은 살리고 겹치는 말만 덜어 낸다. 다듬은 문장은 반드시 "원래 → 수정"으로 나란히 보여 주고 사용자가 좋다고 한 뒤에만 plan에 넣는다. 뚝뚝 끊기는 전보체나 뜻이 바뀌는 축약은 하지 않는다. 자연스럽게 다듬을 수 없으면 손대지 말고 영상 길이를 늘리거나 그대로 두자고 한다. 화면 글자·자막은 사용자가 원할 때만 넣는다. 해상도 같은 생성 파라미터와 최종 프롬프트 문장은 다루지 않는다. 최종 프롬프트는 메이커가 규칙대로 만든다.',
+  '[컷 규칙] 한 컷에 카메라 움직임은 하나만. 컷마다 보이는 동작이 달라야 한다(장소는 같아도 된다). 컷의 scene에는 화면에 실제로 보이는 것만 쓴다: 누가, 어떤 동작을, 어디를 보며, 어떤 소품으로. "분위기가 고조된다" 같은 추상적인 말이나 줄거리 요약은 쓰지 않는다. 주체는 모든 컷에서 같은 말로 부른다. 주체의 겉모습(종류나 나이·성별, 색, 옷·소품, 눈에 띄는 특징)은 초안에서 한 번 정해 plan.subject에 함께 적는다. 컷의 scene에는 카메라 움직임을 쓰지 않고 camera 칸에만 쓴다. 한 컷에는 주된 동작을 하나만 넣는다. 인물이나 동물이 직접 말하는 컷은 말하는 이의 얼굴과 입이 화면에 보이게 짠다. 눈에 맺히는 빛·반사·반짝임은 적지 않는다(눈이 발광하는 영상이 나온다). 빛은 얼굴·털·윤곽에 닿는 것으로 적는다. 컷은 촬영 대본처럼 순서대로 짠다: 컷마다 light에 그 컷의 조명과 질감(빛이 어디서 어떤 색으로 드는지, 앞 컷에서 바뀌면 어떻게 바뀌는지)을, sound에 그 컷에서 실제로 나는 효과음(어떤 동작에서 나는 소리인지)을 적는다. "고급스럽게", "영화처럼", "하이퍼리얼" 같은 추상적인 채움말은 쓰지 않고 보이는 것과 들리는 것으로 풀어 쓴다. 대사는 한국어다. 사용자가 정한 대사는 기본적으로 그대로 둔다. 분량 기준은 컷 길이 1초당 한글 4자 정도다(3초 컷 12자, 4초 컷 16자, 5초 컷 20자). 실제 생성 시험에서 이보다 많으면 말이 급하고 어색해졌다. 30초 영상 전체로는 120자 안팎이 한계다. 사용자가 준 대본이 이 기준을 넘으면 초안을 내기 전에 먼저 알리고, 대사를 고치지 않는 방법부터 제안한다: 영상을 두 편으로 나누기, 길이 늘리기. 넘는 컷이 있으면 먼저 문장을 통째로 옆 컷으로 옮기는 안을 낸다. 그래도 넘치고, 고쳐도 어색해지지 않는 경우에만 다듬는다: 말투·추임새·끝맺음·핵심 단어·반전 문장은 살리고 겹치는 말만 덜어 낸다. 다듬은 문장은 반드시 "원래 → 수정"으로 나란히 보여 주고 사용자가 좋다고 한 뒤에만 plan에 넣는다. 뚝뚝 끊기는 전보체나 뜻이 바뀌는 축약은 하지 않는다. 자연스럽게 다듬을 수 없으면 손대지 말고 영상 길이를 늘리거나 그대로 두자고 한다. 화면 글자·자막은 사용자가 원할 때만 넣는다. 해상도 같은 생성 파라미터와 최종 프롬프트 문장은 다루지 않는다. 최종 프롬프트는 메이커가 규칙대로 만든다.',
   '[화면 비율] 올릴 곳이 정해지면 plan.ratio에 비율을 적는다: 쇼츠·릴스·틱톡 등 세로 영상은 9:16, 유튜브·TV 등 가로 영상은 16:9, 정사각 피드는 1:1. 그 밖에 4:3, 3:4, 21:9도 가능하다. 올릴 곳을 모르면 비워 두고, 목적을 물을 때 함께 확인한다.',
   '[만든 뒤 수정] 프롬프트를 만든 뒤 사용자가 값을 바꾸자고 하면 plan.axes나 plan.cuts에 반영하고, 다시 "이 기획으로 프롬프트 만들기"를 누르라고 안내한다. plan.axes에 이미 있는 값은 사용자가 바꾸자고 하기 전에는 그대로 둔다.',
   '[사진] 사용자가 사진을 첨부하면 첨부 순서대로 사진1, 사진2로 부르고, 보이는 내용을 짧게 확인한 뒤 쓰임(인물·제품 참조, 시작 프레임, 끝 프레임, 배경·스타일 참조)을 정해 plan.photos에 넣는다. 실존 인물의 얼굴 사진은 참조로 쓸 수 없다고 안내한다. 사진을 쓰면 작업 유형도 그에 맞게 고른다.',
@@ -3486,12 +3494,13 @@ function chatAxisMenu() {
     if (axis.tag === 'r2v') flags.push('참조 영상(r2v) 작업 전용');
     if (axis.requires && axis.requires.length) flags.push(`작업 ${axis.requires.join('/')} 전용`);
     if (axis.dependsOn) flags.push(`조건 ${Object.entries(axis.dependsOn).map(([id, keys]) => `${id}=${keys.join('|')}`).join(', ')}`);
-    const options = axis.options.filter(option => !option.manualOnly).map(option => `${option.k}=${option.label}`).join(' ; ');
+    /* 선택지가 프롬프트에 실제로 넣는 문장을 함께 보여 준다 (라벨만 보고 고르면 내용과 어긋나는 문장이 들어간다) */
+    const options = axis.options.filter(option => !option.manualOnly).map(option => `${option.k}=${option.label}${option.value ? ` 〔${String(option.value).slice(0, 70)}〕` : ''}`).join(' ; ');
     return `${axis.id} | ${axis.title} | ${flags.join(' | ')}\n  ${options}`;
   }).join('\n');
 }
 function chatSystemPrompt() {
-  if (!chatSystemPromptCache) chatSystemPromptCache = `${CHAT_SYSTEM_RULES}\n\n[축 메뉴] 형식: 축ID | 제목 | 속성 / 다음 줄: 옵션키=라벨\n${chatAxisMenu()}`;
+  if (!chatSystemPromptCache) chatSystemPromptCache = `${CHAT_SYSTEM_RULES}\n\n[축 메뉴] 형식: 축ID | 제목 | 속성 / 다음 줄: 옵션키=라벨 〔그 선택지가 프롬프트에 실제로 넣는 중국어 문장〕. 〔〕 안의 문장이 기획 내용과 어긋나면(예: 실내 장면인데 도시 불빛, 밝은 톤인데 불안에서 안도로 바뀌는 감정) 그 선택지는 고르지 않는다.\n${chatAxisMenu()}`;
   return chatSystemPromptCache;
 }
 
